@@ -3,115 +3,162 @@
 	import { api } from '$lib/api.js';
 	import Nav from '$lib/Nav.svelte';
 
-	let recentInvoices = [];
-	let loading = true;
-	let errorMessage = '';
+	let recentInvoices = $state([]);
+	let loading = $state(true);
+	let errorMessage = $state('');
 
-	onMount(async () => {
+	let paidCount = $derived(
+		recentInvoices.filter((invoice) => invoice.status === 'paid').length
+	);
+
+	async function loadDashboard() {
+		loading = true;
+		errorMessage = '';
+
 		try {
-			recentInvoices = await api.getInvoices({ limit: 5 });
-		} catch (err) {
-			errorMessage = err.message || '加载失败';
+			recentInvoices = await api.getInvoices({
+				limit: 5
+			});
+		} catch (error) {
+			errorMessage =
+				error?.message || 'Unable to load dashboard';
 		} finally {
 			loading = false;
 		}
-	});
+	}
+
+	onMount(loadDashboard);
 </script>
 
 <Nav />
 
-<div class="page">
-	<h1>首页</h1>
+<main class="app-page">
+	<header class="page-heading">
+		<div>
+			<p class="eyebrow">WORKSPACE</p>
 
-	<section>
-		<div class="section-header">
-			<h2>最近的发票</h2>
-			<a href="/invoices">查看全部 →</a>
+			<h1>Good day 👋</h1>
+
+			<p>
+				Here is a quick look at your inventory activity.
+			</p>
+		</div>
+
+		<a
+			class="btn btn-primary"
+			href="/invoices/create"
+		>
+			＋ New invoice
+		</a>
+	</header>
+
+	<div class="stat-grid">
+		<div class="stat-card">
+			<span>Recent invoices</span>
+			<strong>{recentInvoices.length}</strong>
+		</div>
+
+		<div class="stat-card">
+			<span>Paid</span>
+			<strong>{paidCount}</strong>
+		</div>
+
+		<div class="stat-card">
+			<span>Awaiting payment</span>
+			<strong>
+				{recentInvoices.length - paidCount}
+			</strong>
+		</div>
+
+		<div class="stat-card">
+			<span>Quick action</span>
+			<strong class="quick">
+				Ready
+			</strong>
+		</div>
+	</div>
+
+	<section class="panel">
+		<div class="panel-title">
+			<h2>Recent invoices</h2>
+
+			<a href="/invoices">
+				View all →
+			</a>
 		</div>
 
 		{#if loading}
-			<p>加载中...</p>
+
+			<div class="state">
+				Loading recent activity…
+			</div>
+
 		{:else if errorMessage}
-			<p class="error">{errorMessage}</p>
+
+			<div class="state error">
+				{errorMessage}
+			</div>
+
 		{:else if recentInvoices.length === 0}
-			<p class="empty">还没有发票记录。<a href="/invoices/create">创建第一张发票</a></p>
+
+			<div class="state">
+				<h3>No invoices yet</h3>
+
+				<p>
+					Create your first invoice to see activity here.
+				</p>
+			</div>
+
 		{:else}
-			<table>
+
+			<table class="data-table">
 				<thead>
 					<tr>
-						<th>发票号</th>
-						<th>客户</th>
-						<th>日期</th>
-						<th>金额</th>
-						<th>状态</th>
+						<th>Invoice</th>
+						<th>Customer</th>
+						<th>Date</th>
+						<th>Amount</th>
+						<th>Status</th>
 					</tr>
 				</thead>
+
 				<tbody>
 					{#each recentInvoices as invoice (invoice.id)}
 						<tr>
-							<td>{invoice.invoice_no}</td>
-							<td>{invoice.customer?.name ?? '-'}</td>
-							<td>{invoice.issued_date}</td>
-							<td>{invoice.total_amount}</td>
+							<td class="strong">
+								{invoice.invoice_no}
+							</td>
+
 							<td>
-								<span class="status {invoice.status}">
-									{invoice.status === 'paid' ? '已付款' : '未付款'}
+								{invoice.customer?.name || 'Walk-in customer'}
+							</td>
+
+							<td>
+								{invoice.issued_date}
+							</td>
+
+							<td>
+								RM {invoice.total_amount}
+							</td>
+
+							<td>
+								<span class="badge {invoice.status}">
+									{invoice.status === 'paid'
+										? 'Paid'
+										: 'Unpaid'}
 								</span>
 							</td>
 						</tr>
 					{/each}
 				</tbody>
 			</table>
+
 		{/if}
 	</section>
-</div>
+</main>
 
 <style>
-	.page {
-		max-width: 960px;
-		margin: 2rem auto;
-		padding: 0 1rem;
-		font-family: sans-serif;
-	}
-	.section-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 0.75rem;
-	}
-	.section-header a {
-		font-size: 0.85rem;
-		color: #2563eb;
-		text-decoration: none;
-	}
-	table {
-		width: 100%;
-		border-collapse: collapse;
-	}
-	th,
-	td {
-		text-align: left;
-		padding: 0.5rem;
-		border-bottom: 1px solid #eee;
-		font-size: 0.9rem;
-	}
-	.status {
-		padding: 0.1rem 0.5rem;
-		border-radius: 4px;
-		font-size: 0.75rem;
-	}
-	.status.unpaid {
-		background: #fef2f2;
-		color: #dc2626;
-	}
-	.status.paid {
-		background: #f0fdf4;
-		color: #16a34a;
-	}
-	.empty {
-		color: #64748b;
-	}
-	.error {
-		color: #dc2626;
+	.quick {
+		color: #315ee7 !important;
 	}
 </style>

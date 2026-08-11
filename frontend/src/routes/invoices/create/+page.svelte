@@ -1,637 +1,243 @@
 <script>
-    import { onMount } from 'svelte';
-    import { api } from '$lib/api.js';
-    import Nav from '$lib/Nav.svelte';
 	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
+	import { api } from '$lib/api.js';
+	import Nav from '$lib/Nav.svelte';
 
-    let invoiceId = $state('');
 
-	let selectedCustomerId = $state(null);
-
-    let customerName = $state('');
+	let invoiceId = $state('');
+	let customerName = $state('');
 
 	let phone = $state('');
 
-    let rentalStart = $state(
-        new Date().toISOString().slice(0, 10)
-    );
+	let rentalStart = $state(new Date().toISOString().slice(0, 10));
+	let rentalEnd = $state('');
+	let address = $state('');
+	let barrelId = $state('');
+	let description = $state('');
+	let availableBarrels = $state([]);
+	let isLoading = $state(true);
+	let isSubmitting = $state(false);
+	let pageError = $state('');
 
-    let rentalEnd = $state('');
+	async function loadFormData() {
+		isLoading = true;
+		pageError = '';
 
-    let address = $state('');
+		try {
 
-    let barrel = $state('');
-    let description = $state('');
+			const [numberResult, barrelsResult] = await Promise.all([
+				api.getNextInvoiceNo(),
+				api.getBarrels()
+			]);
+			invoiceId = numberResult.invoice_no;
+			availableBarrels = barrelsResult.filter((item) => item.status === 'available');
+		} catch (error) {
+			console.error('Failed to load invoice form:', error);
+			pageError = 'We could not load the invoice details. Please refresh and try again.';
+		} finally {
+			isLoading = false;
+		}
+	}
 
-    async function loadInvoiceNumber() {
-        try {
-            const result = await api.getNextInvoiceNo();
+	async function findOrCreateCustomer() {
+		const name = customerName.trim();
+			if (name) {
+			const customers = await api.getCustomers({ search: name });
+			const existingCustomer = customers.find(
+				(item) => item.name?.toLowerCase() === name.toLowerCase()
+			);
 
-            invoiceId = result.invoice_no;
-        } catch (error) {
-            console.error(
-                'Failed to load invoice number:',
-                error
-            );
-        }
-    }
+			if (existingCustomer) return existingCustomer;
+		}
+		return api.createCustomer({
+			name: name || null,
+			phone: phone.trim() || null
+		});
+	}
 
 	async function handleSubmit() {
-		try {
-			/*
-			* 1. Basic validation
-			*/
-			if (!customerName.trim()) {
-				alert('Please enter customer name');
-				return;
-			}
+			pageError = '';
 
-			if (!barrel.trim()) {
-				alert('Please enter barrel code');
+			if (!barrelId) {
+				pageError = 'Please select a barrel for this invoice.';
 				return;
 			}
 
 			if (!rentalStart) {
-				alert('Please select rental start date');
+				pageError = 'Please select a rental start date.';
 				return;
 			}
 
-
-			/*
-			* 2. Find customer
-			*/
-			const customers = await api.getCustomers({
-				search: customerName.trim()
-			});
-
-			let customer = customers.find(
-				(item) =>
-					item.name.toLowerCase() ===
-					customerName.trim().toLowerCase()
-			);
-
-
-			/*
-			* No customer found → create new customer
-			*/
-			if (!customer) {
-				customer = await api.createCustomer({
-					name: customerName.trim(),
-					phone: phone.trim() || null
-				});
-			}
-
-
-			/*
-			* 3. Find barrel by code
-			*/
-			const barrels = await api.getBarrels();
-
-			const selectedBarrel = barrels.find(
-				(item) =>
-					item.code.toLowerCase() ===
-					barrel.trim().toLowerCase()
-			);
-
-
-			if (!selectedBarrel) {
-				alert('Barrel not found');
+			if (rentalEnd && rentalEnd < rentalStart) {
+				pageError = 'Rental end cannot be earlier than the start date.';
 				return;
 			}
 
+			isSubmitting = true;
 
-			if (selectedBarrel.status !== 'available') {
-				alert('This barrel is not available');
-				return;
-			}
-
-
-			/*
-			* 4. Create invoice
-			*/
-			const invoice = await api.createInvoice({
+			try {
+				const customer = await findOrCreateCustomer();
+				await api.createInvoice({
 				customer_id: customer.id,
-
 				issued_date: rentalStart,
-
 				address: address.trim() || null,
-
 				notes: null,
-
 				items: [
 					{
-						barrel_id: selectedBarrel.id,
-
-						description:
-							description.trim() || null,
+						barrel_id: Number(barrelId),
+						description: description.trim() || null,
 
 						rental_start: rentalStart,
-
-						rental_end:
-							rentalEnd || null
+						rental_end: rentalEnd || null
 					}
 				]
 			});
 
-
-			console.log(
-				'Invoice created:',
-				invoice
-			);
-
-
-			/*
-			* 5. Redirect
-			*/
 			goto('/invoices');
-
 		} catch (error) {
-
-			console.error(
-				'Create invoice failed:',
-				error
-			);
-
-			alert(
-				error instanceof Error
-					? error.message
-					: 'Failed to create invoice'
-			);
+			console.error('Create invoice failed:', error);
+			pageError = error instanceof Error ? error.message : 'Failed to create invoice.';
+		} finally {
+			isSubmitting = false;
 		}
 	}
 
-    onMount(() => {
-        loadInvoiceNumber();
-    });
+    onMount(loadFormData);
 </script>
 
 <Nav />
 
-<div class="page">
-
-	<!-- Page Title -->
-	<div class="page-header">
-		<h1>Create Invoice</h1>
-	</div>
-
-	<!-- ========================= -->
-	<!-- PART 1 : Invoice Details -->
-	<!-- ========================= -->
-
-	<section class="invoice-section">
-
-		<div class="section-title">
-			Invoice Details
+<main class="page-shell">
+	<header class="page-header">
+		<div>
+			<p class="eyebrow">INVOICES</p>
+			<h1>Create invoice</h1>
+			<p class="subtitle">Record a new barrel rental and customer details.</p>
 		</div>
-
-		<div class="form-grid">
-
-			<!-- Invoice ID -->
-			<div class="form-group">
-				<label for="invoiceId">
-					Invoice ID
-				</label>
-
-				<input
-					id="invoiceId"
-					type="text"
-					bind:value={invoiceId}
-					readonly
-				/>
-			</div>
-
-
-			<!-- Customer Name -->
-			<div class="form-group">
-				<label for="customerName">
-					Customer Name
-				</label>
-
-				<input
-					id="customerName"
-					type="text"
-					placeholder="Enter customer name"
-					bind:value={customerName}
-				/>
-			</div>
-
-
-			<div class="form-group">
-				<label for="phone">
-					Phone
-					<span class="optional">
-						(Optional)
-					</span>
-				</label>
-
-				<input
-					id="phone"
-					type="tel"
-					placeholder="Enter phone number"
-					bind:value={phone}
-				/>
-			</div>
-
-			<!-- Rental Start -->
-			<div class="form-group">
-				<label for="rentalStart">
-					Rental Start
-				</label>
-
-				<input
-					id="rentalStart"
-					type="date"
-					bind:value={rentalStart}
-				/>
-			</div>
-
-
-			<!-- Rental End -->
-			<div class="form-group">
-				<label for="rentalEnd">
-					Rental End
-				</label>
-
-				<input
-					id="rentalEnd"
-					type="date"
-					bind:value={rentalEnd}
-				/>
-			</div>
-
-
-			<!-- Address -->
-			<div class="form-group full-width">
-				<label for="address">
-					Address
-				</label>
-
-				<textarea
-					id="address"
-					rows="3"
-					placeholder="Enter customer address"
-					bind:value={address}
-				></textarea>
-			</div>
-
+		<div class="invoice-number">
+			<span>Invoice number</span>
+			<strong>{invoiceId || 'Loading…'}</strong>
 		</div>
+	</header>
 
-	</section>
 
+	{#if pageError}
+		<div class="alert" role="alert">{pageError}</div>
+	{/if}
 
-	<!-- ========================= -->
-	<!-- PART 2 : Invoice Items   -->
-	<!-- ========================= -->
+	<form onsubmit={(event) => { event.preventDefault(); handleSubmit(); }}>
+		<section class="card">
+			<div class="card-heading">
+				<div class="step">1</div>
+				<div>
+					<h2>Customer details</h2>
+					<p>Name and contact information can be added later.</p>
+				</div>
+			</div>
 
-	<section class="invoice-section">
+			<div class="form-grid">	
+				<label>
+					<span>Customer name <small>Optional</small></span>
+					<input type="text" placeholder="e.g. Alex Tan" bind:value={customerName} />
+				</label>
 
-		<div class="section-title">
-			Invoice Items
+				<label>
+					<span>Phone <small>Optional</small></span>
+					<input type="tel" placeholder="e.g. 012-345 6789" bind:value={phone} />
+				</label>
+
+				<label class="full-width">
+					<span>Address <small>Optional</small></span>
+					<textarea rows="3" placeholder="Enter the delivery or billing address" bind:value={address}></textarea>
+				</label>
+			</div>
+		</section>
+
+		<section class="card">
+			<div class="card-heading">
+				<div class="step">2</div>
+				<div>
+					<h2>Rental details</h2>
+					<p>Select the barrel and rental period for this invoice.</p>
+				</div>
+			</div>
+			<div class="form-grid">
+				<label class="full-width">
+					<span>Barrel <b>Required</b></span>
+					<select bind:value={barrelId} disabled={isLoading} required>
+						<option value="">{isLoading ? 'Loading available barrels…' : 'Select an available barrel'}</option>
+						{#each availableBarrels as barrel (barrel.id)}
+							<option value={barrel.id}>{barrel.code}{barrel.type ? ` · ${barrel.type}` : ''}</option>
+						{/each}
+					</select>
+					{#if !isLoading && availableBarrels.length === 0}
+						<em>No barrels are currently available.</em>
+					{/if}
+				</label>
+				<label>
+					<span>Rental start <b>Required</b></span>
+					<input type="date" bind:value={rentalStart} required />
+				</label>
+				<label>
+					<span>Rental end <small>Optional</small></span>
+					<input type="date" min={rentalStart} bind:value={rentalEnd} />
+				</label>
+				<label class="full-width">
+					<span>Description <small>Optional</small></span>
+					<textarea rows="3" placeholder="Add notes about the barrel or rental" bind:value={description}></textarea>
+				</label>
+			</div>
+		</section>
+
+		<div class="actions">
+			<button class="secondary" type="button" onclick={() => goto('/invoices')}>Cancel</button>
+			<button class="primary" type="submit" disabled={isSubmitting || isLoading || availableBarrels.length === 0}>
+			{isSubmitting ? 'Creating invoice…' : 'Create invoice'}
+			</button>
 		</div>
-
-		<div class="table-wrapper">
-
-			<table>
-
-				<thead>
-					<tr>
-						<th class="barrel-column">
-							Barrel
-						</th>
-
-						<th>
-							Description
-						</th>
-					</tr>
-				</thead>
-
-
-				<tbody>
-					<tr>
-
-						<td>
-							<input
-								type="text"
-								placeholder="Barrel"
-								bind:value={barrel}
-							/>
-						</td>
-
-						<td>
-							<input
-								type="text"
-								placeholder="Description"
-								bind:value={description}
-							/>
-						</td>
-
-					</tr>
-				</tbody>
-
-			</table>
-
-		</div>
-
-	</section>
-
-
-	<!-- Button -->
-	<button
-		type="button"
-		class="create-button"
-		on:click={handleSubmit}
-	>
-		Create Invoice
-	</button>
-
-</div>
-
+	</form>
+</main>
 
 <style>
-
-	/* ========================================
-	   MAIN PAGE
-	======================================== */
-
-	.page {
-		max-width: 1100px;
-
-		/*
-		 * 不再使用 auto 把整个页面放正中央
-		 * 左边留一点空间
-		 */
-		margin: 32px 0 60px 50px;
-
-		padding-right: 40px;
-
-		font-family:
-			Arial,
-			Helvetica,
-			sans-serif;
+:global(body) { background: #f6f8fb; }
+	.page-shell { max-width: 980px; margin: 0 auto; padding: 44px 28px 72px; font-family: Inter, ui-sans-serif, system-ui, sans-serif; color: #172033; }
+	.page-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 30px; }
+	.eyebrow { margin: 0 0 7px; color: #3563e9; font-size: 12px; font-weight: 800; letter-spacing: .12em; }
+	h1 { margin: 0; font-size: 34px; letter-spacing: -.035em; }
+	.subtitle { margin: 8px 0 0; color: #697386; font-size: 15px; }
+	.invoice-number { min-width: 150px; padding: 14px 18px; border: 1px solid #dfe5ef; border-radius: 12px; background: #fff; text-align: right; box-shadow: 0 3px 12px rgb(30 52 90 / 5%); }
+	.invoice-number span { display: block; margin-bottom: 4px; color: #7a8496; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+	.invoice-number strong { color: #25314d; font-size: 17px; }
+	.alert { margin-bottom: 20px; padding: 13px 16px; border: 1px solid #fecaca; border-radius: 10px; background: #fef2f2; color: #b42318; font-size: 14px; }
+	.card { margin-bottom: 22px; overflow: hidden; border: 1px solid #dfe5ef; border-radius: 14px; background: #fff; box-shadow: 0 5px 22px rgb(30 52 90 / 5%); }
+	.card-heading { display: flex; align-items: center; gap: 13px; padding: 20px 24px; border-bottom: 1px solid #e8ecf2; background: #fbfcfe; }
+	.step { display: grid; width: 30px; height: 30px; place-items: center; border-radius: 9px; background: #e9efff; color: #3563e9; font-size: 14px; font-weight: 800; }
+	h2 { margin: 0; font-size: 17px; }
+	.card-heading p { margin: 3px 0 0; color: #7a8496; font-size: 13px; }
+	.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; padding: 25px; }
+	label { display: flex; flex-direction: column; gap: 8px; color: #344054; font-size: 13px; font-weight: 700; }
+	label span { display: flex; align-items: center; gap: 7px; }
+	small, b { padding: 2px 7px; border-radius: 20px; font-size: 10px; font-weight: 700; }
+	small { background: #f1f3f7; color: #7a8496; }
+	b { background: #eaf8f1; color: #16805c; }
+	input, textarea, select { width: 100%; box-sizing: border-box; padding: 11px 12px; border: 1px solid #ccd4e0; border-radius: 9px; outline: none; background: #fff; color: #172033; font: inherit; font-weight: 400; transition: border-color .15s, box-shadow .15s; }
+	input:focus, textarea:focus, select:focus { border-color: #4771e8; box-shadow: 0 0 0 3px rgb(53 99 233 / 12%); }
+	textarea { resize: vertical; }
+	.full-width { grid-column: 1 / -1; }
+	em { color: #b54708; font-size: 12px; font-weight: 500; }
+	.actions { display: flex; justify-content: flex-end; gap: 12px; padding-top: 4px; }
+	button { padding: 11px 21px; border-radius: 9px; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+	.secondary { border: 1px solid #ccd4e0; background: #fff; color: #344054; }
+	.primary { border: 1px solid #3563e9; background: #3563e9; color: #fff; box-shadow: 0 4px 10px rgb(53 99 233 / 22%); }
+	button:hover:not(:disabled) { filter: brightness(.97); }
+	button:disabled { cursor: not-allowed; opacity: .55; }
+	@media (max-width: 640px) {
+		.page-shell { padding: 28px 16px 50px; }
+		.page-header { align-items: stretch; flex-direction: column; }
+		.invoice-number { text-align: left; }
+		.form-grid { grid-template-columns: 1fr; padding: 20px; }
+		.full-width { grid-column: auto; }
+		.actions button { flex: 1; }
 	}
-
-
-	/* ========================================
-	   TITLE
-	======================================== */
-
-	.page-header {
-		margin-bottom: 28px;
-	}
-
-	.page-header h1 {
-		margin: 0;
-
-		font-size: 32px;
-		font-weight: 700;
-
-		color: #111827;
-	}
-
-
-	/* ========================================
-	   SECTION
-	======================================== */
-
-	.invoice-section {
-		margin-bottom: 32px;
-
-		border: 1px solid #e5e7eb;
-		border-radius: 8px;
-
-		background: white;
-	}
-
-
-	.section-title {
-		padding: 15px 20px;
-
-		border-bottom: 1px solid #e5e7eb;
-
-		background: #f8fafc;
-
-		font-size: 16px;
-		font-weight: 600;
-
-		color: #1f2937;
-	}
-
-
-	/* ========================================
-	   TOP FORM
-	======================================== */
-
-	.form-grid {
-		display: grid;
-
-		grid-template-columns:
-			repeat(2, minmax(0, 1fr));
-
-		gap: 20px 28px;
-
-		padding: 24px;
-	}
-
-
-	.form-group {
-		display: flex;
-		flex-direction: column;
-
-		gap: 7px;
-	}
-
-
-	.form-group label {
-		font-size: 14px;
-		font-weight: 600;
-
-		color: #374151;
-	}
-
-
-	.form-group input,
-	.form-group textarea {
-		width: 100%;
-
-		box-sizing: border-box;
-
-		padding: 11px 12px;
-
-		border: 1px solid #d1d5db;
-		border-radius: 5px;
-
-		font-size: 14px;
-
-		outline: none;
-
-		background: white;
-	}
-
-
-	.form-group input:focus,
-	.form-group textarea:focus {
-		border-color: #2563eb;
-
-		box-shadow:
-			0 0 0 1px #2563eb;
-	}
-
-
-	.form-group input[readonly] {
-		background: #f3f4f6;
-
-		color: #4b5563;
-	}
-
-
-	.form-group textarea {
-		resize: vertical;
-	}
-
-
-	.full-width {
-		grid-column: 1 / -1;
-	}
-
-
-	/* ========================================
-	   TABLE
-	======================================== */
-
-	.table-wrapper {
-		padding: 0;
-		overflow-x: auto;
-	}
-
-
-	table {
-		width: 100%;
-
-		border-collapse: collapse;
-	}
-
-
-	th {
-		padding: 13px 15px;
-
-		background: #f8fafc;
-
-		border-bottom: 1px solid #e5e7eb;
-
-		text-align: left;
-
-		font-size: 14px;
-		font-weight: 600;
-
-		color: #374151;
-	}
-
-
-	td {
-		padding: 12px 15px;
-
-		border-bottom: 1px solid #e5e7eb;
-	}
-
-
-	td input {
-		width: 100%;
-
-		box-sizing: border-box;
-
-		padding: 10px 11px;
-
-		border: 1px solid #d1d5db;
-		border-radius: 5px;
-
-		font-size: 14px;
-
-		outline: none;
-	}
-
-
-	td input:focus {
-		border-color: #2563eb;
-	}
-
-
-	.barrel-column {
-		width: 30%;
-	}
-
-
-	/* ========================================
-	   BUTTON
-	======================================== */
-
-	.actions {
-		display: flex;
-
-		justify-content: flex-end;
-
-		margin-top: 20px;
-	}
-
-
-	.create-button {
-		padding: 11px 28px;
-
-		border: none;
-		border-radius: 5px;
-
-		background: #2563eb;
-
-		color: white;
-
-		font-size: 15px;
-		font-weight: 500;
-
-		cursor: pointer;
-	}
-
-	.optional {
-		font-weight: 400;
-		color: #6b7280;
-		font-size: 12px;
-	}
-
-
-	.create-button:hover {
-		background: #1d4ed8;
-	}
-
-
-	/* ========================================
-	   MOBILE
-	======================================== */
-
-	@media (max-width: 768px) {
-
-		.page {
-			margin: 24px 16px;
-
-			padding-right: 0;
-		}
-
-
-		.form-grid {
-			grid-template-columns: 1fr;
-		}
-
-
-		.full-width {
-			grid-column: auto;
-		}
-
-
-		.actions {
-			justify-content: stretch;
-		}
-
-
-		.create-button {
-			width: 100%;
-		}
-	}
-
 </style>
