@@ -31,7 +31,7 @@
 			<button
 				type="button"
 				class="cancel-button"
-				on:click={() => goto('/barrels')}
+				onclick={() => goto('/barrels')}
 			>
 				取消
 			</button>

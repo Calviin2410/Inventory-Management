@@ -3,17 +3,17 @@
 	import { api } from '$lib/api.js';
 	import Nav from '$lib/Nav.svelte';
 
-	let sku = '';
-	let name = '';
-	let description = '';
-	let costPrice = '';
-	let sellPrice = '';
-	let quantity = '0';
-	let lowStockThreshold = '5';
-	let barcode = '';
+	let sku = $state('');
+	let name = $state('');
+	let description = $state('');
+	let costPrice = $state('');
+	let sellPrice = $state('');
+	let quantity = $state('0');
+	let lowStockThreshold = $state('5');
+	let barcode = $state('');
 
-	let errorMessage = '';
-	let submitting = false;
+	let errorMessage = $state('');
+	let submitting = $state(false);
 
 	async function handleSubmit() {
 		errorMessage = '';
@@ -43,7 +43,7 @@
 <div class="page">
 	<h1>新增商品</h1>
 
-	<form on:submit|preventDefault={handleSubmit}>
+	<form onsubmit={(event) => { event.preventDefault(); handleSubmit(); }}>
 		{#if errorMessage}
 			<p class="error">{errorMessage}</p>
 		{/if}

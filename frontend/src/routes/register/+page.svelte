@@ -3,11 +3,11 @@
 	import { api, setToken } from '$lib/api.js';
 	import { user } from '$lib/stores/auth.js';
 
-	let name = '';
-	let email = '';
-	let password = '';
-	let errorMessage = '';
-	let loading = false;
+	let name = $state('');
+	let email = $state('');
+	let password = $state('');
+	let errorMessage = $state('');
+	let loading = $state(false);
 
 	async function handleRegister() {
 		errorMessage = '';
@@ -26,7 +26,7 @@
 </script>
 
 <div class="register-page">
-	<form on:submit|preventDefault={handleRegister}>
+	<form onsubmit={(event) => { event.preventDefault(); handleRegister(); }}>
 		<h1>注册账号</h1>
 
 		{#if errorMessage}

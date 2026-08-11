@@ -1,621 +1,447 @@
 <script>
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
 	import { api } from '$lib/api.js';
 	import Nav from '$lib/Nav.svelte';
 
+	// =========================
+	// State
+	// =========================
 	let barrels = $state([]);
 	let loading = $state(true);
 	let errorMessage = $state('');
-
 	let status = $state('');
 	let searchCode = $state('');
+	let view = $state('table');
 
-	let openMenuId = $state(null);
-
+	// =========================
+	// Load Barrels
+	// =========================
 	async function loadBarrels() {
 		loading = true;
 		errorMessage = '';
 
 		try {
-			const params = {};
+			const params = status
+				? { status }
+				: {};
 
-			if (status) {
-				params.status = status;
-			}
-
-			const result = await api.getBarrels(params);
-
-			barrels = result;
+			barrels = await api.getBarrels(params);
 		} catch (error) {
-			errorMessage =
-				error instanceof Error
-					? error.message
-					: '加载失败';
+			errorMessage = error?.message || 'Unable to load barrels';
 		} finally {
 			loading = false;
 		}
 	}
 
-	async function handleStatusUpdate(barrel, newStatus) {
-		console.log(
-			'Update barrel:',
-			barrel.code,
-			'to:',
-			newStatus
-		);
+	// =========================
+	// Search Filter
+	// =========================
+	let filtered = $derived(
+		barrels.filter((barrel) => {
+			const code = barrel.code || '';
+			const keyword = searchCode.toLowerCase();
 
-		barrel.status = newStatus;
+			return code
+				.toLowerCase()
+				.includes(keyword);
+		})
+	);
 
-		openMenuId = null;
-	}
+	// =========================
+	// Status Totals
+	// =========================
+	let statusCounts = $derived({
+		available: filtered.filter((barrel) => barrel.status === 'available').length,
+		rented: filtered.filter((barrel) => barrel.status === 'rented').length,
+		returning: filtered.filter((barrel) => barrel.status === 'returning').length
+	});
 
-	function filteredBarrels() {
-		if (!searchCode.trim()) {
-			return barrels;
-		}
-
-		const keyword = searchCode
-			.trim()
-			.toLowerCase();
-
-		return barrels.filter((barrel) =>
-			barrel.code
-				?.toLowerCase()
-				.includes(keyword)
-		);
-	}
-
+	// =========================
+	// Page Load
+	// =========================
 	onMount(loadBarrels);
 </script>
 
 <Nav />
 
-<div class="page">
+<main class="app-page">
+	<header class="page-heading">
+		<div>
+			<p class="eyebrow">
+				RENTAL ASSETS
+			</p>
 
-	<!-- TITLE -->
-	<h1>桶状态</h1>
+			<h1>
+				Barrels
+			</h1>
 
-
-	<!-- FILTER BAR -->
-	<div class="toolbar">
-
-		<!-- LEFT: STATUS -->
-		<div class="filter-group">
-			<label for="status">
-				状态
-			</label>
-
-			<select
-				id="status"
-				bind:value={status}
-				on:change={loadBarrels}
-			>
-				<option value="">
-					全部
-				</option>
-
-				<option value="available">
-					Available
-				</option>
-
-				<option value="rented">
-					在租
-				</option>
-
-				<option value="returning">
-					归还中
-				</option>
-			</select>
+			<p>
+				See availability and current rental status at a glance.
+			</p>
 		</div>
 
-
-		<!-- CENTER: SEARCH -->
-		<div class="search-group">
-			<input
-				type="text"
-				placeholder="搜索桶编号"
-				bind:value={searchCode}
-			/>
-		</div>
-
-
-		<!-- RIGHT: CREATE BARREL -->
-		<button
-			type="button"
-			on:click={() => goto('/barrels/create')}
+		<a
+			class="btn btn-primary"
+			href="/barrels/create"
 		>
-			+ 添加桶
-		</button>
+			＋ Add barrel
+		</a>
+	</header>
 
+	<div class="toolbar">
+		<input
+			class="control search"
+			placeholder="Search barrel code…"
+			bind:value={searchCode}
+		/>
+
+		<select
+			class="control"
+			bind:value={status}
+			onchange={loadBarrels}
+		>
+			<option value="">
+				All statuses
+			</option>
+
+			<option value="available">
+				Available
+			</option>
+
+			<option value="rented">
+				Rented
+			</option>
+
+			<option value="returning">
+				Returning
+			</option>
+		</select>
+
+		<div class="view-switch" aria-label="Barrel view">
+			<button
+				class:active={view === 'table'}
+				type="button"
+				onclick={() => (view = 'table')}
+			>
+				<span aria-hidden="true">☷</span> Table
+			</button>
+
+			<button
+				class:active={view === 'visual'}
+				type="button"
+				onclick={() => (view = 'visual')}
+			>
+				<span aria-hidden="true">◉</span> Visual
+			</button>
+		</div>
 	</div>
 
+	{#if view === 'visual' && !loading && !errorMessage && filtered.length > 0}
+		<div class="legend" aria-label="Barrel status legend">
+			<span><i class="available"></i>Available <strong>{statusCounts.available}</strong></span>
+			<span><i class="rented"></i>Rented <strong>{statusCounts.rented}</strong></span>
+			<span><i class="returning"></i>Returning <strong>{statusCounts.returning}</strong></span>
+		</div>
+	{/if}
 
-	<!-- TABLE -->
-	<div class="table-card">
-
+	<section class="panel">
 		{#if loading}
-
-			<div class="message">
-				加载中...
+			<div class="state">
+				Loading barrels…
 			</div>
-
 		{:else if errorMessage}
-
-			<div class="message error">
+			<div class="state error">
 				{errorMessage}
 			</div>
+		{:else if filtered.length === 0}
+			<div class="state">
+				<h3>
+					No barrels found
+				</h3>
 
+				<p>
+					Add a barrel or adjust your filters.
+				</p>
+			</div>
+		{:else if view === 'visual'}
+			<div class="barrel-grid">
+				{#each filtered as barrel (barrel.id)}
+					<article class="barrel-card {barrel.status}">
+						<div class="barrel-picture" aria-hidden="true">
+							<div class="barrel-top"></div>
+							<div class="barrel-body">
+								<span class="band top"></span>
+								<span class="barrel-code">{barrel.code}</span>
+								<span class="band bottom"></span>
+							</div>
+							<div class="barrel-bottom"></div>
+						</div>
+						<div class="barrel-info">
+							<div><strong>Barrel {barrel.code}</strong><span>{barrel.type || 'Standard barrel'}</span></div>
+							<span class="badge {barrel.status}">{barrel.status}</span>
+						</div>
+						<dl>
+							<div><dt>Customer</dt><dd>{barrel.current_customer?.name || '—'}</dd></div>
+							<div><dt>Invoice</dt><dd>{barrel.invoice_no || '—'}</dd></div>
+						</dl>
+					</article>
+				{/each}
+			</div>
 		{:else}
-
-			<table>
-
+			<table class="data-table">
 				<thead>
 					<tr>
-						<th>桶Code</th>
+						<th>Barrel code</th>
+						<th>Type</th>
 						<th>Status</th>
-						<th>Invoice Number</th>
-						<th class="action-column"></th>
+						<th>Invoice</th>
+						<th>Customer</th>
 					</tr>
 				</thead>
 
 				<tbody>
-
-					{#each filteredBarrels() as barrel (barrel.id)}
-
+					{#each filtered as barrel (barrel.id)}
 						<tr>
+							<td class="strong">
+								{barrel.code}
+							</td>
 
-						<td class="code">
-							{barrel.code}
-						</td>
+							<td>
+								{barrel.type || 'Standard'}
+							</td>
 
-						<td>
-							<span
-								class="status-badge"
-								class:available={barrel.status === 'available'}
-								class:rented={barrel.status === 'rented'}
-								class:returning={barrel.status === 'returning'}
-							>
-								{barrel.status}
-							</span>
-						</td>
+							<td>
+								<span class="badge {barrel.status}">
+									{barrel.status}
+								</span>
+							</td>
 
-						<td>
-							{barrel.invoice_no ?? '-'}
-						</td>
+							<td>
+								{barrel.invoice_no || '—'}
+							</td>
 
-						<td class="action-cell">
-
-							<div class="action-menu">
-
-								<button
-									type="button"
-									class="more-button"
-									on:click={() =>
-										openMenuId =
-											openMenuId === barrel.id
-												? null
-												: barrel.id
-									}
-								>
-									⋯
-								</button>
-
-								{#if openMenuId === barrel.id}
-
-									<div class="dropdown-menu">
-
-										<button
-											type="button"
-											on:click={() =>
-												handleStatusUpdate(
-													barrel,
-													'available'
-												)
-											}
-										>
-											Set Available
-										</button>
-
-										<button
-											type="button"
-											on:click={() =>
-												handleStatusUpdate(
-													barrel,
-													'rented'
-												)
-											}
-										>
-											Set Rented
-										</button>
-
-										<button
-											type="button"
-											on:click={() =>
-												handleStatusUpdate(
-													barrel,
-													'returning'
-												)
-											}
-										>
-											Set Returning
-										</button>
-
-									</div>
-
-								{/if}
-
-							</div>
-
-						</td>
-
-					</tr>
-
-					{:else}
-
-						<tr>
-							<td
-								colspan="3"
-								class="empty"
-							>
-								没有桶记录
+							<td>
+								{barrel.current_customer?.name || '—'}
 							</td>
 						</tr>
-
 					{/each}
-
 				</tbody>
-
 			</table>
-
 		{/if}
-
-	</div>
-
-</div>
-
+	</section>
+</main>
 
 <style>
-
-	/* ===============================
-	   PAGE
-	================================ */
-
-	.page {
-		margin: 36px 48px 60px 48px;
-		font-family:
-			Arial,
-			Helvetica,
-			sans-serif;
+	.view-switch {
+		display: flex;
+		padding: 3px;
+		border: 1px solid #d9e0ea;
+		border-radius: 9px;
+		background: #f4f6f9;
 	}
-
-	h1 {
-		margin: 0 0 26px 0;
-
-		font-size: 34px;
+	.view-switch button {
+		display: flex;
+		min-height: 34px;
+		align-items: center;
+		gap: 6px;
+		padding: 0 11px;
+		border: 0;
+		border-radius: 6px;
+		background: transparent;
+		color: #778195;
+		font-size: 12px;
 		font-weight: 700;
-
-		color: #111827;
+		cursor: pointer;
 	}
-
-
-	/* ===============================
-	   TOOLBAR
-	================================ */
-
-	.toolbar {
-		display: grid;
-
-		grid-template-columns:
-			1fr
-			1.2fr
-			auto;
-
-		align-items: end;
-
-		gap: 30px;
-
-		margin-bottom: 30px;
+	.view-switch button.active {
+		background: #fff;
+		color: #315ee7;
+		box-shadow: 0 2px 7px rgb(30 52 90 / 10%);
 	}
-
-
-	/* STATUS */
-
-	.filter-group {
+	.legend {
 		display: flex;
-		flex-direction: column;
-
-		gap: 7px;
-	}
-
-	.filter-group label {
-		font-size: 14px;
-		font-weight: 600;
-
-		color: #374151;
-	}
-
-	.filter-group select {
-		width: 100%;
-
-		height: 44px;
-
-		padding: 0 14px;
-
-		border: 1px solid #d1d5db;
-		border-radius: 6px;
-
-		background: white;
-
-		font-size: 15px;
-
-		outline: none;
-	}
-
-
-	/* SEARCH */
-
-	.search-group input {
-		width: 100%;
-		height: 44px;
-
-		box-sizing: border-box;
-
-		padding: 0 15px;
-
-		border: 1px solid #d1d5db;
-		border-radius: 6px;
-
-		font-size: 15px;
-
-		outline: none;
-	}
-
-	.search-group input:focus,
-	.filter-group select:focus {
-		border-color: #2563eb;
-
-		box-shadow:
-			0 0 0 1px #2563eb;
-	}
-
-
-	/* CREATE */
-
-	.create-group {
-		display: flex;
-
 		justify-content: flex-end;
+		gap: 18px;
+		margin: -5px 2px 13px;
+		color: #697386;
+		font-size: 12px;
 	}
-
-	.create-group button {
-		height: 44px;
-
-		padding: 0 25px;
-
-		border: none;
-		border-radius: 6px;
-
-		background: #2563eb;
-
-		color: white;
-
-		font-size: 15px;
-		font-weight: 500;
-
-		cursor: pointer;
+	.legend span {
+		display: flex;
+		align-items: center;
+		gap: 6px;
 	}
-
-	.create-group button:hover {
-		background: #1d4ed8;
+	.legend i {
+		width: 9px;
+		height: 9px;
+		border-radius: 50%;
 	}
-
-
-	/* ===============================
-	   TABLE
-	================================ */
-
-	.table-card {
-		border: 1px solid #e5e7eb;
-		border-radius: 8px;
-
-		overflow: visible;
-
-		background: white;
+	.legend i.available {
+		background: #26a879;
 	}
-
-	table {
-		width: 100%;
-
-		border-collapse: collapse;
+	.legend i.rented {
+		background: #e29a35;
 	}
-
-	th {
-		padding: 16px 18px;
-
-		background: #f8fafc;
-
-		border-bottom: 1px solid #e5e7eb;
-
-		text-align: left;
-
-		font-size: 14px;
-		font-weight: 600;
-
-		color: #374151;
+	.legend i.returning {
+		background: #5577df;
 	}
-
-	td {
-		padding: 17px 18px;
-
-		border-bottom: 1px solid #e5e7eb;
-
-		font-size: 14px;
-
-		color: #111827;
+	.legend strong {
+		color: #344054;
 	}
-
-	tbody tr:last-child td {
-		border-bottom: none;
+	.barrel-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+		gap: 18px;
+		padding: 22px;
+		background: #fafbfc;
 	}
-
-
-	/* ===============================
-	   STATUS BADGE
-	================================ */
-
-	.status-badge {
-		display: inline-block;
-
-		padding: 5px 9px;
-
-		border-radius: 5px;
-
-		font-size: 13px;
-		font-weight: 600;
-
-		background: #f3f4f6;
-
-		color: #4b5563;
-	}
-
-	.status-badge.available {
-		background: #dcfce7;
-		color: #15803d;
-	}
-
-	.status-badge.rented {
-		background: #dbeafe;
-		color: #1d4ed8;
-	}
-
-	.status-badge.returning {
-		background: #fef3c7;
-		color: #b45309;
-	}
-
-	.action-column {
-		width: 70px;
-	}
-
-	.action-cell {
-		position: relative;
-		text-align: right;
-	}
-
-	.action-menu {
-		position: relative;
-		display: inline-block;
-	}
-
-	.more-button {
-		width: 36px;
-		height: 34px;
-
-		border: 1px solid #d1d5db;
-		border-radius: 6px;
-
-		background: white;
-
-		font-size: 22px;
-		line-height: 20px;
-
-		cursor: pointer;
-
-		color: #374151;
-	}
-
-	.more-button:hover {
-		background: #f3f4f6;
-	}
-
-	.dropdown-menu {
-		position: absolute;
-
-		top: 40px;
-		right: 0;
-
-		width: 160px;
-
-		background: white;
-
-		border: 1px solid #e5e7eb;
-		border-radius: 7px;
-
-		box-shadow:
-			0 8px 20px rgba(0, 0, 0, 0.12);
-
-		z-index: 20;
-
+	.barrel-card {
 		overflow: hidden;
+		border: 1px solid #e2e7ef;
+		border-top: 4px solid var(--status-color);
+		border-radius: 13px;
+		background: #fff;
+		box-shadow: 0 4px 14px rgb(30 52 90 / 5%);
 	}
-
-	.dropdown-menu button {
-		width: 100%;
-
-		padding: 10px 14px;
-
-		border: none;
-		background: white;
-
-		text-align: left;
-
+	.barrel-card.available {
+		--status-color: #26a879;
+		--barrel-light: #d5f4e8;
+		--barrel-main: #55c79d;
+		--barrel-dark: #168762;
+	}
+	.barrel-card.rented {
+		--status-color: #e29a35;
+		--barrel-light: #ffebc8;
+		--barrel-main: #f1b85d;
+		--barrel-dark: #b87519;
+	}
+	.barrel-card.returning {
+		--status-color: #5577df;
+		--barrel-light: #dce4ff;
+		--barrel-main: #7892e7;
+		--barrel-dark: #3b59ba;
+	}
+	.barrel-picture {
+		display: flex;
+		height: 176px;
+		align-items: center;
+		flex-direction: column;
+		justify-content: center;
+		background: linear-gradient(145deg, #f8fafc, #edf1f6);
+	}
+	.barrel-top, .barrel-bottom {
+		z-index: 2;
+		width: 91px;
+		height: 17px;
+		border: 4px solid var(--barrel-dark);
+		border-radius: 50%;
+		background: var(--barrel-light);
+	}
+	.barrel-top {
+		margin-bottom: -8px;
+	}
+	.barrel-bottom {
+		margin-top: -8px;
+	}
+	.barrel-body {
+		position: relative;
+		display: grid;
+		width: 96px;
+		height: 116px;
+		place-items: center;
+		border-right: 5px solid var(--barrel-dark);
+		border-left: 5px solid var(--barrel-dark);
+		border-radius: 15px / 42px;
+		background: linear-gradient(90deg, var(--barrel-dark), var(--barrel-main) 18%, var(--barrel-light) 49%, var(--barrel-main) 78%, var(--barrel-dark));
+		box-shadow: 8px 10px 18px rgb(30 52 90 / 15%);
+	}
+	.band {
+		position: absolute;
+		right: -8px;
+		left: -8px;
+		height: 7px;
+		border-radius: 5px;
+		background: var(--barrel-dark);
+	}
+	.band.top {
+		top: 25px;
+	}
+	.band.bottom {
+		bottom: 25px;
+	}
+	.barrel-code {
+		z-index: 1;
+		padding: 5px 8px;
+		border-radius: 5px;
+		background: rgb(255 255 255 / 82%);
+		color: #25314d;
+		font-size: 13px;
+		font-weight: 850;
+		box-shadow: 0 2px 6px rgb(30 52 90 / 12%);
+	}
+	.barrel-info {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 10px;
+		padding: 16px 16px 12px;
+	}
+	.barrel-info strong, .barrel-info span {
+		display: block;
+	}
+	.barrel-info strong {
+		color: #202a40;
 		font-size: 14px;
-
-		cursor: pointer;
 	}
-
-	.dropdown-menu button:hover {
-		background: #f3f4f6;
+	.barrel-info div > span {
+		margin-top: 3px;
+		color: #8791a2;
+		font-size: 11px;
 	}
-
-
-	/* ===============================
-	   MESSAGE
-	================================ */
-
-	.message {
-		padding: 25px;
-
-		color: #64748b;
+	.barrel-info > .badge {
+		display: inline-flex;
 	}
-
-	.error {
-		color: #dc2626;
+	dl {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		margin: 0;
+		padding: 12px 16px 16px;
+		border-top: 1px solid #edf0f4;
 	}
-
-	.empty {
-		padding: 35px;
-
-		text-align: center;
-
-		color: #64748b;
+	dl div + div {
+		padding-left: 14px;
+		border-left: 1px solid #edf0f4;
 	}
-
-
-	/* ===============================
-	   RESPONSIVE
-	================================ */
-
-	@media (max-width: 800px) {
-
-		.page {
-			margin: 25px 16px;
-		}
-
-		.toolbar {
-			grid-template-columns: 1fr;
-
-			gap: 15px;
-		}
-
-		.create-group {
-			justify-content: flex-start;
-		}
-
-		.create-group button {
+	dt {
+		margin-bottom: 4px;
+		color: #8a94a6;
+		font-size: 10px;
+		font-weight: 750;
+		text-transform: uppercase;
+	}
+	dd {
+		overflow: hidden;
+		margin: 0;
+		color: #485267;
+		font-size: 12px;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	@media (max-width: 760px) {
+		.view-switch {
 			width: 100%;
 		}
+		.view-switch button {
+			flex: 1;
+			justify-content: center;
+		}
+		.legend {
+			justify-content: flex-start;
+			flex-wrap: wrap;
+		}
+		.barrel-grid {
+			grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+			padding: 15px;
+		}
 	}
-
 </style>
