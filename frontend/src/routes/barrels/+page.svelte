@@ -157,7 +157,7 @@
 			onchange={loadBarrels}
 		>
 			<option value="">
-				All statuses
+				All Status
 			</option>
 
 			<option value="available">
@@ -230,7 +230,7 @@
 	<!-- =========================
 	     CONTENT
 	========================= -->
-	<section class="panel">
+	<section class="panel barrels-panel">
 
 		{#if loading}
 
@@ -363,8 +363,10 @@
 
 						<tr>
 
-							<td class="strong">
-								{barrel.code}
+							<td>
+								<span class="barrel-code-badge {barrel.status}">
+									{barrel.code}
+								</span>
 							</td>
 
 
@@ -630,7 +632,7 @@
 
 
 	/* =========================
-	   BARREL IMAGE
+	   BARREL VISUAL
 	========================= */
 
 	.barrel-picture {
@@ -748,6 +750,48 @@
 
 
 	/* =========================
+	   TABLE BARREL CODE
+	========================= */
+
+	.barrel-code-badge {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+
+		padding: 6px 10px;
+
+		border-radius: 8px;
+
+		font-size: 14px;
+		font-weight: 700;
+	}
+
+
+	/* =========================
+	   STATUS COLORS
+	   Barrel Code + Status
+	========================= */
+
+	.badge.available,
+	.barrel-code-badge.available {
+		background: #e8f8f0;
+		color: #168762;
+	}
+
+	.badge.rented,
+	.barrel-code-badge.rented {
+		background: #fff3df;
+		color: #b87519;
+	}
+
+	.badge.returning,
+	.barrel-code-badge.returning {
+		background: #eef2ff;
+		color: #4564c8;
+	}
+
+
+	/* =========================
 	   BARREL INFO
 	========================= */
 
@@ -856,26 +900,34 @@
 	}
 
 	.more-button {
-		width: 36px;
-		height: 34px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 
-		border:
-			1px solid #d1d5db;
+		width: 38px;
+		height: 36px;
 
-		border-radius: 6px;
+		padding: 0;
+
+		border: 1px solid #d7dce5;
+		border-radius: 8px;
 
 		background: white;
+		color: #536078;
 
-		color: #374151;
-
-		font-size: 22px;
-		line-height: 20px;
+		font-size: 20px;
+		font-weight: 700;
 
 		cursor: pointer;
+
+		transition:
+			background 0.15s ease,
+			border-color 0.15s ease;
 	}
 
 	.more-button:hover {
-		background: #f3f4f6;
+		background: #f5f7fb;
+		border-color: #bfc7d4;
 	}
 
 
@@ -886,25 +938,23 @@
 	.dropdown-menu {
 		position: absolute;
 
-		top: 40px;
 		right: 0;
+		bottom: 42px;
 
-		z-index: 20;
+		z-index: 100;
 
-		width: 160px;
+		width: 170px;
 
 		overflow: hidden;
 
-		border:
-			1px solid #e5e7eb;
-
-		border-radius: 7px;
+		border: 1px solid #e5e7eb;
+		border-radius: 8px;
 
 		background: white;
 
 		box-shadow:
-			0 8px 20px
-			rgba(0, 0, 0, 0.12);
+			0 10px 30px
+			rgba(15, 23, 42, 0.14);
 	}
 
 	.dropdown-menu button {
@@ -929,6 +979,16 @@
 
 
 	/* =========================
+	   IMPORTANT
+	   Allow dropdown outside panel
+	========================= */
+
+	.barrels-panel {
+		overflow: visible;
+	}
+
+
+	/* =========================
 	   RESPONSIVE
 	========================= */
 
@@ -944,7 +1004,6 @@
 
 		.legend {
 			justify-content: flex-start;
-
 			flex-wrap: wrap;
 		}
 

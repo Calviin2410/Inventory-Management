@@ -180,8 +180,14 @@
 					<input type="date" bind:value={rentalStart} required />
 				</label>
 				<label>
-					<span>Rental end <small>Optional</small></span>
-					<input type="date" min={rentalStart} bind:value={rentalEnd} />
+					<span>Rental end <b>Required</b></span>
+
+					<input
+						type="date"
+						min={rentalStart}
+						bind:value={rentalEnd}
+						required
+					/>
 				</label>
 				<label class="full-width">
 					<span>Description <small>Optional</small></span>
