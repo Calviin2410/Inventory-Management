@@ -35,6 +35,50 @@ class InvoiceController extends Controller
         return response()->json(
             $invoice->load([
                 'customer',
+                'driver',
+                'vehicle',
+                'items.barrel'
+            ])
+        );
+    }
+
+    public function update(Request $request, Invoice $invoice)
+    {
+        $data = $request->validate([
+            'customer_id' => [
+                'sometimes',
+                'required',
+                'exists:customers,id'
+            ],
+
+            'issued_date' => [
+                'sometimes',
+                'required',
+                'date'
+            ],
+
+            'address' => [
+                'nullable',
+                'string'
+            ],
+
+            'notes' => [
+                'nullable',
+                'string'
+            ],
+
+            'status' => [
+                'sometimes',
+                'required',
+                'in:unpaid,paid,cancelled'
+            ],
+        ]);
+
+        $invoice->update($data);
+
+        return response()->json(
+            $invoice->load([
+                'customer',
                 'items.barrel'
             ])
         );
@@ -59,13 +103,23 @@ class InvoiceController extends Controller
                 'exists:customers,id'
             ],
 
+            'driver_id' => [
+                'required',
+                'exists:drivers,id'
+            ],
+
+            'vehicle_id' => [
+                'required',
+                'exists:vehicles,id'
+            ],
+
             'issued_date' => [
                 'required',
                 'date'
             ],
 
             'address' => [
-                'nullable',
+                'required',
                 'string'
             ],
 
@@ -159,13 +213,19 @@ class InvoiceController extends Controller
                     'customer_id' =>
                         $data['customer_id'],
 
+                    'driver_id' =>
+                        $data['driver_id'],
+
+                    'vehicle_id' =>
+                        $data['vehicle_id'],
+
                     'user_id' =>
                         $request->user()?->id,
 
                     'issued_date' =>
                         $data['issued_date'],
 
-                    'address' => $data['address'] ?? null,
+                    'address' => $data['address'],
                     
                     'status' =>
                         'unpaid',
@@ -210,6 +270,8 @@ class InvoiceController extends Controller
         return response()->json(
             $invoice->load([
                 'customer',
+                'driver',
+                'vehicle',
                 'items.barrel'
             ]),
             201

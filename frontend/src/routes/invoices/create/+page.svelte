@@ -20,18 +20,39 @@
 	let isSubmitting = $state(false);
 	let pageError = $state('');
 
+	let driverId = $state('');
+	let vehicleId = $state('');
+
+	let drivers = $state([]);
+	let vehicles = $state([]);
+
 	async function loadFormData() {
 		isLoading = true;
 		pageError = '';
 
 		try {
 
-			const [numberResult, barrelsResult] = await Promise.all([
+			const [
+				numberResult,
+				barrelsResult,
+				driversResult,
+				vehiclesResult
+			] = await Promise.all([
 				api.getNextInvoiceNo(),
-				api.getBarrels()
+				api.getBarrels(),
+				api.getDrivers(),
+				api.getVehicles()
 			]);
 			invoiceId = numberResult.invoice_no;
-			availableBarrels = barrelsResult.filter((item) => item.status === 'available');
+
+			availableBarrels =
+				barrelsResult.filter(
+					(item) =>
+						item.status === 'available'
+				);
+
+			drivers = driversResult;
+			vehicles = vehiclesResult;
 		} catch (error) {
 			console.error('Failed to load invoice form:', error);
 			pageError = 'We could not load the invoice details. Please refresh and try again.';
@@ -74,14 +95,37 @@
 				return;
 			}
 
+
+			if (!address.trim()) {
+				pageError =
+					'Please enter an address.';
+				return;
+			}
+
+			if (!driverId) {
+				pageError =
+					'Please select a driver.';
+				return;
+			}
+
+			if (!vehicleId) {
+				pageError =
+					'Please select a vehicle.';
+				return;
+			}
 			isSubmitting = true;
 
 			try {
 				const customer = await findOrCreateCustomer();
 				await api.createInvoice({
 				customer_id: customer.id,
+
+				driver_id: Number(driverId),
+				vehicle_id: Number(vehicleId),
+
 				issued_date: rentalStart,
-				address: address.trim() || null,
+
+				address: address.trim(),
 				notes: null,
 				items: [
 					{
@@ -148,8 +192,17 @@
 				</label>
 
 				<label class="full-width">
-					<span>Address <small>Optional</small></span>
-					<textarea rows="3" placeholder="Enter the delivery or billing address" bind:value={address}></textarea>
+					<span>
+						Address
+						<b>Required</b>
+					</span>
+
+					<textarea
+						rows="3"
+						placeholder="Enter the delivery or billing address"
+						bind:value={address}
+						required
+					></textarea>
 				</label>
 			</div>
 		</section>
@@ -161,6 +214,50 @@
 					<h2>Rental details</h2>
 					<p>Select the barrel and rental period for this invoice.</p>
 				</div>
+
+				<label>
+					<span>
+						Driver
+						<b>Required</b>
+					</span>
+
+					<select
+						bind:value={driverId}
+						required
+					>
+						<option value="">
+							Select a driver
+						</option>
+
+						{#each drivers as driver (driver.id)}
+							<option value={driver.id}>
+								{driver.name}
+							</option>
+						{/each}
+					</select>
+				</label>
+
+				<label>
+					<span>
+						Vehicle Plate
+						<b>Required</b>
+					</span>
+
+					<select
+						bind:value={vehicleId}
+						required
+					>
+						<option value="">
+							Select vehicle plate
+						</option>
+
+						{#each vehicles as vehicle (vehicle.id)}
+							<option value={vehicle.id}>
+								{vehicle.plate_number}
+							</option>
+						{/each}
+					</select>
+				</label>
 			</div>
 			<div class="form-grid">
 				<label class="full-width">

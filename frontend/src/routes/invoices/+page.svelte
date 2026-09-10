@@ -1,6 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api.js';
+	import { openInvoicePrintWindow } from '$lib/invoicePrint.js';
 	import Nav from '$lib/Nav.svelte';
 
 	// =========================
@@ -12,7 +13,7 @@
 	let search = $state('');
 
 	let openMenuId = $state(null);
-
+	let exportingId = $state(null);
 
 	// =========================
 	// Load Invoices
@@ -22,12 +23,13 @@
 		errorMessage = '';
 
 		try {
-			const result = await api.getInvoices();
+			const result =
+				await api.getInvoices();
 
-			invoices =
-				result.data ??
-				result ??
-				[];
+			invoices = Array.isArray(result)
+				? result
+				: result?.data ?? [];
+
 		} catch (error) {
 			errorMessage =
 				error?.message ||
@@ -58,29 +60,14 @@
 		})
 	);
 
-
-	// =========================
-	// Update Invoice Status
-	// =========================
 	async function updateInvoiceStatus(
 		invoice,
 		newStatus
 	) {
 		try {
-			/*
-				暂时只修改 frontend。
 
-				之后 backend API 做好后可以改成：
-
-				await api.updateInvoice(
-					invoice.id,
-					{
-						status: newStatus
-					}
-				);
-			*/
-
-			invoice.status = newStatus;
+			const updated = await api.updateInvoice(invoice.id, { status: newStatus });
+			invoices = invoices.map((item) => item.id === invoice.id ? updated : item);
 
 			openMenuId = null;
 		} catch (error) {
@@ -94,22 +81,29 @@
 	// =========================
 	// Export PDF
 	// =========================
-	function exportPdf(invoice) {
-		console.log(
-			'Export PDF:',
-			invoice.invoice_no
-		);
+	async function exportPdf(invoice) {
+		const printWindow = window.open('', '_blank');
 
-		/*
-			之后 PDF API 做好后可以类似：
+		if (!printWindow) {
+			errorMessage = 'Please allow pop-ups to export this invoice as PDF.';
+			return;
+		}
 
-			window.open(
-				`http://localhost:8000/api/invoices/${invoice.id}/pdf`,
-				'_blank'
-			);
-		*/
-
+		printWindow.document.write('<p style="font:14px sans-serif;padding:24px">Preparing invoice…</p>');
+		exportingId = invoice.id;
 		openMenuId = null;
+
+		errorMessage = '';
+
+		try {
+			const fullInvoice = await api.getInvoice(invoice.id);
+			openInvoicePrintWindow(printWindow, fullInvoice);
+		} catch (error) {
+			printWindow.close();
+			errorMessage = error?.message || 'Unable to export invoice PDF';
+		} finally {
+			exportingId = null;
+		}
 	}
 
 
@@ -245,7 +239,11 @@
 
 							<!-- Invoice Number -->
 							<td class="strong">
-								{invoice.invoice_no}
+
+								<a href={`/invoices/${invoice.id}`}>
+									{invoice.invoice_no}
+								</a>
+
 							</td>
 
 
@@ -274,85 +272,94 @@
 							<!-- Action -->
 							<td class="action-cell">
 
-								<div class="action-menu">
+									<div class="action-menu">
 
-									<button
-										type="button"
-										class="more-button"
-										onclick={() => {
-											openMenuId =
-												openMenuId === invoice.id
-													? null
-													: invoice.id;
-										}}
-									>
-										⋯
-									</button>
+										<button
+											type="button"
+											class="more-button"
+											onclick={() => {
+												openMenuId =
+													openMenuId === invoice.id
+														? null
+														: invoice.id;
+											}}
+										>
+											⋯
+										</button>
 
+										{#if openMenuId === invoice.id}
 
-									{#if openMenuId === invoice.id}
+											<div class="dropdown-menu">
 
-										<div class="dropdown-menu">
+												<a
+													class="menu-link"
+													href={`/invoices/${invoice.id}`}
+												>
+													View invoice
+												</a>
 
-											<!--
-												如果现在不是 Paid，
-												才显示 Set Paid
-											-->
-											{#if invoice.status !== 'paid'}
+												<a
+													class="menu-link"
+													href={`/invoices/${invoice.id}/edit`}
+												>
+													Edit invoice
+												</a>
+
+												<div class="menu-divider"></div>
+
+												{#if invoice.status !== 'paid'}
+
+													<button
+														type="button"
+														onclick={() =>
+															updateInvoiceStatus(
+																invoice,
+																'paid'
+															)
+														}
+													>
+														Set Paid
+													</button>
+
+												{/if}
+
+												{#if invoice.status !== 'unpaid'}
+
+													<button
+														type="button"
+														onclick={() =>
+															updateInvoiceStatus(
+																invoice,
+																'unpaid'
+															)
+														}
+													>
+														Set Unpaid
+													</button>
+
+												{/if}
+
+												<div class="menu-divider"></div>
 
 												<button
 													type="button"
+													disabled={
+														exportingId === invoice.id
+													}
 													onclick={() =>
-														updateInvoiceStatus(
-															invoice,
-															'paid'
-														)
+														exportPdf(invoice)
 													}
 												>
-													Set Paid
+													{exportingId === invoice.id
+														? 'Preparing…'
+														: 'Export PDF'}
 												</button>
 
-											{/if}
+											</div>
 
+										{/if}
 
-											<!--
-												如果现在不是 Unpaid，
-												才显示 Set Unpaid
-											-->
-											{#if invoice.status !== 'unpaid'}
-
-												<button
-													type="button"
-													onclick={() =>
-														updateInvoiceStatus(
-															invoice,
-															'unpaid'
-														)
-													}
-												>
-													Set Unpaid
-												</button>
-
-											{/if}
-
-
-											<div class="menu-divider"></div>
-
-
-											<button
-												type="button"
-												onclick={() =>
-													exportPdf(invoice)
-												}
-											>
-												Export PDF
-											</button>
-
-										</div>
-
-									{/if}
-
-								</div>
+									</div>
 
 							</td>
 
@@ -465,6 +472,26 @@
 			border-color 0.15s ease;
 	}
 
+	.menu-link {
+		display: block;
+
+		width: 100%;
+
+		padding: 11px 14px;
+
+		color: #202939;
+		background: white;
+
+		text-align: left;
+		text-decoration: none;
+
+		font-size: 14px;
+		font-weight: 500;
+	}
+
+	.menu-link:hover {
+		background: #f3f4f6;
+	}
 
 	.more-button:hover {
 		background: #f5f7fb;

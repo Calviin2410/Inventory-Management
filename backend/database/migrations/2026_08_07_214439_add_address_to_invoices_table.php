@@ -1,24 +1,17 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('invoices', function (Blueprint $table) {
-            $table->text('address')
-                ->nullable()
-                ->after('issued_date');
-        });
+        // Kept for existing migration histories. The column is now part of the
+        // original create_invoices_table migration.
     }
 
     public function down(): void
     {
-        Schema::table('invoices', function (Blueprint $table) {
-            $table->dropColumn('address');
-        });
+        // No-op: this migration no longer owns the address column.
     }
 };

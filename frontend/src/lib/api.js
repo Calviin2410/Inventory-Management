@@ -33,9 +33,14 @@ async function request(path, { method = 'GET', body, headers = {} } = {}) {
 	const data = await res.json().catch(() => null);
 
 	if (!res.ok) {
-		const error = new Error(data?.message || `请求失败 (${res.status})`);
+		const error = new Error(
+			data?.message || `Request Failed (${res.status})`
+		);
+
 		error.status = res.status;
 		error.data = data;
+		error.errors = data?.errors ?? null;
+
 		throw error;
 	}
 
@@ -77,8 +82,9 @@ export const api = {
 		return request(`/barrels${query ? `?${query}` : ''}`);
 	},
 	createBarrel: (payload) => request('/barrels', { method: 'POST', body: payload }),
+	updateBarrel: (id, payload) => request(`/barrels/${id}`, { method: 'PATCH', body: payload }),
 	returnBarrel: (id) => request(`/barrels/${id}/return`, { method: 'POST' }),
-
+	deleteBarrel: (id) =>request(`/barrels/${id}`, {method: 'DELETE'}),
 	// Invoices
 	getNextInvoiceNo: () =>request('/invoices-next-number'),
 	getInvoices: (params = {}) => {
@@ -86,5 +92,12 @@ export const api = {
 		return request(`/invoices${query ? `?${query}` : ''}`);
 	},
 	getInvoice: (id) => request(`/invoices/${id}`),
-	createInvoice: (payload) => request('/invoices', { method: 'POST', body: payload })
+	createInvoice: (payload) => request('/invoices', { method: 'POST', body: payload }),
+	updateInvoice: (id, payload) => request(`/invoices/${id}`, { method: 'PATCH', body: payload }),
+
+	getDrivers: () =>request('/drivers'),
+	createDriver: (payload) =>request('/drivers', {method: 'POST',body: payload}),
+
+	getVehicles: () =>request('/vehicles'),
+	createVehicle: (payload) =>request('/vehicles', {method: 'POST',body: payload}),
 };

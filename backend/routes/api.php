@@ -6,6 +6,8 @@ use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\StockMovementController;
+use App\Http\Controllers\Api\DriverController;
+use App\Http\Controllers\Api\VehicleController;
 use Illuminate\Support\Facades\Route;
 
 // ---- 公开路由(不需要登录) ----
@@ -24,9 +26,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::apiResource('customers', CustomerController::class)->only(['index', 'store']);
 
-    Route::apiResource('barrels', BarrelController::class)->only(['index', 'store']);
+    Route::apiResource('barrels', BarrelController::class)->only(['index', 'store', 'update','destroy']);
     Route::post('/barrels/{barrel}/return', [BarrelController::class, 'markReturned']);
 
     Route::get('/invoices-next-number',[InvoiceController::class, 'nextInvoiceNo']);
-    Route::apiResource('invoices', InvoiceController::class)->only(['index', 'store', 'show']);
+    Route::apiResource('invoices', InvoiceController::class)->only(['index', 'store', 'show', 'update']);
+    Route::apiResource('drivers',DriverController::class)->only(['index','store']);
+    Route::apiResource('vehicles',VehicleController::class)->only(['index','store']);
+
 });

@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api.js';
 	import Nav from '$lib/Nav.svelte';
+	import { user } from '$lib/stores/auth.js';
 
 	// =========================
 	// State
@@ -15,6 +16,10 @@
 	let view = $state('table');
 
 	let openMenuId = $state(null);
+
+	let isAdmin = $derived(
+		$user?.role === 'admin'
+	);
 
 
 	// =========================
@@ -30,6 +35,8 @@
 				: {};
 
 			barrels = await api.getBarrels(params);
+
+			console.log(barrels);
 		} catch (error) {
 			errorMessage =
 				error?.message || 'Unable to load barrels';
@@ -53,7 +60,8 @@
 				});
 			*/
 
-			barrel.status = newStatus;
+			const updated = await api.updateBarrel(barrel.id, { status: newStatus });
+			barrels = barrels.map((item) => item.id === barrel.id ? updated : item);
 			openMenuId = null;
 
 		} catch (error) {
@@ -98,6 +106,49 @@
 	});
 
 
+	async function deleteBarrel(barrel) {
+		if (!isAdmin) {
+			return;
+		}
+
+		if (barrel.status === 'rented') {
+			alert(
+				'A rented barrel cannot be deleted.'
+			);
+
+			return;
+		}
+
+		const confirmed = confirm(
+			`Delete barrel ${barrel.code}?`
+		);
+
+		if (!confirmed) {
+			return;
+		}
+
+		try {
+			await api.deleteBarrel(
+				barrel.id
+			);
+
+			barrels = barrels.filter(
+				(item) =>
+					item.id !== barrel.id
+			);
+
+			openMenuId = null;
+
+		} catch (error) {
+			console.error(error);
+
+			alert(
+				error?.message ??
+				'Unable to delete barrel.'
+			);
+		}
+	}
+
 	// =========================
 	// Page Load
 	// =========================
@@ -127,12 +178,16 @@
 			</p>
 		</div>
 
-		<a
-			class="btn btn-primary"
-			href="/barrels/create"
-		>
-			＋ Add barrel
-		</a>
+		{#if isAdmin}
+
+			<a
+				href="/barrels/create"
+				class="add-button"
+			>
+				＋ Add Barrel
+			</a>
+
+		{/if}
 	</header>
 
 
@@ -426,7 +481,6 @@
 												Set Available
 											</button>
 
-
 											<button
 												type="button"
 												onclick={() =>
@@ -438,7 +492,6 @@
 											>
 												Set Rented
 											</button>
-
 
 											<button
 												type="button"
@@ -452,12 +505,29 @@
 												Set Returning
 											</button>
 
+											{#if isAdmin}
+
+												<div class="menu-divider"></div>
+
+												<button
+													type="button"
+													class="delete-action"
+													disabled={barrel.status === 'rented'}
+													onclick={() =>
+														deleteBarrel(barrel)
+													}
+												>
+													Delete Barrel
+												</button>
+
+											{/if}
+
 										</div>
 
 									{/if}
 
 								</div>
-
+								
 							</td>
 
 						</tr>
@@ -586,6 +656,15 @@
 		padding: 22px;
 
 		background: #fafbfc;
+	}
+
+	.delete-action {
+		color: #dc2626;
+	}
+
+	.delete-action:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
 	}
 
 
@@ -1016,5 +1095,63 @@
 
 			padding: 15px;
 		}
+	}
+
+	.add-button {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 6px;
+
+		padding: 11px 18px;
+
+		border: none;
+		border-radius: 8px;
+
+		background: #2563eb;
+		color: white;
+
+		font-size: 14px;
+		font-weight: 700;
+
+		text-decoration: none;
+
+		cursor: pointer;
+
+		box-shadow:
+			0 2px 6px
+			rgb(37 99 235 / 20%);
+
+		transition:
+			background 0.15s ease,
+			transform 0.15s ease;
+	}
+
+	.add-button:hover {
+		background: #1d4ed8;
+	}
+
+	.add-button:active {
+		transform: translateY(1px);
+	}
+
+	.menu-divider {
+		height: 1px;
+		background: #e5e7eb;
+	}
+
+	.dropdown-menu .delete-action {
+		color: #dc2626;
+	}
+
+	.dropdown-menu .delete-action:hover {
+		background: #fef2f2;
+	}
+
+	.dropdown-menu .delete-action:disabled {
+		color: #9ca3af;
+		background: white;
+		cursor: not-allowed;
+		opacity: 0.6;
 	}
 </style>

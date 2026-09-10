@@ -1,30 +1,91 @@
 <script>
 	import { goto } from '$app/navigation';
+	import { api } from '$lib/api.js';
 	import Nav from '$lib/Nav.svelte';
+	import { user } from '$lib/stores/auth.js';
+	import { onMount } from 'svelte';
+	let code = '';
+	let saving = false;
+	let errorMessage = '';
 
-	let code = $state('');
+	async function handleSubmit(event) {
+		event.preventDefault();
+
+		if (saving) {
+			return;
+		}
+
+		if (!code.trim()) {
+			errorMessage = 'Please enter barrel code.';
+			return;
+		}
+
+		saving = true;
+		errorMessage = '';
+
+		try {
+			console.log(
+				'Creating barrel:',
+				code
+			);
+
+			const result =
+				await api.createBarrel({
+					code: code.trim()
+				});
+
+			console.log(
+				'Created barrel:',
+				result
+			);
+
+			goto('/barrels');
+
+		} catch (error) {
+			console.error(
+				'Create barrel error:',
+				error
+			);
+
+			errorMessage =
+				error?.message ??
+				'Unable to create barrel.';
+		} finally {
+			saving = false;
+		}
+	}
 </script>
 
 <Nav />
 
 <div class="page">
 
-	<h1>添加桶</h1>
+	<h1>Add Barrel</h1>
 
-	<div class="form-card">
+	<form
+		class="form-card"
+		onsubmit={handleSubmit}
+	>
 
 		<div class="form-group">
 			<label for="code">
-				桶 Code
+				Barrel Code
 			</label>
 
 			<input
 				id="code"
 				type="text"
-				placeholder="例如 001"
+				placeholder="e.g. 001"
 				bind:value={code}
+				required
 			/>
 		</div>
+
+		{#if errorMessage}
+			<p class="error-message">
+				{errorMessage}
+			</p>
+		{/if}
 
 		<div class="actions">
 
@@ -33,19 +94,20 @@
 				class="cancel-button"
 				onclick={() => goto('/barrels')}
 			>
-				取消
+				Cancel
 			</button>
 
 			<button
-				type="button"
+				type="submit"
 				class="create-button"
+				disabled={saving}
 			>
-				添加桶
+				{saving ? 'Adding...' : 'Add Barrel'}
 			</button>
 
 		</div>
 
-	</div>
+	</form>
 
 </div>
 
