@@ -1,36 +1,30 @@
 <script>
-	import { onMount } from 'svelte';
+	import { onMount } from "svelte";
 
-	import { api } from '$lib/api.js';
-	import { user } from '$lib/stores/auth.js';
-	import Nav from '$lib/Nav.svelte';
+	import { api } from "$lib/api.js";
+	import { user } from "$lib/stores/auth.js";
+	import Nav from "$lib/Nav.svelte";
 
 	let drivers = $state([]);
 	let loading = $state(true);
-	let errorMessage = $state('');
+	let errorMessage = $state("");
 
-	let name = $state('');
-	let phone = $state('');
+	let name = $state("");
+	let phone = $state("");
 	let saving = $state(false);
 
-	let isAdmin = $derived(
-		$user?.role === 'admin'
-	);
+	let isAdmin = $derived($user?.role === "admin");
 
 	async function loadDrivers() {
 		loading = true;
-		errorMessage = '';
+		errorMessage = "";
 
 		try {
 			const result = await api.getDrivers();
 
-			drivers = Array.isArray(result)
-				? result
-				: result?.data ?? [];
+			drivers = Array.isArray(result) ? result : (result?.data ?? []);
 		} catch (error) {
-			errorMessage =
-				error?.message ||
-				'Unable to load drivers.';
+			errorMessage = error?.message || "Unable to load drivers.";
 		} finally {
 			loading = false;
 		}
@@ -44,35 +38,27 @@
 		}
 
 		if (!name.trim()) {
-			errorMessage =
-				'Please enter the driver name.';
+			errorMessage = "Please enter the driver name.";
 			return;
 		}
 
 		saving = true;
-		errorMessage = '';
+		errorMessage = "";
 
 		try {
-			const created =
-				await api.createDriver({
-					name: name.trim(),
-					phone: phone.trim() || null
-				});
+			const created = await api.createDriver({
+				name: name.trim(),
+				phone: phone.trim() || null,
+			});
 
-			drivers = [
-				...drivers,
-				created
-			].sort((a, b) =>
-				a.name.localeCompare(b.name)
+			drivers = [...drivers, created].sort((a, b) =>
+				a.name.localeCompare(b.name),
 			);
 
-			name = '';
-			phone = '';
-
+			name = "";
+			phone = "";
 		} catch (error) {
-			errorMessage =
-				error?.message ||
-				'Unable to add driver.';
+			errorMessage = error?.message || "Unable to add driver.";
 		} finally {
 			saving = false;
 		}
@@ -84,40 +70,23 @@
 <Nav />
 
 <main class="app-page">
-
 	<header class="page-heading">
 		<div>
-			<p class="eyebrow">
-				TRANSPORT
-			</p>
+			<p class="eyebrow">TRANSPORT</p>
 
-			<h1>
-				Drivers
-			</h1>
+			<h1>Drivers</h1>
 
-			<p>
-				Manage drivers used for invoice deliveries.
-			</p>
+			<p>Manage drivers used for invoice deliveries.</p>
 		</div>
 	</header>
 
 	{#if isAdmin}
-
 		<section class="panel add-panel">
+			<h2>Add Driver</h2>
 
-			<h2>
-				Add Driver
-			</h2>
-
-			<form
-				class="driver-form"
-				onsubmit={handleSubmit}
-			>
-
+			<form class="driver-form" onsubmit={handleSubmit}>
 				<label>
-					<span>
-						Driver Name
-					</span>
+					<span> Driver Name </span>
 
 					<input
 						type="text"
@@ -128,9 +97,7 @@
 				</label>
 
 				<label>
-					<span>
-						Phone
-					</span>
+					<span> Phone </span>
 
 					<input
 						type="text"
@@ -139,44 +106,25 @@
 					/>
 				</label>
 
-				<button
-					type="submit"
-					class="btn btn-primary"
-					disabled={saving}
-				>
-					{saving
-						? 'Adding...'
-						: '+ Add Driver'}
+				<button type="submit" class="btn btn-primary" disabled={saving}>
+					{saving ? "Adding..." : "+ Add Driver"}
 				</button>
-
 			</form>
-
 		</section>
-
 	{/if}
 
 	{#if errorMessage}
-
 		<div class="error-message">
 			{errorMessage}
 		</div>
-
 	{/if}
 
 	<section class="panel">
-
 		{#if loading}
-
-			<div class="state">
-				Loading drivers...
-			</div>
-
+			<div class="state">Loading drivers...</div>
 		{:else if drivers.length === 0}
-
 			<div class="state">
-				<h3>
-					No drivers yet
-				</h3>
+				<h3>No drivers yet</h3>
 
 				<p>
 					{#if isAdmin}
@@ -186,50 +134,39 @@
 					{/if}
 				</p>
 			</div>
-
 		{:else}
-
 			<table class="data-table">
-
 				<thead>
 					<tr>
-						<th>
-							Driver
-						</th>
+						<th> Driver </th>
 
-						<th>
-							Phone
-						</th>
+						<th> Phone </th>
 					</tr>
 				</thead>
 
 				<tbody>
-
 					{#each drivers as driver (driver.id)}
-
 						<tr>
 							<td class="strong">
 								{driver.name}
 							</td>
 
 							<td>
-								{driver.phone || '—'}
+								{driver.phone || "—"}
 							</td>
 						</tr>
-
 					{/each}
-
 				</tbody>
-
 			</table>
-
 		{/if}
-
 	</section>
-
 </main>
 
 <style>
+	/* =========================
+	   ADD DRIVER PANEL
+	========================= */
+
 	.add-panel {
 		margin-bottom: 24px;
 		padding: 24px;
@@ -237,35 +174,47 @@
 
 	.add-panel h2 {
 		margin: 0 0 18px;
+
 		font-size: 18px;
 	}
 
+	/* =========================
+	   DRIVER FORM
+	========================= */
+
 	.driver-form {
 		display: grid;
+
 		grid-template-columns:
 			minmax(0, 1fr)
 			minmax(0, 1fr)
 			auto;
+
 		align-items: end;
+
 		gap: 16px;
 	}
 
 	label {
 		display: flex;
 		flex-direction: column;
+
 		gap: 7px;
 	}
 
 	label span {
+		color: #344054;
+
 		font-size: 14px;
 		font-weight: 600;
-		color: #344054;
 	}
 
 	input {
-		box-sizing: border-box;
 		width: 100%;
 		min-height: 42px;
+
+		box-sizing: border-box;
+
 		padding: 10px 12px;
 
 		border: 1px solid #d0d5dd;
@@ -279,19 +228,25 @@
 
 	input:focus {
 		outline: none;
+
 		border-color: #2563eb;
-		box-shadow:
-			0 0 0 3px
-			rgb(37 99 235 / 10%);
+
+		box-shadow: 0 0 0 3px rgb(37 99 235 / 10%);
 	}
 
 	.driver-form .btn {
 		min-height: 42px;
+
 		white-space: nowrap;
 	}
 
+	/* =========================
+	   ERROR MESSAGE
+	========================= */
+
 	.error-message {
 		margin-bottom: 20px;
+
 		padding: 12px 14px;
 
 		border: 1px solid #fecaca;
@@ -300,6 +255,70 @@
 		background: #fef2f2;
 		color: #b42318;
 	}
+
+	/* =========================
+   DRIVER TABLE
+========================= */
+
+	.data-table {
+		width: 100%;
+
+		border-collapse: separate;
+		border-spacing: 0;
+
+		border: 1px solid #e5e7eb;
+		border-radius: 8px;
+
+		background: white;
+	}
+
+	.data-table th {
+		padding: 15px 18px;
+
+		border-bottom: 1px solid #e5e7eb;
+
+		background: #f8fafc;
+
+		color: #374151;
+
+		text-align: left;
+
+		font-size: 14px;
+		font-weight: 600;
+	}
+
+	.data-table th:first-child {
+		border-top-left-radius: 8px;
+	}
+
+	.data-table th:last-child {
+		border-top-right-radius: 8px;
+	}
+
+	.data-table td {
+		padding: 16px 18px;
+
+		border-bottom: 1px solid #e5e7eb;
+
+		color: #111827;
+
+		font-size: 14px;
+	}
+
+	.data-table tbody tr:last-child td {
+		border-bottom: none;
+	}
+
+	.data-table tbody tr:hover {
+		background: #fafafa;
+	}
+
+	.strong {
+		font-weight: 600;
+	}
+	/* =========================
+	   RESPONSIVE
+	========================= */
 
 	@media (max-width: 760px) {
 		.driver-form {

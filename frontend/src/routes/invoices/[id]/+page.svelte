@@ -1,380 +1,520 @@
 <script>
-	import { onMount } from 'svelte';
-	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
+	import { onMount } from "svelte";
+	import { page } from "$app/state";
 
-	import { api } from '$lib/api.js';
-	import Nav from '$lib/Nav.svelte';
+	import { api } from "$lib/api.js";
+	import Nav from "$lib/Nav.svelte";
+	import { openInvoicePrintWindow } from "$lib/invoicePrint.js";
 
-	let invoice = null;
-	let loading = true;
-	let errorMessage = '';
-
-	onMount(async () => {
-		// 前端再挡一次 normal staff
-		if (!isAdmin) {
-			goto('/invoices');
-			return;
-		}
-
-		await loadInvoice();
-	});
+	let invoice = $state(null);
+	let loading = $state(true);
+	let errorMessage = $state("");
+	let exporting = $state(false);
 
 	async function loadInvoice() {
 		loading = true;
-		errorMessage = '';
+		errorMessage = "";
 
 		try {
 			const id = page.params.id;
 
+			console.log("Loading invoice ID:", id);
+
 			invoice = await api.getInvoice(id);
+
+			console.log("Invoice loaded:", invoice);
 		} catch (error) {
-			console.error(error);
+			console.error("Unable to load invoice:", error);
 
 			if (error?.status === 403) {
 				errorMessage =
-					'You do not have permission to view this invoice.';
+					"You do not have permission to view this invoice.";
+			} else if (error?.status === 404) {
+				errorMessage = "Invoice not found.";
 			} else {
-				errorMessage =
-					error?.message ??
-					'Unable to load invoice.';
+				errorMessage = error?.message ?? "Unable to load invoice.";
 			}
 		} finally {
 			loading = false;
 		}
 	}
 
-	function formatMoney(value) {
-		return Number(value ?? 0).toFixed(2);
+	async function exportPdf() {
+		if (!invoice || exporting) {
+			return;
+		}
+
+		const printWindow = window.open("", "_blank");
+
+		if (!printWindow) {
+			errorMessage = "Please allow pop-ups to export this invoice.";
+			return;
+		}
+
+		printWindow.document.write(`
+		<p style="
+			font: 14px sans-serif;
+			padding: 24px;
+		">
+			Preparing invoice...
+		</p>
+	`);
+
+		exporting = true;
+		errorMessage = "";
+
+		try {
+			const fullInvoice = await api.getInvoice(invoice.id);
+
+			openInvoicePrintWindow(printWindow, fullInvoice);
+		} catch (error) {
+			printWindow.close();
+
+			errorMessage =
+				error instanceof Error
+					? error.message
+					: "Unable to export invoice PDF";
+		} finally {
+			exporting = false;
+		}
 	}
+
+	onMount(loadInvoice);
 </script>
 
 <Nav />
 
-<div class="page">
-
+<main class="page">
 	<div class="page-header">
 		<div>
-			<a
-				class="back-link"
-				href="/invoices"
-			>
-				← Back to invoices
-			</a>
+			<a class="back-link" href="/invoices"> ← Back to invoices </a>
 
 			<h1>
-				{invoice?.invoice_no ?? 'Invoice'}
+				{invoice?.invoice_no ?? "Invoice"}
 			</h1>
 		</div>
 
 		{#if invoice}
-			<a
-				class="edit-button"
-				href={`/invoices/${invoice.id}/edit`}
-			>
-				Edit Invoice
-			</a>
+			<div class="header-actions">
+				<button
+					type="button"
+					class="export-button"
+					disabled={exporting}
+					on:click={exportPdf}
+				>
+					{exporting ? "Preparing..." : "Export PDF"}
+				</button>
+
+				<a class="edit-button" href={`/invoices/${invoice.id}/edit`}>
+					Edit Invoice
+				</a>
+			</div>
 		{/if}
 	</div>
 
 	{#if loading}
-
-		<p>Loading invoice...</p>
-
+		<div class="message-card">Loading invoice...</div>
 	{:else if errorMessage}
-
-		<p class="error">
+		<div class="error">
 			{errorMessage}
-		</p>
-
+		</div>
 	{:else if invoice}
-
-		<div class="invoice-card">
+		<section class="invoice-card">
+			<!-- =========================
+			     INVOICE DETAILS
+			========================= -->
 
 			<div class="detail-grid">
+				<div class="detail-item">
+					<span class="label"> Invoice Number </span>
 
-				<div>
-					<span class="label">
-						Invoice Number
-					</span>
-
-					<p>
+					<p class="strong">
 						{invoice.invoice_no}
 					</p>
 				</div>
 
-				<div>
-					<span class="label">
-						Status
-					</span>
+				<div class="detail-item">
+					<span class="label"> Status </span>
 
 					<p>
 						<span
-							class="status {invoice.status}"
+							class="status-badge"
+							class:paid={invoice.status === "paid"}
+							class:unpaid={invoice.status === "unpaid"}
 						>
-							{invoice.status}
+							{invoice.status === "paid" ? "Paid" : "Unpaid"}
 						</span>
 					</p>
 				</div>
 
-				<div>
-					<span class="label">
-						Customer
-					</span>
+				<div class="detail-item">
+					<span class="label"> Customer </span>
 
 					<p>
-						{invoice.customer?.name ?? '-'}
+						{invoice.customer?.name ?? "-"}
 					</p>
 				</div>
 
-				<div>
-					<span class="label">
-						Phone
-					</span>
+				<div class="detail-item">
+					<span class="label"> Phone </span>
 
 					<p>
-						{invoice.customer?.phone ?? '-'}
+						{invoice.customer?.phone ?? "-"}
 					</p>
 				</div>
 
-				<div>
-					<span class="label">
-						Issued Date
-					</span>
+				<div class="detail-item">
+					<span class="label"> Issued Date </span>
 
 					<p>
-						{invoice.issued_date ?? '-'}
+						{invoice.issued_date ?? "-"}
 					</p>
 				</div>
-
-				<div>
-					<span class="label">
-						Total Amount
-					</span>
-
-					<p>
-						RM {formatMoney(
-							invoice.total_amount
-						)}
-					</p>
-				</div>
-
 			</div>
 
-			{#if invoice.address}
-
-				<div class="section">
-					<span class="label">
-						Address
-					</span>
-
-					<p>
-						{invoice.address}
-					</p>
-				</div>
-
-			{/if}
-
-			{#if invoice.notes}
-
-				<div class="section">
-					<span class="label">
-						Notes
-					</span>
-
-					<p>
-						{invoice.notes}
-					</p>
-				</div>
-
-			{/if}
+			<!-- =========================
+			     ADDRESS
+			========================= -->
 
 			<div class="section">
+				<span class="label"> Address </span>
 
-				<h2>
-					Invoice Items
-				</h2>
+				<p>
+					{invoice.address ?? "-"}
+				</p>
+			</div>
+
+			<!-- =========================
+			     ITEMS
+			========================= -->
+
+			<div class="section">
+				<h2>Invoice Items</h2>
 
 				<div class="table-wrapper">
-
 					<table>
-
 						<thead>
 							<tr>
-								<th>Barrel</th>
-								<th>Description</th>
-								<th>Rental Start</th>
-								<th>Rental End</th>
-								<th>Unit Price</th>
+								<th> Barrel </th>
+
+								<th> Description </th>
+
+								<th> Rental Start </th>
+
+								<th> Rental End </th>
 							</tr>
 						</thead>
 
 						<tbody>
-
 							{#each invoice.items ?? [] as item}
-
 								<tr>
-									<td>
-										{item.barrel?.code ?? '-'}
+									<td class="barrel-code">
+										{item.barrel?.code ?? "-"}
 									</td>
 
 									<td>
-										{item.description ?? '-'}
+										{item.description ?? "-"}
 									</td>
 
 									<td>
-										{item.rental_start ?? '-'}
+										{item.rental_start ?? "-"}
 									</td>
 
 									<td>
-										{item.rental_end ?? '-'}
-									</td>
-
-									<td>
-										RM {formatMoney(
-											item.unit_price
-										)}
+										{item.rental_end ?? "-"}
 									</td>
 								</tr>
-
+							{:else}
+								<tr>
+									<td colspan="4" class="empty">
+										No invoice items.
+									</td>
+								</tr>
 							{/each}
-
 						</tbody>
-
 					</table>
-
 				</div>
-
 			</div>
-
-		</div>
-
+		</section>
 	{/if}
-
-</div>
+</main>
 
 <style>
 	.page {
+		margin: 36px 48px 60px 48px;
 		max-width: 1180px;
-		margin: 0 auto;
-		padding: 32px;
+
+		font-family: Arial, Helvetica, sans-serif;
+
+		color: #111827;
 	}
+
+	/* HEADER */
 
 	.page-header {
 		display: flex;
+		align-items: flex-start;
 		justify-content: space-between;
-		align-items: center;
+
 		gap: 20px;
-		margin-bottom: 24px;
+
+		margin-bottom: 28px;
 	}
 
 	.page-header h1 {
 		margin: 8px 0 0;
+
+		font-size: 34px;
+		font-weight: 700;
 	}
 
 	.back-link {
-		color: #667085;
+		color: #64748b;
+
 		text-decoration: none;
+
 		font-size: 14px;
 	}
 
+	.back-link:hover {
+		color: #111827;
+	}
+
+	/* EDIT */
+
 	.edit-button {
-		padding: 10px 16px;
-		border-radius: 8px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+
+		height: 42px;
+
+		padding: 0 18px;
+
+		border-radius: 7px;
+
 		background: #111827;
 		color: white;
+
 		text-decoration: none;
+
+		font-size: 14px;
 		font-weight: 600;
 	}
 
+	/* CARD */
+
 	.invoice-card {
-		background: white;
-		border: 1px solid #e5e7eb;
-		border-radius: 12px;
 		padding: 24px;
+
+		border: 1px solid #e5e7eb;
+		border-radius: 10px;
+
+		background: white;
 	}
+
+	/* DETAILS */
 
 	.detail-grid {
 		display: grid;
-		grid-template-columns:
-			repeat(2, minmax(0, 1fr));
-		gap: 20px;
+
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+
+		gap: 24px 40px;
+	}
+
+	.detail-item {
+		min-width: 0;
 	}
 
 	.label {
 		display: block;
-		color: #667085;
-		font-size: 13px;
+
 		margin-bottom: 6px;
+
+		color: #64748b;
+
+		font-size: 13px;
+		font-weight: 500;
 	}
 
-	.detail-grid p,
+	.detail-item p,
 	.section p {
 		margin: 0;
-		color: #101828;
+
+		color: #111827;
+
+		font-size: 14px;
+
+		line-height: 1.6;
 	}
 
+	.strong {
+		font-weight: 600;
+	}
+
+	/* STATUS */
+
+	.status-badge {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+
+		min-width: 64px;
+
+		padding: 5px 10px;
+
+		border-radius: 6px;
+
+		font-size: 13px;
+		font-weight: 600;
+	}
+
+	.status-badge.paid {
+		background: #ccfbf1;
+		color: #0f766e;
+	}
+
+	.status-badge.unpaid {
+		background: #fee2e2;
+		color: #dc2626;
+	}
+
+	/* SECTIONS */
+
 	.section {
-		margin-top: 30px;
+		margin-top: 32px;
+		padding-top: 24px;
+
+		border-top: 1px solid #e5e7eb;
 	}
 
 	.section h2 {
-		margin-bottom: 16px;
+		margin: 0 0 16px;
+
 		font-size: 18px;
+		font-weight: 700;
 	}
+
+	/* TABLE */
 
 	.table-wrapper {
 		overflow-x: auto;
+
+		border: 1px solid #e5e7eb;
+		border-radius: 8px;
 	}
 
 	table {
 		width: 100%;
+
 		border-collapse: collapse;
 	}
 
-	th,
-	td {
-		padding: 12px;
-		text-align: left;
-		border-bottom: 1px solid #e5e7eb;
-	}
-
 	th {
-		color: #667085;
+		padding: 13px 15px;
+
+		border-bottom: 1px solid #e5e7eb;
+
+		background: #f8fafc;
+
+		text-align: left;
+
+		color: #64748b;
+
 		font-size: 13px;
-	}
-
-	.status {
-		display: inline-block;
-		padding: 4px 9px;
-		border-radius: 999px;
-		font-size: 12px;
 		font-weight: 600;
-		text-transform: capitalize;
 	}
 
-	.status.paid {
-		background: #ecfdf3;
-		color: #027a48;
+	td {
+		padding: 15px;
+
+		border-bottom: 1px solid #e5e7eb;
+
+		color: #111827;
+
+		font-size: 14px;
 	}
 
-	.status.unpaid {
-		background: #fef3f2;
-		color: #b42318;
+	tbody tr:last-child td {
+		border-bottom: none;
 	}
 
-	.status.cancelled {
-		background: #f2f4f7;
-		color: #475467;
+	.barrel-code {
+		font-weight: 600;
+	}
+
+	.empty {
+		padding: 28px;
+
+		text-align: center;
+
+		color: #64748b;
+	}
+
+	/* MESSAGES */
+
+	.message-card {
+		padding: 22px;
+
+		border: 1px solid #e5e7eb;
+		border-radius: 8px;
+
+		background: white;
+
+		color: #64748b;
 	}
 
 	.error {
+		padding: 13px 15px;
+
+		border: 1px solid #fecaca;
+		border-radius: 8px;
+
+		background: #fef2f2;
+
 		color: #b42318;
+
+		font-size: 14px;
 	}
+
+	.header-actions {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
+
+	.export-button {
+		height: 42px;
+
+		padding: 0 18px;
+
+		border: 1px solid #d1d5db;
+		border-radius: 7px;
+
+		background: white;
+		color: #374151;
+
+		font-size: 14px;
+		font-weight: 600;
+
+		cursor: pointer;
+	}
+
+	.export-button:hover {
+		background: #f8fafc;
+	}
+
+	.export-button:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+
+	/* MOBILE */
 
 	@media (max-width: 700px) {
 		.page {
-			padding: 20px;
+			margin: 24px 16px;
 		}
 
 		.detail-grid {
@@ -382,7 +522,7 @@
 		}
 
 		.page-header {
-			align-items: flex-start;
+			flex-direction: column;
 		}
 	}
 </style>

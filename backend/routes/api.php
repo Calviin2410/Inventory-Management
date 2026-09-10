@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\StockMovementController;
 use App\Http\Controllers\Api\DriverController;
 use App\Http\Controllers\Api\VehicleController;
+use App\Http\Controllers\Api\ReportController;
 use Illuminate\Support\Facades\Route;
 
 // ---- 公开路由(不需要登录) ----
@@ -34,4 +35,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('drivers',DriverController::class)->only(['index','store']);
     Route::apiResource('vehicles',VehicleController::class)->only(['index','store']);
 
+    Route::get('/reports/rentals',[ReportController::class, 'rentalReport']);
 });

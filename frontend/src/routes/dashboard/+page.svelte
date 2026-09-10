@@ -1,27 +1,75 @@
 <script>
-	import { onMount } from 'svelte';
-	import { api } from '$lib/api.js';
-	import Nav from '$lib/Nav.svelte';
+	import { onMount } from "svelte";
+	import { api } from "$lib/api.js";
+	import Nav from "$lib/Nav.svelte";
 
 	let recentInvoices = $state([]);
-	let loading = $state(true);
-	let errorMessage = $state('');
+	let allInvoices = $state([]);
+	let customers = $state([]);
+	let barrels = $state([]);
 
-	let paidCount = $derived(
-		recentInvoices.filter((invoice) => invoice.status === 'paid').length
+	let loading = $state(true);
+	let errorMessage = $state("");
+
+	let totalInvoices = $derived(allInvoices.length);
+
+	let paidInvoices = $derived(
+		allInvoices.filter((invoice) => invoice.status === "paid").length,
+	);
+
+	let unpaidInvoices = $derived(
+		allInvoices.filter((invoice) => invoice.status === "unpaid").length,
+	);
+
+	let totalCustomers = $derived(customers.length);
+
+	let availableBarrels = $derived(
+		barrels.filter((barrel) => barrel.status === "available").length,
+	);
+
+	let rentedBarrels = $derived(
+		barrels.filter((barrel) => barrel.status === "rented").length,
 	);
 
 	async function loadDashboard() {
 		loading = true;
-		errorMessage = '';
+		errorMessage = "";
 
 		try {
-			recentInvoices = await api.getInvoices({
-				limit: 5
-			});
+			const [
+				recentInvoiceResult,
+				allInvoiceResult,
+				customerResult,
+				barrelResult,
+			] = await Promise.all([
+				api.getInvoices({
+					limit: 5,
+				}),
+				api.getInvoices(),
+				api.getCustomers(),
+				api.getBarrels(),
+			]);
+
+			recentInvoices = Array.isArray(recentInvoiceResult)
+				? recentInvoiceResult
+				: (recentInvoiceResult?.data ?? []);
+
+			allInvoices = Array.isArray(allInvoiceResult)
+				? allInvoiceResult
+				: (allInvoiceResult?.data ?? []);
+
+			customers = Array.isArray(customerResult)
+				? customerResult
+				: (customerResult?.data ?? []);
+
+			barrels = Array.isArray(barrelResult)
+				? barrelResult
+				: (barrelResult?.data ?? []);
 		} catch (error) {
 			errorMessage =
-				error?.message || 'Unable to load dashboard';
+				error instanceof Error
+					? error.message
+					: "Unable to load dashboard";
 		} finally {
 			loading = false;
 		}
@@ -35,130 +83,349 @@
 <main class="app-page">
 	<header class="page-heading">
 		<div>
-			<p class="eyebrow">WORKSPACE</p>
+			<p class="eyebrow">OVERVIEW</p>
 
-			<h1>Good day 👋</h1>
+			<h1>Dashboard</h1>
 
-			<p>
-				Here is a quick look at your inventory activity.
-			</p>
+			<p>Here is a quick overview of your rental activity.</p>
 		</div>
-
-		<a
-			class="btn btn-primary"
-			href="/invoices/create"
-		>
-			＋ New invoice
-		</a>
 	</header>
 
-	<div class="stat-grid">
-		<div class="stat-card">
-			<span>Recent invoices</span>
-			<strong>{recentInvoices.length}</strong>
+	{#if loading}
+		<div class="state">Loading dashboard...</div>
+	{:else if errorMessage}
+		<div class="state error">
+			{errorMessage}
 		</div>
+	{:else}
+		<!-- 统计卡片 -->
+		<div class="stat-grid">
+			<div class="stat-card">
+				<span> Total Invoices </span>
 
-		<div class="stat-card">
-			<span>Paid</span>
-			<strong>{paidCount}</strong>
-		</div>
-
-		<div class="stat-card">
-			<span>Awaiting payment</span>
-			<strong>
-				{recentInvoices.length - paidCount}
-			</strong>
-		</div>
-
-		<div class="stat-card">
-			<span>Quick action</span>
-			<strong class="quick">
-				Ready
-			</strong>
-		</div>
-	</div>
-
-	<section class="panel">
-		<div class="panel-title">
-			<h2>Recent invoices</h2>
-
-			<a href="/invoices">
-				View all →
-			</a>
-		</div>
-
-		{#if loading}
-
-			<div class="state">
-				Loading recent activity…
+				<strong>
+					{totalInvoices}
+				</strong>
 			</div>
 
-		{:else if errorMessage}
+			<div class="stat-card">
+				<span> Paid Invoices </span>
 
-			<div class="state error">
-				{errorMessage}
+				<strong>
+					{paidInvoices}
+				</strong>
 			</div>
 
-		{:else if recentInvoices.length === 0}
+			<div class="stat-card">
+				<span> Unpaid Invoices </span>
 
-			<div class="state">
-				<h3>No invoices yet</h3>
-
-				<p>
-					Create your first invoice to see activity here.
-				</p>
+				<strong>
+					{unpaidInvoices}
+				</strong>
 			</div>
 
-		{:else}
+			<div class="stat-card">
+				<span> Total Customers </span>
 
-			<table class="data-table">
-				<thead>
-					<tr>
-						<th>Invoice</th>
-						<th>Customer</th>
-						<th>Date</th>
-						<th>Amount</th>
-						<th>Status</th>
-					</tr>
-				</thead>
+				<strong>
+					{totalCustomers}
+				</strong>
+			</div>
 
-				<tbody>
-					{#each recentInvoices as invoice (invoice.id)}
-						<tr>
-							<td class="strong">
-								{invoice.invoice_no}
-							</td>
+			<div class="stat-card">
+				<span> Available Barrels </span>
 
-							<td>
-								{invoice.customer?.name || 'Walk-in customer'}
-							</td>
+				<strong>
+					{availableBarrels}
+				</strong>
+			</div>
 
-							<td>
-								{invoice.issued_date}
-							</td>
+			<div class="stat-card">
+				<span> Rented Barrels </span>
 
-							<td>
-								RM {invoice.total_amount}
-							</td>
+				<strong>
+					{rentedBarrels}
+				</strong>
+			</div>
+		</div>
 
-							<td>
-								<span class="badge {invoice.status}">
-									{invoice.status === 'paid'
-										? 'Paid'
-										: 'Unpaid'}
-								</span>
-							</td>
-						</tr>
-					{/each}
-				</tbody>
-			</table>
+		<section class="panel">
+			<div class="panel-title">
+				<div>
+					<h2>Recent Invoices</h2>
 
-		{/if}
-	</section>
+					<p>The latest rental invoices created.</p>
+				</div>
+
+				<a href="/invoices"> View All → </a>
+			</div>
+
+			{#if recentInvoices.length === 0}
+				<div class="state">
+					<h3>No invoices yet</h3>
+
+					<p>Create your first invoice to see activity here.</p>
+				</div>
+			{:else}
+				<div class="table-wrapper">
+					<table class="data-table">
+						<thead>
+							<tr>
+								<th> Invoice </th>
+
+								<th> Customer </th>
+
+								<th> Date </th>
+
+								<th> Status </th>
+							</tr>
+						</thead>
+
+						<tbody>
+							{#each recentInvoices as invoice (invoice.id)}
+								<tr>
+									<td class="strong">
+										<a
+											class="invoice-link"
+											href={`/invoices/${invoice.id}`}
+										>
+											{invoice.invoice_no}
+										</a>
+									</td>
+
+									<td>
+										{invoice.customer?.name ?? "-"}
+									</td>
+
+									<td>
+										{invoice.issued_date ?? "-"}
+									</td>
+
+									<td>
+										<span
+											class="badge"
+											class:paid={invoice.status ===
+												"paid"}
+											class:unpaid={invoice.status ===
+												"unpaid"}
+										>
+											{invoice.status === "paid"
+												? "Paid"
+												: "Unpaid"}
+										</span>
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+			{/if}
+		</section>
+	{/if}
 </main>
 
 <style>
-	.quick {
-		color: #315ee7 !important;
+	/* =========================
+	   DASHBOARD STATS
+	========================= */
+
+	.stat-grid {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+
+		gap: 16px;
+
+		margin-bottom: 28px;
+	}
+
+	.stat-card {
+		padding: 20px;
+
+		border: 1px solid #e5e7eb;
+		border-radius: 10px;
+
+		background: white;
+	}
+
+	.stat-card span {
+		display: block;
+
+		margin-bottom: 10px;
+
+		color: #64748b;
+
+		font-size: 13px;
+		font-weight: 500;
+	}
+
+	.stat-card strong {
+		color: #111827;
+
+		font-size: 28px;
+	}
+
+	/* =========================
+	   RECENT INVOICE PANEL
+	========================= */
+
+	.panel-title {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+
+		gap: 20px;
+
+		padding: 18px 20px;
+
+		border-bottom: 1px solid #e5e7eb;
+	}
+
+	.panel-title h2 {
+		margin: 0 0 4px;
+
+		font-size: 18px;
+	}
+
+	.panel-title p {
+		margin: 0;
+
+		color: #64748b;
+
+		font-size: 13px;
+	}
+
+	.panel-title a {
+		color: #315ee7;
+
+		font-size: 14px;
+		font-weight: 600;
+
+		text-decoration: none;
+	}
+
+	.panel-title a:hover {
+		text-decoration: underline;
+	}
+
+	/* =========================
+	   TABLE
+	========================= */
+
+	.table-wrapper {
+		overflow-x: auto;
+	}
+
+	.data-table {
+		width: 100%;
+
+		border-collapse: collapse;
+	}
+
+	.data-table th {
+		padding: 14px 18px;
+
+		background: #f8fafc;
+
+		color: #64748b;
+
+		text-align: left;
+
+		font-size: 13px;
+		font-weight: 600;
+	}
+
+	.data-table td {
+		padding: 15px 18px;
+
+		border-top: 1px solid #e5e7eb;
+
+		font-size: 14px;
+	}
+
+	.strong {
+		font-weight: 600;
+	}
+
+	.invoice-link {
+		color: #111827;
+
+		text-decoration: none;
+	}
+
+	.invoice-link:hover {
+		color: #315ee7;
+	}
+
+	/* =========================
+	   STATUS BADGE
+	========================= */
+
+	.badge {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+
+		min-width: 64px;
+
+		padding: 5px 10px;
+
+		border-radius: 6px;
+
+		font-size: 13px;
+		font-weight: 600;
+	}
+
+	.badge.paid {
+		background: #ccfbf1;
+
+		color: #0f766e;
+	}
+
+	.badge.unpaid {
+		background: #fee2e2;
+
+		color: #dc2626;
+	}
+
+	/* =========================
+	   PAGE STATES
+	========================= */
+
+	.state {
+		padding: 24px;
+
+		color: #64748b;
+
+		font-size: 14px;
+	}
+
+	.state h3 {
+		margin: 0 0 6px;
+
+		color: #111827;
+	}
+
+	.state p {
+		margin: 0;
+	}
+
+	.error {
+		color: #dc2626;
+	}
+
+	/* =========================
+	   RESPONSIVE
+	========================= */
+
+	@media (max-width: 900px) {
+		.stat-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	@media (max-width: 600px) {
+		.stat-grid {
+			grid-template-columns: 1fr;
+		}
 	}
 </style>

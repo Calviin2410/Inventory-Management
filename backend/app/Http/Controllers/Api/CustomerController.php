@@ -10,13 +10,27 @@ class CustomerController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Customer::query();
+        $query = Customer::query()
+            ->latest('id');
 
         if ($search = $request->query('search')) {
-            $query->where('name', 'like', "%{$search}%");
+            $query->where(function ($q) use ($search) {
+                $q->where(
+                    'name',
+                    'like',
+                    '%' . $search . '%'
+                )
+                ->orWhere(
+                    'phone',
+                    'like',
+                    '%' . $search . '%'
+                );
+            });
         }
 
-        return response()->json($query->orderBy('name')->get());
+        return response()->json(
+            $query->paginate(20)
+        );
     }
 
     public function store(Request $request)

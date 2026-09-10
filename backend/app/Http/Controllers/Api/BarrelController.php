@@ -9,7 +9,6 @@ use Illuminate\Validation\ValidationException;
 
 class BarrelController extends Controller
 {
-    // GET /api/barrels?status=rented
     public function index(Request $request)
     {
         $query = Barrel::with([
@@ -18,30 +17,49 @@ class BarrelController extends Controller
         ]);
 
         if ($status = $request->query('status')) {
-            $query->where('status', $status);
+            $query->where(
+                'status',
+                $status
+            );
+        }
+
+        if ($search = $request->query('search')) {
+            $query->where(
+                'code',
+                'like',
+                '%' . $search . '%'
+            );
         }
 
         $barrels = $query
             ->orderBy('code')
-            ->get()
-            ->map(function ($barrel) {
+            ->paginate(20);
 
-                $latestInvoiceItem = $barrel->invoiceItems
-                    ->sortByDesc('id')
-                    ->first();
+        $barrels->getCollection()->transform(
+            function ($barrel) {
+                $latestInvoiceItem =
+                    $barrel->invoiceItems
+                        ->sortByDesc('id')
+                        ->first();
 
                 $barrel->invoice_no =
-                    $latestInvoiceItem?->invoice?->invoice_no;
+                    $latestInvoiceItem
+                        ?->invoice
+                        ?->invoice_no;
 
-                unset($barrel->invoiceItems);
+                unset(
+                    $barrel->invoiceItems
+                );
 
                 return $barrel;
-            });
+            }
+        );
 
-        return response()->json($barrels);
+        return response()->json(
+            $barrels
+        );
     }
 
-    // POST /api/barrels  — add a new barrel to the fleet
     public function store(Request $request)
     {
         abort_unless(
@@ -56,18 +74,12 @@ class BarrelController extends Controller
                 'string',
                 'unique:barrels,code'
             ],
-
-            'type' => [
-                'nullable',
-                'string'
-            ],
         ]);
 
-        $barrel = Barrel::create(
-            $data + [
-                'status' => 'available'
-            ]
-        );
+        $barrel = Barrel::create([
+            'code' => $data['code'],
+            'status' => 'available',
+        ]);
 
         return response()->json(
             $barrel,
@@ -75,15 +87,27 @@ class BarrelController extends Controller
         );
     }
 
-    public function update(Request $request, Barrel $barrel)
-    {
+
+    public function update(
+        Request $request,
+        Barrel $barrel
+    ) {
         $data = $request->validate([
-            'status' => ['required', 'in:available,rented,returning'],
+            'status' => [
+                'required',
+                'in:available,rented,returning'
+            ],
         ]);
 
-        if ($data['status'] === 'rented' && ! $barrel->current_customer_id) {
+        if (
+            $data['status'] === 'rented'
+            &&
+            !$barrel->current_customer_id
+        ) {
             throw ValidationException::withMessages([
-                'status' => ['A barrel can only be marked rented through an invoice.'],
+                'status' => [
+                    'A barrel can only be marked rented through an invoice.'
+                ],
             ]);
         }
 
@@ -91,12 +115,18 @@ class BarrelController extends Controller
             return $this->markReturned($barrel);
         }
 
-        $barrel->update(['status' => $data['status']]);
+        $barrel->update([
+            'status' => $data['status']
+        ]);
 
-        return response()->json($barrel->fresh()->load('currentCustomer'));
+        return response()->json(
+            $barrel
+                ->fresh()
+                ->load('currentCustomer')
+        );
     }
 
-    // POST /api/barrels/{barrel}/return — mark a rented barrel as returned
+
     public function markReturned(Barrel $barrel)
     {
         $barrel->update([
@@ -104,21 +134,29 @@ class BarrelController extends Controller
             'current_customer_id' => null,
         ]);
 
-        // close out the open rental period on the most recent invoice item for this barrel
-        $barrel->invoiceItems()
-            ->whereNull('rental_end')
-            ->latest()
-            ->first()
-            ?->update(['rental_end' => now()->toDateString()]);
+        $latestOpenRental =
+            $barrel->invoiceItems()
+                ->whereNull('rental_end')
+                ->latest()
+                ->first();
 
-        return response()->json($barrel->fresh());
+        if ($latestOpenRental) {
+            $latestOpenRental->update([
+                'rental_end' =>
+                    now()->toDateString()
+            ]);
+        }
+
+        return response()->json(
+            $barrel->fresh()
+        );
     }
+
 
     public function destroy(
         Request $request,
         Barrel $barrel
-    )
-    {
+    ) {
         abort_unless(
             $request->user()->isAdmin(),
             403,

@@ -17,10 +17,21 @@ class InvoiceController extends Controller
             ->latest('issued_date')
             ->latest('id');
 
-        if ($limit = $request->query('limit')) {
-            return response()->json(
-                $query->limit((int) $limit)->get()
-            );
+        if ($search = $request->query('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where(
+                    'invoice_no',
+                    'like',
+                    '%' . $search . '%'
+                )
+                ->orWhereHas('customer', function ($customerQuery) use ($search) {
+                    $customerQuery->where(
+                        'name',
+                        'like',
+                        '%' . $search . '%'
+                    );
+                });
+            });
         }
 
         return response()->json(

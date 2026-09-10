@@ -84,9 +84,9 @@ export const api = {
 	createBarrel: (payload) => request('/barrels', { method: 'POST', body: payload }),
 	updateBarrel: (id, payload) => request(`/barrels/${id}`, { method: 'PATCH', body: payload }),
 	returnBarrel: (id) => request(`/barrels/${id}/return`, { method: 'POST' }),
-	deleteBarrel: (id) =>request(`/barrels/${id}`, {method: 'DELETE'}),
+	deleteBarrel: (id) => request(`/barrels/${id}`, { method: 'DELETE' }),
 	// Invoices
-	getNextInvoiceNo: () =>request('/invoices-next-number'),
+	getNextInvoiceNo: () => request('/invoices-next-number'),
 	getInvoices: (params = {}) => {
 		const query = new URLSearchParams(params).toString();
 		return request(`/invoices${query ? `?${query}` : ''}`);
@@ -95,9 +95,10 @@ export const api = {
 	createInvoice: (payload) => request('/invoices', { method: 'POST', body: payload }),
 	updateInvoice: (id, payload) => request(`/invoices/${id}`, { method: 'PATCH', body: payload }),
 
-	getDrivers: () =>request('/drivers'),
-	createDriver: (payload) =>request('/drivers', {method: 'POST',body: payload}),
+	getDrivers: () => request('/drivers'),
+	createDriver: (payload) => request('/drivers', { method: 'POST', body: payload }),
 
-	getVehicles: () =>request('/vehicles'),
-	createVehicle: (payload) =>request('/vehicles', {method: 'POST',body: payload}),
+	getVehicles: () => request('/vehicles'),
+	createVehicle: (payload) => request('/vehicles', { method: 'POST', body: payload }),
+	getRentalReport: (params = {}) => { const query = new URLSearchParams(params).toString(); return request(`/reports/rentals${query ? `?${query}` : ''}`); },
 };

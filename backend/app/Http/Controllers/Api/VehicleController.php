@@ -27,14 +27,8 @@ class VehicleController extends Controller
             'plate_number' => [
                 'required',
                 'string',
-                'max:50',
+                'max:30',
                 'unique:vehicles,plate_number'
-            ],
-
-            'description' => [
-                'nullable',
-                'string',
-                'max:255'
             ],
         ]);
 

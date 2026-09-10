@@ -1,89 +1,63 @@
 <script>
-	import { onMount } from 'svelte';
-	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
+	import { onMount } from "svelte";
+	import { page } from "$app/state";
+	import { goto } from "$app/navigation";
 
-	import { api } from '$lib/api.js';
-	import Nav from '$lib/Nav.svelte';
+	import { api } from "$lib/api.js";
+	import Nav from "$lib/Nav.svelte";
 
-	let invoice = null;
-	let customers = [];
+	let invoice = $state(null);
+	let customers = $state([]);
 
-	let loading = true;
-	let saving = false;
+	let loading = $state(true);
+	let saving = $state(false);
 
-	let errorMessage = '';
-	let successMessage = '';
+	let errorMessage = $state("");
+	let successMessage = $state("");
 
-	let customerId = '';
-	let issuedDate = '';
-	let address = '';
-	let notes = '';
-	let status = 'unpaid';
-
-	onMount(async () => {
-        await loadData();
-    });
+	let customerId = $state("");
+	let issuedDate = $state("");
+	let address = $state("");
+	let notes = $state("");
+	let status = $state("unpaid");
 
 	async function loadData() {
 		loading = true;
-		errorMessage = '';
+		errorMessage = "";
 
 		try {
 			const id = page.params.id;
 
-			const [
-				invoiceData,
-				customerData
-			] = await Promise.all([
+			const [invoiceData, customerData] = await Promise.all([
 				api.getInvoice(id),
-				api.getCustomers()
+				api.getCustomers(),
 			]);
 
 			invoice = invoiceData;
 
-			/*
-				兼容两种 API response：
-
-				[
-					{...}
-				]
-
-				或者
-
-				{
-					data: [...]
-				}
-			*/
 			customers = Array.isArray(customerData)
 				? customerData
-				: customerData?.data ?? [];
+				: (customerData?.data ?? []);
 
-			customerId =
-				String(invoice.customer_id ?? '');
+			customerId = String(invoice.customer_id ?? "");
 
-			issuedDate =
-				invoice.issued_date ?? '';
+			issuedDate = invoice.issued_date ?? "";
 
-			address =
-				invoice.address ?? '';
+			address = invoice.address ?? "";
 
-			notes =
-				invoice.notes ?? '';
+			notes = invoice.notes ?? "";
 
-			status =
-				invoice.status ?? 'unpaid';
-
+			status = invoice.status ?? "unpaid";
 		} catch (error) {
-			console.error(error);
+			console.error("Unable to load invoice:", error);
 
 			if (error?.status === 403) {
 				errorMessage =
-					'You do not have permission to edit this invoice.';
+					"You do not have permission to edit this invoice.";
+			} else if (error?.status === 404) {
+				errorMessage = "Invoice not found.";
 			} else {
-				errorMessage =
-					error?.message ??
-					'Unable to load invoice.';
+				errorMessage = error?.message ?? "Unable to load invoice.";
 			}
 		} finally {
 			loading = false;
@@ -97,8 +71,8 @@
 			return;
 		}
 
-		errorMessage = '';
-		successMessage = '';
+		errorMessage = "";
+		successMessage = "";
 		saving = true;
 
 		try {
@@ -106,78 +80,56 @@
 
 			const payload = {
 				customer_id: Number(customerId),
+
 				issued_date: issuedDate,
+
 				address: address.trim() || null,
+
 				notes: notes.trim() || null,
-				status
+
+				status,
 			};
 
-			const updatedInvoice =
-				await api.updateInvoice(
-					id,
-					payload
-				);
+			const updatedInvoice = await api.updateInvoice(id, payload);
 
 			invoice = updatedInvoice;
 
-			successMessage =
-				'Invoice updated successfully.';
+			successMessage = "Invoice updated successfully.";
 
-			/*
-				成功以后直接回到 invoice detail。
-
-				如果你想先留在 edit page 看 success message，
-				可以暂时 comment 掉这行。
-			*/
 			goto(`/invoices/${id}`);
-
 		} catch (error) {
-			console.error(error);
+			console.error("Unable to update invoice:", error);
 
 			if (error?.status === 403) {
-				errorMessage =
-					'Only administrators can edit invoices.';
+				errorMessage = "Only administrators can edit invoices.";
 			} else if (error?.errors) {
+				const validationMessages = Object.values(error.errors).flat();
 
-				const validationMessages =
-					Object.values(error.errors)
-						.flat();
-
-				errorMessage =
-					validationMessages.join(' ');
-
+				errorMessage = validationMessages.join(" ");
 			} else {
-				errorMessage =
-					error?.message ??
-					'Unable to update invoice.';
+				errorMessage = error?.message ?? "Unable to update invoice.";
 			}
 		} finally {
 			saving = false;
 		}
 	}
+
+	onMount(loadData);
 </script>
 
 <Nav />
 
 <main class="page">
-
 	<div class="page-header">
-
 		<div>
 			<a
 				class="back-link"
-				href={
-					invoice
-						? `/invoices/${invoice.id}`
-						: '/invoices'
-				}
+				href={invoice ? `/invoices/${invoice.id}` : "/invoices"}
 			>
 				← Back to invoice
 			</a>
 
-			<h1>
-				Edit Invoice
-			</h1>
+			<h1>Edit Invoice</h1>
 
 			{#if invoice}
 				<p class="invoice-number">
@@ -185,30 +137,16 @@
 				</p>
 			{/if}
 		</div>
-
 	</div>
 
 	{#if loading}
-
-		<div class="card">
-			<p>
-				Loading invoice...
-			</p>
-		</div>
-
+		<div class="card">Loading invoice...</div>
 	{:else if errorMessage && !invoice}
-
 		<div class="error-message">
 			{errorMessage}
 		</div>
-
 	{:else if invoice}
-
-		<form
-			class="card"
-			onsubmit={handleSubmit}
-		>
-
+		<form class="card" onsubmit={handleSubmit}>
 			{#if errorMessage}
 				<div class="error-message">
 					{errorMessage}
@@ -222,46 +160,30 @@
 			{/if}
 
 			<div class="form-grid">
+				<!-- CUSTOMER -->
 
 				<div class="field full-width">
+					<label for="customer"> Customer </label>
 
-					<label for="customer">
-						Customer
-					</label>
-
-					<select
-						id="customer"
-						bind:value={customerId}
-						required
-					>
-						<option
-							value=""
-							disabled
-						>
-							Select customer
-						</option>
+					<select id="customer" bind:value={customerId} required>
+						<option value="" disabled> Select customer </option>
 
 						{#each customers as customer}
-
-							<option
-								value={String(customer.id)}
-							>
+							<option value={String(customer.id)}>
 								{customer.name}
+
 								{#if customer.phone}
 									- {customer.phone}
 								{/if}
 							</option>
-
 						{/each}
 					</select>
-
 				</div>
 
-				<div class="field">
+				<!-- ISSUED DATE -->
 
-					<label for="issued-date">
-						Issued Date
-					</label>
+				<div class="field">
+					<label for="issued-date"> Issued Date </label>
 
 					<input
 						id="issued-date"
@@ -269,40 +191,24 @@
 						bind:value={issuedDate}
 						required
 					/>
-
 				</div>
+
+				<!-- STATUS -->
 
 				<div class="field">
+					<label for="status"> Status </label>
 
-					<label for="status">
-						Status
-					</label>
+					<select id="status" bind:value={status} required>
+						<option value="unpaid"> Unpaid </option>
 
-					<select
-						id="status"
-						bind:value={status}
-						required
-					>
-						<option value="unpaid">
-							Unpaid
-						</option>
-
-						<option value="paid">
-							Paid
-						</option>
-
-						<option value="cancelled">
-							Cancelled
-						</option>
+						<option value="paid"> Paid </option>
 					</select>
-
 				</div>
 
-				<div class="field full-width">
+				<!-- ADDRESS -->
 
-					<label for="address">
-						Address
-					</label>
+				<div class="field full-width">
+					<label for="address"> Address </label>
 
 					<textarea
 						id="address"
@@ -310,14 +216,12 @@
 						bind:value={address}
 						placeholder="Invoice address"
 					></textarea>
-
 				</div>
 
-				<div class="field full-width">
+				<!-- NOTES -->
 
-					<label for="notes">
-						Notes
-					</label>
+				<div class="field full-width">
+					<label for="notes"> Notes </label>
 
 					<textarea
 						id="notes"
@@ -325,128 +229,88 @@
 						bind:value={notes}
 						placeholder="Optional notes"
 					></textarea>
-
 				</div>
-
 			</div>
 
-			<div class="items-section">
+			<!-- ITEMS -->
 
+			<div class="items-section">
 				<div class="section-heading">
 					<div>
-						<h2>
-							Invoice Items
-						</h2>
+						<h2>Invoice Items</h2>
 
-						<p>
-							Barrel items are view-only for now.
-						</p>
+						<p>Barrel items are view-only for now.</p>
 					</div>
 				</div>
 
 				<div class="table-wrapper">
-
 					<table>
-
 						<thead>
 							<tr>
-								<th>
-									Barrel
-								</th>
+								<th> Barrel </th>
 
-								<th>
-									Description
-								</th>
+								<th> Description </th>
 
-								<th>
-									Rental Start
-								</th>
+								<th> Rental Start </th>
 
-								<th>
-									Rental End
-								</th>
-
-								<th class="price-column">
-									Unit Price
-								</th>
+								<th> Rental End </th>
 							</tr>
 						</thead>
 
 						<tbody>
-
 							{#each invoice.items ?? [] as item}
-
 								<tr>
-
 									<td>
 										<strong>
-											{item.barrel?.code ?? '-'}
+											{item.barrel?.code ?? "-"}
 										</strong>
 									</td>
 
 									<td>
-										{item.description ?? '-'}
+										{item.description ?? "-"}
 									</td>
 
 									<td>
-										{item.rental_start ?? '-'}
+										{item.rental_start ?? "-"}
 									</td>
 
 									<td>
-										{item.rental_end ?? '-'}
+										{item.rental_end ?? "-"}
 									</td>
-
-									<td class="price-column">
-										RM
-										{Number(
-											item.unit_price ?? 0
-										).toFixed(2)}
-									</td>
-
 								</tr>
-
+							{:else}
+								<tr>
+									<td colspan="4" class="empty-row">
+										No invoice items.
+									</td>
+								</tr>
 							{/each}
-
 						</tbody>
-
 					</table>
-
 				</div>
-
 			</div>
 
 			<div class="form-actions">
-
-				<a
-					class="cancel-button"
-					href={`/invoices/${invoice.id}`}
-				>
+				<a class="cancel-button" href={`/invoices/${invoice.id}`}>
 					Cancel
 				</a>
 
-				<button
-					class="save-button"
-					type="submit"
-					disabled={saving}
-				>
-					{saving
-						? 'Saving...'
-						: 'Save Changes'}
+				<button class="save-button" type="submit" disabled={saving}>
+					{saving ? "Saving..." : "Save Changes"}
 				</button>
-
 			</div>
-
 		</form>
-
 	{/if}
-
 </main>
 
 <style>
 	.page {
+		margin: 36px 48px 60px 48px;
 		max-width: 1100px;
-		margin: 0 auto;
-		padding: 32px;
+
+		font-family: Arial, Helvetica, sans-serif;
+
+		color: #111827;
 	}
 
 	.page-header {
@@ -455,18 +319,23 @@
 
 	.page-header h1 {
 		margin: 8px 0 4px;
-		font-size: 28px;
+
+		font-size: 32px;
+
 		color: #101828;
 	}
 
 	.invoice-number {
 		margin: 0;
+
 		color: #667085;
 	}
 
 	.back-link {
 		color: #667085;
+
 		text-decoration: none;
+
 		font-size: 14px;
 	}
 
@@ -475,22 +344,26 @@
 	}
 
 	.card {
-		background: white;
+		padding: 24px;
+
 		border: 1px solid #e5e7eb;
 		border-radius: 12px;
-		padding: 24px;
+
+		background: white;
 	}
 
 	.form-grid {
 		display: grid;
-		grid-template-columns:
-			repeat(2, minmax(0, 1fr));
+
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+
 		gap: 20px;
 	}
 
 	.field {
 		display: flex;
 		flex-direction: column;
+
 		gap: 7px;
 	}
 
@@ -499,30 +372,40 @@
 	}
 
 	label {
+		color: #344054;
+
 		font-size: 14px;
 		font-weight: 600;
-		color: #344054;
 	}
 
 	input,
 	select,
 	textarea {
 		width: 100%;
+
 		box-sizing: border-box;
+
+		padding: 10px 12px;
+
 		border: 1px solid #d0d5dd;
 		border-radius: 8px;
-		padding: 10px 12px;
+
+		background: white;
+
+		color: #101828;
+
 		font-family: inherit;
 		font-size: 14px;
-		color: #101828;
-		background: white;
+
 		outline: none;
 	}
 
 	input:focus,
 	select:focus,
 	textarea:focus {
-		border-color: #667085;
+		border-color: #315ee7;
+
+		box-shadow: 0 0 0 2px rgba(49, 94, 231, 0.1);
 	}
 
 	textarea {
@@ -534,122 +417,155 @@
 	}
 
 	.section-heading {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
 		margin-bottom: 14px;
 	}
 
 	.section-heading h2 {
 		margin: 0 0 4px;
+
 		font-size: 18px;
+
 		color: #101828;
 	}
 
 	.section-heading p {
 		margin: 0;
+
 		color: #667085;
+
 		font-size: 13px;
 	}
 
 	.table-wrapper {
 		overflow-x: auto;
+
 		border: 1px solid #e5e7eb;
 		border-radius: 10px;
 	}
 
 	table {
 		width: 100%;
+
 		border-collapse: collapse;
 	}
 
 	th,
 	td {
 		padding: 13px 14px;
+
 		border-bottom: 1px solid #e5e7eb;
+
 		text-align: left;
+
 		white-space: nowrap;
 	}
 
 	th {
 		background: #f9fafb;
+
 		color: #667085;
+
 		font-size: 12px;
 		font-weight: 600;
+
 		text-transform: uppercase;
 	}
 
 	td {
-		font-size: 14px;
 		color: #344054;
+
+		font-size: 14px;
 	}
 
 	tbody tr:last-child td {
 		border-bottom: none;
 	}
 
-	.price-column {
-		text-align: right;
+	.empty-row {
+		padding: 25px;
+
+		text-align: center;
+
+		color: #667085;
 	}
 
 	.form-actions {
 		display: flex;
-		justify-content: flex-end;
 		align-items: center;
+		justify-content: flex-end;
+
 		gap: 12px;
+
 		margin-top: 28px;
 		padding-top: 20px;
+
 		border-top: 1px solid #e5e7eb;
 	}
 
 	.cancel-button {
 		padding: 10px 16px;
+
 		border: 1px solid #d0d5dd;
 		border-radius: 8px;
+
 		background: white;
 		color: #344054;
+
 		text-decoration: none;
+
 		font-size: 14px;
 		font-weight: 600;
 	}
 
 	.save-button {
+		padding: 11px 18px;
+
 		border: none;
 		border-radius: 8px;
-		padding: 11px 18px;
+
 		background: #111827;
 		color: white;
+
 		font-weight: 600;
+
 		cursor: pointer;
 	}
 
 	.save-button:disabled {
 		opacity: 0.6;
+
 		cursor: not-allowed;
 	}
 
 	.error-message {
 		margin-bottom: 20px;
+
 		padding: 12px 14px;
+
 		border-radius: 8px;
+
 		background: #fef3f2;
 		color: #b42318;
+
 		font-size: 14px;
 	}
 
 	.success-message {
 		margin-bottom: 20px;
+
 		padding: 12px 14px;
+
 		border-radius: 8px;
+
 		background: #ecfdf3;
 		color: #027a48;
+
 		font-size: 14px;
 	}
 
 	@media (max-width: 700px) {
-
 		.page {
-			padding: 20px;
+			margin: 24px 16px;
 		}
 
 		.card {
@@ -666,6 +582,7 @@
 
 		.form-actions {
 			flex-direction: column-reverse;
+
 			align-items: stretch;
 		}
 
