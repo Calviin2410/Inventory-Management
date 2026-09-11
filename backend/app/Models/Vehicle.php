@@ -9,6 +9,7 @@ class Vehicle extends Model
 {
     protected $fillable = [
         'plate_number',
+        'status',
     ];
 
     public function invoices(): HasMany

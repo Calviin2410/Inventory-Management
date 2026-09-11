@@ -177,4 +177,13 @@ class BarrelController extends Controller
                 'Barrel deleted successfully.'
         ]);
     }
+
+    public function available()
+    {
+        return response()->json(
+            Barrel::where('status', 'available')
+                ->orderBy('code')
+                ->get()
+        );
+    }
 }

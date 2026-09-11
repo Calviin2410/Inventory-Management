@@ -30,14 +30,12 @@
 
 			const [invoiceData, customerData] = await Promise.all([
 				api.getInvoice(id),
-				api.getCustomers(),
+				api.getCustomerOptions(),
 			]);
 
 			invoice = invoiceData;
 
-			customers = Array.isArray(customerData)
-				? customerData
-				: (customerData?.data ?? []);
+			customers = customerData ?? [];
 
 			customerId = String(invoice.customer_id ?? "");
 
@@ -119,8 +117,8 @@
 
 <Nav />
 
-<main class="page">
-	<div class="page-header">
+<main class="app-page">
+	<div class="page-heading">
 		<div>
 			<a
 				class="back-link"
@@ -304,27 +302,6 @@
 </main>
 
 <style>
-	.page {
-		margin: 36px 48px 60px 48px;
-		max-width: 1100px;
-
-		font-family: Arial, Helvetica, sans-serif;
-
-		color: #111827;
-	}
-
-	.page-header {
-		margin-bottom: 24px;
-	}
-
-	.page-header h1 {
-		margin: 8px 0 4px;
-
-		font-size: 32px;
-
-		color: #101828;
-	}
-
 	.invoice-number {
 		margin: 0;
 
@@ -564,10 +541,6 @@
 	}
 
 	@media (max-width: 700px) {
-		.page {
-			margin: 24px 16px;
-		}
-
 		.card {
 			padding: 18px;
 		}

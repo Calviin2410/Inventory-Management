@@ -1,5 +1,6 @@
 <script>
 	import { onMount } from "svelte";
+	import { goto } from "$app/navigation";
 
 	import { api } from "$lib/api.js";
 	import { user } from "$lib/stores/auth.js";
@@ -12,6 +13,8 @@
 	let name = $state("");
 	let phone = $state("");
 	let saving = $state(false);
+
+	let showAddForm = $state(false);
 
 	let isAdmin = $derived($user?.role === "admin");
 
@@ -57,6 +60,7 @@
 
 			name = "";
 			phone = "";
+			showAddForm = false;
 		} catch (error) {
 			errorMessage = error?.message || "Unable to add driver.";
 		} finally {
@@ -64,7 +68,22 @@
 		}
 	}
 
-	onMount(loadDrivers);
+	onMount(async () => {
+		try {
+			const currentUser = await api.me();
+
+			user.set(currentUser);
+
+			if (currentUser?.role !== "admin") {
+				goto("/dashboard");
+				return;
+			}
+
+			await loadDrivers();
+		} catch (error) {
+			goto("/login");
+		}
+	});
 </script>
 
 <Nav />
@@ -78,9 +97,21 @@
 
 			<p>Manage drivers used for invoice deliveries.</p>
 		</div>
+
+		{#if isAdmin}
+			<button
+				type="button"
+				class="btn btn-primary"
+				onclick={() => {
+					showAddForm = !showAddForm;
+				}}
+			>
+				{showAddForm ? "Close" : "+ Add Driver"}
+			</button>
+		{/if}
 	</header>
 
-	{#if isAdmin}
+	{#if isAdmin && showAddForm}
 		<section class="panel add-panel">
 			<h2>Add Driver</h2>
 
@@ -106,9 +137,28 @@
 					/>
 				</label>
 
-				<button type="submit" class="btn btn-primary" disabled={saving}>
-					{saving ? "Adding..." : "+ Add Driver"}
-				</button>
+				<div class="form-actions">
+					<button
+						type="button"
+						class="btn"
+						onclick={() => {
+							showAddForm = false;
+
+							name = "";
+							phone = "";
+						}}
+					>
+						Cancel
+					</button>
+
+					<button
+						type="submit"
+						class="btn btn-primary"
+						disabled={saving}
+					>
+						{saving ? "Adding..." : "Save Driver"}
+					</button>
+				</div>
 			</form>
 		</section>
 	{/if}
@@ -126,13 +176,7 @@
 			<div class="state">
 				<h3>No drivers yet</h3>
 
-				<p>
-					{#if isAdmin}
-						Add your first driver above.
-					{:else}
-						No drivers have been added yet.
-					{/if}
-				</p>
+				<p>Click Add Driver to create your first driver.</p>
 			</div>
 		{:else}
 			<table class="data-table">
@@ -163,10 +207,6 @@
 </main>
 
 <style>
-	/* =========================
-	   ADD DRIVER PANEL
-	========================= */
-
 	.add-panel {
 		margin-bottom: 24px;
 		padding: 24px;
@@ -174,23 +214,15 @@
 
 	.add-panel h2 {
 		margin: 0 0 18px;
-
 		font-size: 18px;
 	}
-
-	/* =========================
-	   DRIVER FORM
-	========================= */
 
 	.driver-form {
 		display: grid;
 
 		grid-template-columns:
 			minmax(0, 1fr)
-			minmax(0, 1fr)
-			auto;
-
-		align-items: end;
+			minmax(0, 1fr);
 
 		gap: 16px;
 	}
@@ -198,13 +230,11 @@
 	label {
 		display: flex;
 		flex-direction: column;
-
 		gap: 7px;
 	}
 
 	label span {
 		color: #344054;
-
 		font-size: 14px;
 		font-weight: 600;
 	}
@@ -234,15 +264,16 @@
 		box-shadow: 0 0 0 3px rgb(37 99 235 / 10%);
 	}
 
-	.driver-form .btn {
-		min-height: 42px;
+	.form-actions {
+		display: flex;
+		justify-content: flex-end;
 
-		white-space: nowrap;
+		gap: 10px;
+
+		grid-column: 1 / -1;
+
+		margin-top: 4px;
 	}
-
-	/* =========================
-	   ERROR MESSAGE
-	========================= */
 
 	.error-message {
 		margin-bottom: 20px;
@@ -256,73 +287,40 @@
 		color: #b42318;
 	}
 
-	/* =========================
-   DRIVER TABLE
-========================= */
-
-	.data-table {
-		width: 100%;
-
-		border-collapse: separate;
-		border-spacing: 0;
-
-		border: 1px solid #e5e7eb;
-		border-radius: 8px;
-
-		background: white;
-	}
-
-	.data-table th {
-		padding: 15px 18px;
-
-		border-bottom: 1px solid #e5e7eb;
-
-		background: #f8fafc;
-
-		color: #374151;
-
-		text-align: left;
-
-		font-size: 14px;
-		font-weight: 600;
-	}
-
-	.data-table th:first-child {
-		border-top-left-radius: 8px;
-	}
-
-	.data-table th:last-child {
-		border-top-right-radius: 8px;
-	}
-
-	.data-table td {
-		padding: 16px 18px;
-
-		border-bottom: 1px solid #e5e7eb;
-
-		color: #111827;
-
-		font-size: 14px;
-	}
-
-	.data-table tbody tr:last-child td {
-		border-bottom: none;
-	}
-
-	.data-table tbody tr:hover {
-		background: #fafafa;
-	}
-
 	.strong {
 		font-weight: 600;
 	}
-	/* =========================
-	   RESPONSIVE
-	========================= */
+
+	.state {
+		padding: 28px;
+
+		color: #64748b;
+
+		text-align: center;
+	}
+
+	.state h3 {
+		margin: 0 0 6px;
+
+		color: #111827;
+	}
+
+	.state p {
+		margin: 0;
+	}
 
 	@media (max-width: 760px) {
 		.driver-form {
 			grid-template-columns: 1fr;
+		}
+
+		.form-actions {
+			grid-column: auto;
+			flex-direction: column-reverse;
+		}
+
+		.form-actions .btn {
+			width: 100%;
 		}
 	}
 </style>

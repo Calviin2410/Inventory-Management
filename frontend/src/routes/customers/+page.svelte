@@ -215,67 +215,6 @@
 
 <style>
 	/* =========================
-	   CUSTOMER TABLE
-	========================= */
-
-	.table-card {
-		overflow: hidden;
-
-		border: 1px solid #e5e7eb;
-		border-radius: 8px;
-
-		background: white;
-	}
-
-	.data-table {
-		width: 100%;
-
-		border-collapse: separate;
-		border-spacing: 0;
-	}
-
-	.data-table th {
-		padding: 15px 18px;
-
-		border-bottom: 1px solid #e5e7eb;
-
-		background: #f8fafc;
-
-		color: #374151;
-
-		text-align: left;
-
-		font-size: 14px;
-		font-weight: 600;
-	}
-
-	.data-table th:first-child {
-		border-top-left-radius: 8px;
-	}
-
-	.data-table th:last-child {
-		border-top-right-radius: 8px;
-	}
-
-	.data-table td {
-		padding: 16px 18px;
-
-		border-bottom: 1px solid #e5e7eb;
-
-		color: #111827;
-
-		font-size: 14px;
-	}
-
-	.data-table tbody tr:last-child td {
-		border-bottom: none;
-	}
-
-	.data-table tbody tr:hover {
-		background: #fafafa;
-	}
-
-	/* =========================
 	   CUSTOMER
 	========================= */
 
@@ -325,16 +264,5 @@
 
 	.error {
 		color: #dc2626;
-	}
-
-	/* =========================
-	   RESPONSIVE
-	========================= */
-
-	@media (max-width: 760px) {
-		.data-table th,
-		.data-table td {
-			padding: 12px 10px;
-		}
 	}
 </style>

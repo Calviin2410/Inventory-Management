@@ -8,6 +8,15 @@ use Illuminate\Http\Request;
 
 class DriverController extends Controller
 {
+    private function ensureAdmin(Request $request): void
+    {
+        abort_unless(
+            $request->user()?->isAdmin(),
+            403,
+            'Only administrators can manage drivers.'
+        );
+    }
+
     public function index()
     {
         return response()->json(
@@ -17,6 +26,8 @@ class DriverController extends Controller
 
     public function store(Request $request)
     {
+        $this->ensureAdmin($request);
+
         abort_unless(
             $request->user()->isAdmin(),
             403,

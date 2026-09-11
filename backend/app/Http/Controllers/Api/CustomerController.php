@@ -44,4 +44,16 @@ class CustomerController extends Controller
 
         return response()->json($customer, 201);
     }
+
+    public function options()
+    {
+        return response()->json(
+            Customer::orderBy('name')
+                ->get([
+                    'id',
+                    'name',
+                    'phone',
+                ])
+        );
+    }
 }

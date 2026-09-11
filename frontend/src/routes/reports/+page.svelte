@@ -88,18 +88,24 @@
     }
 
     onMount(async () => {
-        /*
-         * Layout 会先恢复 user，
-         * 所以这里让页面等一个 tick。
-         */
-        await Promise.resolve();
+        try {
+            const currentUser = await api.me();
 
-        if (!isAdmin) {
-            goto("/dashboard");
-            return;
+            user.set(currentUser);
+
+            if (currentUser?.role !== "admin") {
+                goto("/dashboard");
+                return;
+            }
+
+            await loadReports();
+        } catch (error) {
+            console.error("Unable to verify user:", error);
+
+            user.set(null);
+
+            goto("/login");
         }
-
-        await loadReports();
     });
 </script>
 

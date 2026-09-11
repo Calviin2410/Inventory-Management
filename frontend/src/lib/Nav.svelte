@@ -7,18 +7,16 @@
 
 	let menuOpen = $state(false);
 
-	let isAdmin = $derived($user?.role === "admin");
-
 	// 导航项目
 	const links = [
 		{
 			href: "/dashboard",
 			label: "Overview",
 		},
-		{
-			href: "/products",
-			label: "Products",
-		},
+		// {
+		// 	href: "/products",
+		// 	label: "Products",
+		// },
 		{
 			href: "/invoices",
 			label: "Invoices",
@@ -34,12 +32,23 @@
 		{
 			href: "/drivers",
 			label: "Drivers",
+			adminOnly: true,
 		},
 		{
 			href: "/vehicles",
 			label: "Vehicles",
+			adminOnly: true,
+		},
+		{
+			href: "/reports",
+			label: "Reports",
+			adminOnly: true,
 		},
 	];
+
+	let visibleLinks = $derived(
+		links.filter((link) => !link.adminOnly || $user?.role === "admin"),
+	);
 
 	async function handleLogout() {
 		try {
@@ -82,7 +91,7 @@
 
 	<!-- 导航 -->
 	<div class="nav-links" class:open={menuOpen}>
-		{#each links as link}
+		{#each visibleLinks as link}
 			<a
 				href={link.href}
 				class:active={page.url.pathname.startsWith(link.href)}
@@ -93,19 +102,6 @@
 				{link.label}
 			</a>
 		{/each}
-
-		<!-- Reports 只给 Admin -->
-		{#if isAdmin}
-			<a
-				href="/reports"
-				class:active={page.url.pathname.startsWith("/reports")}
-				onclick={() => {
-					menuOpen = false;
-				}}
-			>
-				Reports
-			</a>
-		{/if}
 	</div>
 
 	<!-- 登出 -->
@@ -119,37 +115,38 @@
 	.nav-shell {
 		position: sticky;
 		top: 0;
-
-		z-index: 20;
+		z-index: 50;
 
 		display: flex;
 		align-items: center;
 
-		height: 66px;
+		height: 68px;
 
 		padding: 0 max(24px, calc((100vw - 1180px) / 2));
 
-		border-bottom: 1px solid #e0e5ed;
+		border-bottom: 1px solid #e2e8f0;
 
-		background: rgb(255 255 255 / 94%);
+		background: rgb(255 255 255 / 92%);
 
-		box-shadow: 0 3px 16px rgb(30 52 90 / 4%);
+		box-shadow:
+			0 1px 2px rgb(15 23 42 / 3%),
+			0 6px 20px rgb(15 23 42 / 4%);
 
-		backdrop-filter: blur(12px);
+		backdrop-filter: blur(14px);
 	}
 
-	/* 品牌 */
 	.brand {
 		display: flex;
 		align-items: center;
 
 		gap: 10px;
 
-		margin-right: 28px;
+		margin-right: 30px;
 
-		color: #1d2941;
+		color: #0f172a;
 
 		font-size: 14px;
+		font-weight: 500;
 
 		line-height: 1.05;
 
@@ -158,39 +155,45 @@
 
 	.brand-logo {
 		display: grid;
-
-		width: 35px;
-		height: 35px;
-
 		place-items: center;
+
+		width: 36px;
+		height: 36px;
 
 		border-radius: 10px;
 
-		background: #315ee7;
+		background: linear-gradient(180deg, #3b82f6, #2563eb);
+
 		color: white;
 
 		font-size: 12px;
-		font-weight: 850;
+		font-weight: 800;
 
-		box-shadow: 0 5px 12px rgb(49 94 231 / 24%);
+		box-shadow: 0 6px 16px rgb(37 99 235 / 22%);
+	}
+
+	.brand-name {
+		color: #334155;
 	}
 
 	.brand-name strong {
 		display: block;
 
-		color: #315ee7;
+		margin-top: 2px;
+
+		color: #2563eb;
 
 		font-size: 12px;
+		font-weight: 700;
 	}
 
-	/* 导航链接 */
 	.nav-links {
 		display: flex;
 		align-items: center;
 
 		height: 100%;
 
-		gap: 2px;
+		gap: 3px;
 	}
 
 	.nav-links a {
@@ -199,11 +202,11 @@
 
 		height: 38px;
 
-		padding: 0 10px;
+		padding: 0 11px;
 
-		border-radius: 8px;
+		border-radius: 9px;
 
-		color: #687386;
+		color: #64748b;
 
 		font-size: 12px;
 		font-weight: 650;
@@ -212,28 +215,39 @@
 
 		transition:
 			background 0.15s ease,
-			color 0.15s ease;
+			color 0.15s ease,
+			transform 0.15s ease;
 	}
 
-	.nav-links a:hover,
+	.nav-links a:hover {
+		background: #f1f5f9;
+		color: #334155;
+	}
+
 	.nav-links a.active {
 		background: #eef2ff;
+		color: #2563eb;
 
-		color: #315ee7;
+		box-shadow: inset 0 0 0 1px rgb(37 99 235 / 6%);
 	}
 
-	/* 登出 */
+	.nav-links a:active {
+		transform: translateY(1px);
+	}
+
 	.logout {
 		margin-left: auto;
 
-		padding: 8px 12px;
+		height: 38px;
 
-		border: 1px solid #d8dee8;
+		padding: 0 14px;
 
-		border-radius: 8px;
+		border: 1px solid #dbe2ea;
+		border-radius: 9px;
 
-		background: white;
-		color: #667085;
+		background: #fff;
+
+		color: #64748b;
 
 		font-size: 12px;
 		font-weight: 700;
@@ -243,35 +257,40 @@
 		transition:
 			background 0.15s ease,
 			border-color 0.15s ease,
-			color 0.15s ease;
+			color 0.15s ease,
+			box-shadow 0.15s ease;
 	}
 
 	.logout:hover {
-		border-color: #c7ced9;
+		border-color: #cbd5e1;
 
 		background: #f8fafc;
 
-		color: #344054;
+		color: #334155;
+
+		box-shadow: 0 2px 8px rgb(15 23 42 / 5%);
 	}
 
-	/* 手机菜单 */
 	.menu-toggle {
 		display: none;
 
 		margin-left: auto;
 
-		border: none;
+		width: 38px;
+		height: 38px;
 
-		background: none;
+		border: 1px solid #e2e8f0;
+		border-radius: 8px;
 
-		color: #344054;
+		background: #fff;
 
-		font-size: 22px;
+		color: #334155;
+
+		font-size: 20px;
 
 		cursor: pointer;
 	}
 
-	/* Responsive */
 	@media (max-width: 1000px) {
 		.brand {
 			margin-right: 18px;
@@ -298,13 +317,14 @@
 		}
 
 		.menu-toggle {
-			display: block;
+			display: grid;
+			place-items: center;
 		}
 
 		.nav-links {
 			position: absolute;
 
-			top: 66px;
+			top: 68px;
 			right: 12px;
 			left: 12px;
 
@@ -314,13 +334,12 @@
 
 			padding: 10px;
 
-			border: 1px solid #e0e5ed;
-
+			border: 1px solid #e2e8f0;
 			border-radius: 12px;
 
 			background: white;
 
-			box-shadow: 0 12px 30px rgb(30 52 90 / 12%);
+			box-shadow: 0 18px 40px rgb(15 23 42 / 12%);
 		}
 
 		.nav-links.open {

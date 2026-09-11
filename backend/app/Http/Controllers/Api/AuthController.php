@@ -43,7 +43,7 @@ class AuthController extends Controller
 
         if (! $user || ! Hash::check($data['password'], $user->password)) {
             throw ValidationException::withMessages([
-                'email' => ['账号或密码不正确 (The provided credentials are incorrect).'],
+                'email' => ['Incorrect username or password.'],
             ]);
         }
 
@@ -59,7 +59,7 @@ class AuthController extends Controller
     {
         $request->user()->currentAccessToken()->delete();
 
-        return response()->json(['message' => '已登出']);
+        return response()->json(['message' => 'Logged out successfully.']);
     }
 
     public function me(Request $request)

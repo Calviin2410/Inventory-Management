@@ -4,67 +4,37 @@
 	import Nav from "$lib/Nav.svelte";
 
 	let recentInvoices = $state([]);
-	let allInvoices = $state([]);
-	let customers = $state([]);
-	let barrels = $state([]);
+
+	let totalInvoices = $state(0);
+	let paidInvoices = $state(0);
+	let unpaidInvoices = $state(0);
+	let totalCustomers = $state(0);
+	let availableBarrels = $state(0);
+	let rentedBarrels = $state(0);
 
 	let loading = $state(true);
 	let errorMessage = $state("");
-
-	let totalInvoices = $derived(allInvoices.length);
-
-	let paidInvoices = $derived(
-		allInvoices.filter((invoice) => invoice.status === "paid").length,
-	);
-
-	let unpaidInvoices = $derived(
-		allInvoices.filter((invoice) => invoice.status === "unpaid").length,
-	);
-
-	let totalCustomers = $derived(customers.length);
-
-	let availableBarrels = $derived(
-		barrels.filter((barrel) => barrel.status === "available").length,
-	);
-
-	let rentedBarrels = $derived(
-		barrels.filter((barrel) => barrel.status === "rented").length,
-	);
 
 	async function loadDashboard() {
 		loading = true;
 		errorMessage = "";
 
 		try {
-			const [
-				recentInvoiceResult,
-				allInvoiceResult,
-				customerResult,
-				barrelResult,
-			] = await Promise.all([
-				api.getInvoices({
-					limit: 5,
-				}),
-				api.getInvoices(),
-				api.getCustomers(),
-				api.getBarrels(),
-			]);
+			const result = await api.getDashboardSummary();
 
-			recentInvoices = Array.isArray(recentInvoiceResult)
-				? recentInvoiceResult
-				: (recentInvoiceResult?.data ?? []);
+			totalInvoices = result?.total_invoices ?? 0;
 
-			allInvoices = Array.isArray(allInvoiceResult)
-				? allInvoiceResult
-				: (allInvoiceResult?.data ?? []);
+			paidInvoices = result?.paid_invoices ?? 0;
 
-			customers = Array.isArray(customerResult)
-				? customerResult
-				: (customerResult?.data ?? []);
+			unpaidInvoices = result?.unpaid_invoices ?? 0;
 
-			barrels = Array.isArray(barrelResult)
-				? barrelResult
-				: (barrelResult?.data ?? []);
+			totalCustomers = result?.total_customers ?? 0;
+
+			availableBarrels = result?.available_barrels ?? 0;
+
+			rentedBarrels = result?.rented_barrels ?? 0;
+
+			recentInvoices = result?.recent_invoices ?? [];
 		} catch (error) {
 			errorMessage =
 				error instanceof Error

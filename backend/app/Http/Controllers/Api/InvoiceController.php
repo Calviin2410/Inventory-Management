@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Barrel;
 use App\Models\Invoice;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 
 class InvoiceController extends Controller
@@ -120,8 +121,11 @@ class InvoiceController extends Controller
             ],
 
             'vehicle_id' => [
-                'required',
-                'exists:vehicles,id'
+                'nullable',
+                Rule::exists('vehicles', 'id')->where(
+                    fn ($query) =>
+                        $query->where('status', 'available')
+                ),
             ],
 
             'issued_date' => [

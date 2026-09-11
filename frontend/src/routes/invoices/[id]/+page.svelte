@@ -84,8 +84,8 @@
 
 <Nav />
 
-<main class="page">
-	<div class="page-header">
+<main class="app-page">
+	<div class="page-heading">
 		<div>
 			<a class="back-link" href="/invoices"> ← Back to invoices </a>
 
@@ -98,14 +98,17 @@
 			<div class="header-actions">
 				<button
 					type="button"
-					class="export-button"
+					class="btn"
 					disabled={exporting}
-					on:click={exportPdf}
+					onclick={exportPdf}
 				>
 					{exporting ? "Preparing..." : "Export PDF"}
 				</button>
 
-				<a class="edit-button" href={`/invoices/${invoice.id}/edit`}>
+				<a
+					class="btn btn-primary"
+					href={`/invoices/${invoice.id}/edit`}
+				>
 					Edit Invoice
 				</a>
 			</div>
@@ -240,34 +243,6 @@
 </main>
 
 <style>
-	.page {
-		margin: 36px 48px 60px 48px;
-		max-width: 1180px;
-
-		font-family: Arial, Helvetica, sans-serif;
-
-		color: #111827;
-	}
-
-	/* HEADER */
-
-	.page-header {
-		display: flex;
-		align-items: flex-start;
-		justify-content: space-between;
-
-		gap: 20px;
-
-		margin-bottom: 28px;
-	}
-
-	.page-header h1 {
-		margin: 8px 0 0;
-
-		font-size: 34px;
-		font-weight: 700;
-	}
-
 	.back-link {
 		color: #64748b;
 
@@ -278,28 +253,6 @@
 
 	.back-link:hover {
 		color: #111827;
-	}
-
-	/* EDIT */
-
-	.edit-button {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-
-		height: 42px;
-
-		padding: 0 18px;
-
-		border-radius: 7px;
-
-		background: #111827;
-		color: white;
-
-		text-decoration: none;
-
-		font-size: 14px;
-		font-weight: 600;
 	}
 
 	/* CARD */
@@ -484,45 +437,11 @@
 		gap: 10px;
 	}
 
-	.export-button {
-		height: 42px;
-
-		padding: 0 18px;
-
-		border: 1px solid #d1d5db;
-		border-radius: 7px;
-
-		background: white;
-		color: #374151;
-
-		font-size: 14px;
-		font-weight: 600;
-
-		cursor: pointer;
-	}
-
-	.export-button:hover {
-		background: #f8fafc;
-	}
-
-	.export-button:disabled {
-		opacity: 0.6;
-		cursor: not-allowed;
-	}
-
 	/* MOBILE */
 
 	@media (max-width: 700px) {
-		.page {
-			margin: 24px 16px;
-		}
-
 		.detail-grid {
 			grid-template-columns: 1fr;
-		}
-
-		.page-header {
-			flex-direction: column;
 		}
 	}
 </style>

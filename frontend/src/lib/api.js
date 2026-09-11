@@ -55,6 +55,9 @@ export const api = {
 	logout: () => request('/logout', { method: 'POST' }),
 	me: () => request('/me'),
 
+	getDashboardSummary: () =>
+		request('/dashboard-summary'),
+
 	// 商品
 	getProducts: (params = {}) => {
 		const query = new URLSearchParams(params).toString();
@@ -76,11 +79,14 @@ export const api = {
 	},
 	createCustomer: (payload) => request('/customers', { method: 'POST', body: payload }),
 
+	getCustomerOptions: () => request('/customers/options'),
+
 	// Barrels
 	getBarrels: (params = {}) => {
 		const query = new URLSearchParams(params).toString();
 		return request(`/barrels${query ? `?${query}` : ''}`);
 	},
+	getAvailableBarrels: () => request('/barrels/available'),
 	createBarrel: (payload) => request('/barrels', { method: 'POST', body: payload }),
 	updateBarrel: (id, payload) => request(`/barrels/${id}`, { method: 'PATCH', body: payload }),
 	returnBarrel: (id) => request(`/barrels/${id}/return`, { method: 'POST' }),
@@ -99,6 +105,9 @@ export const api = {
 	createDriver: (payload) => request('/drivers', { method: 'POST', body: payload }),
 
 	getVehicles: () => request('/vehicles'),
+	getVehicle: (id) => request(`/vehicles/${id}`),
 	createVehicle: (payload) => request('/vehicles', { method: 'POST', body: payload }),
+	updateVehicle: (id, data) => request(`/vehicles/${id}`, { method: "PUT", body: data }),
+	deleteVehicle: (id) => request(`/vehicles/${id}`, { method: "DELETE" }),
 	getRentalReport: (params = {}) => { const query = new URLSearchParams(params).toString(); return request(`/reports/rentals${query ? `?${query}` : ''}`); },
 };

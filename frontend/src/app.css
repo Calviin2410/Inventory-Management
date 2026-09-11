@@ -1,37 +1,48 @@
-/* =========================
-   GLOBAL PAGE LAYOUT
-========================= */
-
-.app-page {
-	width: min(1180px, calc(100% - 48px));
-	margin: 24px auto 60px;
-
-	font-family: Arial, Helvetica, sans-serif;
-	color: #111827;
+body {
+	margin: 0;
+	background:
+		linear-gradient(180deg,
+			#f8fafc 0%,
+			#f4f7fb 100%);
+	color: #0f172a;
+	font-family:
+		Inter,
+		ui-sans-serif,
+		system-ui,
+		-apple-system,
+		BlinkMacSystemFont,
+		"Segoe UI",
+		sans-serif;
 }
 
+.app-page {
+	width: min(1180px,
+			calc(100% - 48px));
 
-/* =========================
-   PAGE HEADER
-========================= */
+	margin:
+		32px auto 72px;
+}
 
 .page-heading {
 	display: flex;
 	align-items: flex-start;
 	justify-content: space-between;
 
-	gap: 24px;
+	gap: 28px;
 
-	margin-bottom: 28px;
+	margin-bottom: 30px;
 }
 
 .page-heading h1 {
-	margin: 4px 0 6px;
+	margin:
+		5px 0 7px;
 
-	color: #111827;
+	color: #0f172a;
 
 	font-size: 34px;
-	font-weight: 700;
+	font-weight: 750;
+
+	letter-spacing: -0.035em;
 }
 
 .page-heading p {
@@ -40,31 +51,43 @@
 	color: #64748b;
 
 	font-size: 14px;
+	line-height: 1.6;
 }
 
 .eyebrow {
 	margin: 0;
 
-	color: #64748b;
+	color: #2563eb;
 
-	font-size: 12px;
-	font-weight: 700;
+	font-size: 11px;
+	font-weight: 800;
 
-	letter-spacing: 0.08em;
+	letter-spacing: 0.14em;
+
+	text-transform: uppercase;
 }
-
-
-/* =========================
-   TOOLBAR
-========================= */
 
 .toolbar {
 	display: flex;
 	align-items: center;
 
-	gap: 12px;
+	gap: 10px;
 
 	margin-bottom: 20px;
+
+	padding: 12px;
+
+	border: 1px solid #e2e8f0;
+	border-radius: 12px;
+
+	background: rgba(255,
+			255,
+			255,
+			0.92);
+
+	box-shadow:
+		0 1px 2px rgb(15 23 42 / 4%),
+		0 6px 20px rgb(15 23 42 / 4%);
 }
 
 .control {
@@ -72,28 +95,36 @@
 
 	box-sizing: border-box;
 
-	padding: 0 13px;
+	padding:
+		0 13px;
 
-	border: 1px solid #d1d5db;
-	border-radius: 6px;
+	border: 1px solid #d7dee8;
+	border-radius: 8px;
 
-	background: white;
+	background: #fff;
+
+	color: #0f172a;
 
 	font-size: 14px;
 
 	outline: none;
+
+	transition:
+		border-color 0.15s ease,
+		box-shadow 0.15s ease,
+		background 0.15s ease;
+}
+
+.control:hover {
+	border-color: #b8c4d4;
 }
 
 .control:focus {
-	border-color: #2563eb;
+	border-color: #3b82f6;
 
-	box-shadow: 0 0 0 1px #2563eb;
+	box-shadow:
+		0 0 0 3px rgb(59 130 246 / 12%);
 }
-
-
-/* =========================
-   BUTTON
-========================= */
 
 .btn {
 	display: inline-flex;
@@ -102,50 +133,86 @@
 
 	min-height: 42px;
 
-	padding: 0 18px;
+	padding:
+		0 17px;
 
-	border: 1px solid #d1d5db;
-	border-radius: 6px;
+	border: 1px solid #d7dee8;
+	border-radius: 8px;
 
-	background: white;
-	color: #374151;
+	background: #ffffff;
+
+	color: #334155;
 
 	font-size: 14px;
-	font-weight: 500;
+	font-weight: 650;
 
 	text-decoration: none;
 
 	cursor: pointer;
+
+	transition:
+		transform 0.15s ease,
+		background 0.15s ease,
+		border-color 0.15s ease,
+		box-shadow 0.15s ease;
 }
 
 .btn:hover {
+	border-color: #cbd5e1;
+
 	background: #f8fafc;
+
+	box-shadow:
+		0 2px 8px rgb(15 23 42 / 6%);
+
+	transform:
+		translateY(-1px);
+}
+
+.btn:active {
+	transform:
+		translateY(0);
 }
 
 .btn-primary {
 	border-color: #2563eb;
 
-	background: #2563eb;
-	color: white;
+	background:
+		linear-gradient(180deg,
+			#3b82f6 0%,
+			#2563eb 100%);
+
+	color: #fff;
+
+	box-shadow:
+		0 4px 12px rgb(37 99 235 / 20%);
 }
 
 .btn-primary:hover {
-	background: #1d4ed8;
+	border-color: #1d4ed8;
+
+	background:
+		linear-gradient(180deg,
+			#2563eb 0%,
+			#1d4ed8 100%);
+
+	box-shadow:
+		0 6px 16px rgb(37 99 235 / 24%);
 }
-
-
-/* =========================
-   PANEL
-========================= */
 
 .panel {
-	background: white;
+	border: 1px solid #e2e8f0;
+	border-radius: 12px;
+
+	background: rgba(255,
+			255,
+			255,
+			0.96);
+
+	box-shadow:
+		0 1px 2px rgb(15 23 42 / 3%),
+		0 8px 28px rgb(15 23 42 / 4%);
 }
-
-
-/* =========================
-   PAGINATION
-========================= */
 
 .pagination {
 	display: flex;
@@ -154,7 +221,7 @@
 
 	gap: 16px;
 
-	margin-top: 16px;
+	margin-top: 18px;
 }
 
 .pagination-info {
@@ -181,21 +248,29 @@
 .pagination-actions button {
 	height: 36px;
 
-	padding: 0 14px;
+	padding:
+		0 14px;
 
-	border: 1px solid #d1d5db;
-	border-radius: 7px;
+	border: 1px solid #d7dee8;
+	border-radius: 8px;
 
-	background: white;
-	color: #374151;
+	background: #fff;
+
+	color: #334155;
 
 	font-size: 13px;
-	font-weight: 600;
+	font-weight: 650;
 
 	cursor: pointer;
+
+	transition:
+		background 0.15s ease,
+		border-color 0.15s ease;
 }
 
 .pagination-actions button:hover:not(:disabled) {
+	border-color: #cbd5e1;
+
 	background: #f8fafc;
 }
 
@@ -205,23 +280,95 @@
 	cursor: not-allowed;
 }
 
+.table-card {
+	overflow: hidden;
 
-/* =========================
-   RESPONSIVE
-========================= */
+	border: 1px solid #e2e8f0;
+	border-radius: 12px;
+
+	background: #ffffff;
+
+	box-shadow:
+		0 1px 2px rgb(15 23 42 / 3%),
+		0 6px 20px rgb(15 23 42 / 3%);
+}
+
+.data-table {
+	width: 100%;
+
+	border-collapse: separate;
+	border-spacing: 0;
+}
+
+.data-table th {
+	padding: 14px 18px;
+
+	border-bottom: 1px solid #e2e8f0;
+
+	background: #f8fafc;
+
+	color: #64748b;
+
+	text-align: left;
+
+	font-size: 12px;
+	font-weight: 700;
+
+	letter-spacing: 0.03em;
+
+	text-transform: uppercase;
+}
+
+.data-table td {
+	padding: 16px 18px;
+
+	border-bottom: 1px solid #edf0f4;
+
+	color: #1e293b;
+
+	font-size: 14px;
+
+	vertical-align: middle;
+}
+
+.data-table tbody tr {
+	transition:
+		background 0.15s ease;
+}
+
+.data-table tbody tr:hover {
+	background: #f8fafc;
+}
+
+.data-table tbody tr:last-child td {
+	border-bottom: none;
+}
+
+.data-table th:first-child {
+	border-top-left-radius: 12px;
+}
+
+.data-table th:last-child {
+	border-top-right-radius: 12px;
+}
+
+.data-table .strong {
+	color: #0f172a;
+	font-weight: 650;
+}
 
 @media (max-width: 760px) {
-	.app-page {
-		width: auto;
-		margin: 24px 16px 60px;
+	.table-card {
+		overflow-x: auto;
 	}
 
-	.page-heading {
-		flex-direction: column;
+	.data-table {
+		min-width: 620px;
 	}
 
-	.toolbar {
-		flex-direction: column;
-		align-items: stretch;
+	.data-table th,
+	.data-table td {
+		padding:
+			13px 14px;
 	}
 }
