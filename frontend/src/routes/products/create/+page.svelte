@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { api } from '$lib/api.js';
 	import Nav from '$lib/Nav.svelte';
+	import { guardUnsaved } from '$lib/unsaved.js';
 
 	let sku = $state('');
 	let name = $state('');
@@ -14,6 +15,8 @@
 
 	let errorMessage = $state('');
 	let submitting = $state(false);
+	let formDirty = $state(false);
+	guardUnsaved(() => formDirty);
 
 	async function handleSubmit() {
 		errorMessage = '';
@@ -29,6 +32,7 @@
 				low_stock_threshold: Number(lowStockThreshold || 0),
 				barcode: barcode || null
 			});
+			formDirty = false;
 			goto('/products');
 		} catch (err) {
 			errorMessage = err.message || '创建失败';
@@ -43,7 +47,7 @@
 <div class="page">
 	<h1>新增商品</h1>
 
-	<form onsubmit={(event) => { event.preventDefault(); handleSubmit(); }}>
+	<form oninput={() => formDirty = true} onsubmit={(event) => { event.preventDefault(); handleSubmit(); }}>
 		{#if errorMessage}
 			<p class="error">{errorMessage}</p>
 		{/if}

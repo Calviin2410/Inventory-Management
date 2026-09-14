@@ -3,6 +3,7 @@
 	import { onMount } from "svelte";
 	import { api } from "$lib/api.js";
 	import Nav from "$lib/Nav.svelte";
+	import { guardUnsaved } from "$lib/unsaved.js";
 
 	let invoiceId = $state("");
 	let customerName = $state("");
@@ -24,6 +25,8 @@
 
 	let drivers = $state([]);
 	let vehicles = $state([]);
+	let formDirty = $state(false);
+	guardUnsaved(() => formDirty);
 
 	async function loadFormData() {
 		isLoading = true;
@@ -132,6 +135,7 @@
 				],
 			});
 
+			formDirty = false;
 			goto("/invoices");
 		} catch (error) {
 			console.error("Create invoice failed:", error);
@@ -169,6 +173,7 @@
 	{/if}
 
 	<form
+		oninput={() => formDirty = true}
 		onsubmit={(event) => {
 			event.preventDefault();
 			handleSubmit();

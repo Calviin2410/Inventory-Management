@@ -6,6 +6,8 @@
     import { user } from "$lib/stores/auth.js";
 
     import Nav from "$lib/Nav.svelte";
+    import SkeletonTable from "$lib/SkeletonTable.svelte";
+    import { formatDate, formatCurrency } from "$lib/format.js";
 
     let invoices = $state([]);
     let filteredInvoices = $state([]);
@@ -172,7 +174,7 @@
     {/if}
 
     {#if loading}
-        <div class="state">Loading report...</div>
+        <SkeletonTable rows={6} columns={6} />
     {:else}
         <!-- Summary -->
         <section class="summary-section">
@@ -265,11 +267,11 @@
                                             </td>
 
                                             <td>
-                                                {item.rental_start ?? "-"}
+                                                {formatDate(item.rental_start)}
                                             </td>
 
                                             <td>
-                                                {item.rental_end ?? "-"}
+                                                {formatDate(item.rental_end)}
                                             </td>
 
                                             <td>
@@ -576,6 +578,26 @@
     }
 
     @media (max-width: 700px) {
+        .table-card {
+            overflow-x: auto;
+            overscroll-behavior-inline: contain;
+            -webkit-overflow-scrolling: touch;
+        }
+        .table-card table {
+            min-width: 760px;
+        }
+        .table-card th:first-child,
+        .table-card td:first-child {
+            position: sticky;
+            left: 0;
+            z-index: 2;
+            background: white;
+            box-shadow: 8px 0 12px -12px rgb(15 23 42 / 45%);
+        }
+        .table-card th:first-child {
+            z-index: 3;
+            background: #f8fafc;
+        }
         .filter-grid {
             grid-template-columns: 1fr;
         }

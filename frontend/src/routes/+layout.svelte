@@ -6,6 +6,7 @@
 
 	import { api } from '$lib/api.js';
 	import { user } from '$lib/stores/auth.js';
+	let { children } = $props();
 
 	onMount(async () => {
 		if (!browser) {
@@ -37,4 +38,4 @@
 	});
 </script>
 
-<slot />
+{@render children()}

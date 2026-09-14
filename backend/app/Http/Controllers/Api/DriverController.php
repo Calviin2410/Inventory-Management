@@ -28,12 +28,6 @@ class DriverController extends Controller
     {
         $this->ensureAdmin($request);
 
-        abort_unless(
-            $request->user()->isAdmin(),
-            403,
-            'Only administrators can add drivers.'
-        );
-
         $data = $request->validate([
             'name' => [
                 'required',

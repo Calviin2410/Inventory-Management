@@ -2,6 +2,7 @@
 	import { onMount } from "svelte";
 	import { api } from "$lib/api.js";
 	import Nav from "$lib/Nav.svelte";
+	import SkeletonTable from "$lib/SkeletonTable.svelte";
 
 	let customers = $state([]);
 
@@ -97,6 +98,9 @@
 				}
 			}}
 		/>
+		{#if search}
+			<button type="button" class="search-clear" aria-label="Clear search" onclick={() => { search = ""; loadCustomers(1); }}>×</button>
+		{/if}
 
 		<button type="button" class="btn" onclick={() => loadCustomers(1)}>
 			Search
@@ -112,6 +116,7 @@
 		>
 			Refresh
 		</button>
+		<span class="result-count">{totalCustomers} {totalCustomers === 1 ? "result" : "results"}</span>
 	</div>
 
 	<!-- =========================
@@ -120,7 +125,7 @@
 
 	<section class="panel">
 		{#if loading}
-			<div class="state">Loading customers...</div>
+			<SkeletonTable rows={5} columns={3} />
 		{:else if errorMessage}
 			<div class="state error">
 				{errorMessage}

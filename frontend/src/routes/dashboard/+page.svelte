@@ -2,6 +2,8 @@
 	import { onMount } from "svelte";
 	import { api } from "$lib/api.js";
 	import Nav from "$lib/Nav.svelte";
+	import SkeletonTable from "$lib/SkeletonTable.svelte";
+	import { formatDate } from "$lib/format.js";
 
 	let recentInvoices = $state([]);
 
@@ -14,6 +16,13 @@
 
 	let loading = $state(true);
 	let errorMessage = $state("");
+	let barrelUtilization = $derived(
+		availableBarrels + rentedBarrels > 0
+			? Math.round(
+					(rentedBarrels / (availableBarrels + rentedBarrels)) * 100,
+				)
+			: 0,
+	);
 
 	async function loadDashboard() {
 		loading = true;
@@ -54,15 +63,21 @@
 	<header class="page-heading">
 		<div>
 			<p class="eyebrow">OVERVIEW</p>
-
-			<h1>Dashboard</h1>
-
-			<p>Here is a quick overview of your rental activity.</p>
+			<h1>Operations dashboard</h1>
+			<p>
+				Monitor inventory, billing and customer activity from one place.
+			</p>
+		</div>
+		<div class="header-actions">
+			<span class="live-indicator"><i></i> Live overview</span>
+			<a class="btn btn-primary" href="/invoices/create">+ New invoice</a>
 		</div>
 	</header>
 
 	{#if loading}
-		<div class="state">Loading dashboard...</div>
+		<div class="dashboard-skeleton">
+			<SkeletonTable rows={5} columns={4} />
+		</div>
 	{:else if errorMessage}
 		<div class="state error">
 			{errorMessage}
@@ -70,52 +85,37 @@
 	{:else}
 		<!-- 统计卡片 -->
 		<div class="stat-grid">
-			<div class="stat-card">
-				<span> Total Invoices </span>
-
-				<strong>
-					{totalInvoices}
-				</strong>
+			<div class="stat-card blue">
+				<div class="stat-top"><span>Total invoices</span><i>▤</i></div>
+				<strong>{totalInvoices}</strong>
+				<small>All recorded invoices</small>
 			</div>
-
-			<div class="stat-card">
-				<span> Paid Invoices </span>
-
-				<strong>
-					{paidInvoices}
-				</strong>
+			<div class="stat-card green">
+				<div class="stat-top"><span>Paid invoices</span><i>✓</i></div>
+				<strong>{paidInvoices}</strong>
+				<small>Successfully settled</small>
 			</div>
-
-			<div class="stat-card">
-				<span> Unpaid Invoices </span>
-
-				<strong>
-					{unpaidInvoices}
-				</strong>
+			<div class="stat-card amber">
+				<div class="stat-top"><span>Outstanding</span><i>!</i></div>
+				<strong>{unpaidInvoices}</strong>
+				<small>Awaiting payment</small>
 			</div>
-
 			<div class="stat-card">
-				<span> Total Customers </span>
-
-				<strong>
-					{totalCustomers}
-				</strong>
+				<div class="stat-top"><span>Total customers</span><i>♙</i></div>
+				<strong>{totalCustomers}</strong>
+				<small>Active customer records</small>
 			</div>
-
 			<div class="stat-card">
-				<span> Available Barrels </span>
-
-				<strong>
-					{availableBarrels}
-				</strong>
+				<div class="stat-top">
+					<span>Available barrels</span><i>◇</i>
+				</div>
+				<strong>{availableBarrels}</strong>
+				<small>Ready for allocation</small>
 			</div>
-
 			<div class="stat-card">
-				<span> Rented Barrels </span>
-
-				<strong>
-					{rentedBarrels}
-				</strong>
+				<div class="stat-top"><span>Barrels in use</span><i>↗</i></div>
+				<strong>{rentedBarrels}</strong>
+				<small>{barrelUtilization}% inventory utilization</small>
 			</div>
 		</div>
 
@@ -127,7 +127,7 @@
 					<p>The latest rental invoices created.</p>
 				</div>
 
-				<a href="/invoices"> View All → </a>
+				<a href="/invoices">View all invoices <span>→</span></a>
 			</div>
 
 			{#if recentInvoices.length === 0}
@@ -168,7 +168,7 @@
 									</td>
 
 									<td>
-										{invoice.issued_date ?? "-"}
+										{formatDate(invoice.issued_date)}
 									</td>
 
 									<td>
@@ -202,36 +202,99 @@
 	.stat-grid {
 		display: grid;
 		grid-template-columns: repeat(3, minmax(0, 1fr));
-
-		gap: 16px;
-
-		margin-bottom: 28px;
+		gap: 14px;
+		margin-bottom: 24px;
 	}
 
 	.stat-card {
-		padding: 20px;
-
-		border: 1px solid #e5e7eb;
+		position: relative;
+		overflow: hidden;
+		padding: 19px 20px 18px;
+		border: 1px solid #e3e8ef;
 		border-radius: 10px;
-
 		background: white;
+		box-shadow: 0 2px 7px rgb(15 23 42 / 3%);
 	}
 
-	.stat-card span {
-		display: block;
-
-		margin-bottom: 10px;
-
-		color: #64748b;
-
-		font-size: 13px;
-		font-weight: 500;
+	.stat-card::before {
+		position: absolute;
+		inset: 0 auto 0 0;
+		width: 3px;
+		background: #91a0b5;
+		content: "";
 	}
 
 	.stat-card strong {
-		color: #111827;
-
-		font-size: 28px;
+		display: block;
+		margin: 13px 0 7px;
+		color: #172033;
+		font-size: 27px;
+		font-weight: 750;
+		letter-spacing: -0.035em;
+	}
+	.stat-card small {
+		color: #929bab;
+		font-size: 10px;
+	}
+	.stat-top {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		color: #68758a;
+		font-size: 11px;
+		font-weight: 700;
+	}
+	.stat-top i {
+		display: grid;
+		width: 27px;
+		height: 27px;
+		place-items: center;
+		border-radius: 7px;
+		background: #f0f3f7;
+		color: #68758a;
+		font-style: normal;
+		font-size: 13px;
+	}
+	.stat-card.blue::before {
+		background: #3565d8;
+	}
+	.stat-card.blue .stat-top i {
+		background: #eaf0ff;
+		color: #2853ba;
+	}
+	.stat-card.green::before {
+		background: #20a66b;
+	}
+	.stat-card.green .stat-top i {
+		background: #e5f7ef;
+		color: #16855a;
+	}
+	.stat-card.amber::before {
+		background: #e3a225;
+	}
+	.stat-card.amber .stat-top i {
+		background: #fff5dd;
+		color: #a86c0d;
+	}
+	.header-actions {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+	}
+	.live-indicator {
+		display: flex;
+		align-items: center;
+		gap: 7px;
+		color: #758196;
+		font-size: 11px;
+		font-weight: 600;
+	}
+	.live-indicator i {
+		width: 7px;
+		height: 7px;
+		border-radius: 50%;
+		background: #22a86b;
+		box-shadow: 0 0 0 4px #ddf5e9;
 	}
 
 	/* =========================
@@ -245,7 +308,7 @@
 
 		gap: 20px;
 
-		padding: 18px 20px;
+		padding: 20px 22px;
 
 		border-bottom: 1px solid #e5e7eb;
 	}
@@ -253,7 +316,8 @@
 	.panel-title h2 {
 		margin: 0 0 4px;
 
-		font-size: 18px;
+		color: #202b40;
+		font-size: 15px;
 	}
 
 	.panel-title p {
@@ -265,9 +329,8 @@
 	}
 
 	.panel-title a {
-		color: #315ee7;
-
-		font-size: 14px;
+		color: #3158b8;
+		font-size: 11px;
 		font-weight: 600;
 
 		text-decoration: none;
@@ -396,6 +459,10 @@
 	@media (max-width: 600px) {
 		.stat-grid {
 			grid-template-columns: 1fr;
+		}
+		.header-actions {
+			width: 100%;
+			justify-content: space-between;
 		}
 	}
 </style>

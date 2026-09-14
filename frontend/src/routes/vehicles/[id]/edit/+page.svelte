@@ -5,6 +5,8 @@
 
     import { api } from "$lib/api.js";
     import Nav from "$lib/Nav.svelte";
+    import { guardUnsaved } from "$lib/unsaved.js";
+    import SkeletonTable from "$lib/SkeletonTable.svelte";
 
     let plateNumber = $state("");
     let status = $state("available");
@@ -12,6 +14,8 @@
     let loading = $state(true);
     let saving = $state(false);
     let errorMessage = $state("");
+    let formDirty = $state(false);
+    guardUnsaved(() => formDirty);
 
     const vehicleId = $derived(page.params.id);
 
@@ -52,6 +56,7 @@
                 status,
             });
 
+            formDirty = false;
             goto("/vehicles");
         } catch (error) {
             errorMessage =
@@ -73,7 +78,7 @@
         <div>
             <p class="eyebrow">VEHICLES</p>
 
-            <h1>Edit Vehicle</h1>
+            <h1>Edit vehicle</h1>
 
             <p>Update the vehicle plate number and availability status.</p>
         </div>
@@ -82,10 +87,10 @@
     </header>
 
     {#if loading}
-        <div class="state">Loading vehicle...</div>
+        <div class="state"><SkeletonTable rows={3} columns={2} /></div>
     {:else}
         <section class="form-card">
-            <form onsubmit={saveVehicle}>
+            <form oninput={() => formDirty = true} onsubmit={saveVehicle}>
                 {#if errorMessage}
                     <div class="error-message">
                         {errorMessage}
@@ -128,7 +133,7 @@
                         class="btn btn-primary"
                         disabled={saving}
                     >
-                        {saving ? "Saving..." : "Save Changes"}
+                        {saving ? "Saving…" : "Save changes"}
                     </button>
                 </div>
             </form>

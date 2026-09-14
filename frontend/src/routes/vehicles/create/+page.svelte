@@ -2,10 +2,13 @@
     import { goto } from "$app/navigation";
     import { api } from "$lib/api.js";
     import Nav from "$lib/Nav.svelte";
+    import { guardUnsaved } from "$lib/unsaved.js";
 
     let plateNumber = $state("");
     let loading = $state(false);
     let errorMessage = $state("");
+    let formDirty = $state(false);
+    guardUnsaved(() => formDirty);
 
     async function handleSubmit() {
         errorMessage = "";
@@ -22,6 +25,7 @@
                 plate_number: plateNumber.trim(),
             });
 
+            formDirty = false;
             goto("/vehicles");
         } catch (error) {
             errorMessage =
@@ -36,16 +40,16 @@
 
 <Nav />
 
-<main class="page">
-    <header class="page-header">
+<main class="app-page create-page">
+    <header class="page-heading">
         <div>
             <p class="eyebrow">VEHICLES</p>
-            <h1>Add Vehicle</h1>
-            <p class="subtitle">Add a new vehicle.</p>
+            <h1>Add vehicle</h1>
+            <p class="subtitle">Register a delivery vehicle and its plate number.</p>
         </div>
     </header>
 
-    <section class="form-card">
+    <section class="form-card" oninput={() => formDirty = true}>
         {#if errorMessage}
             <div class="error">
                 {errorMessage}
@@ -67,7 +71,7 @@
             <button
                 type="button"
                 class="cancel-button"
-                on:click={() => goto("/vehicles")}
+                onclick={() => goto("/vehicles")}
             >
                 Cancel
             </button>
@@ -76,60 +80,26 @@
                 type="button"
                 class="submit-button"
                 disabled={loading}
-                on:click={handleSubmit}
+                onclick={handleSubmit}
             >
-                {loading ? "Adding..." : "Add Vehicle"}
+                {loading ? "Adding…" : "Add vehicle"}
             </button>
         </div>
     </section>
 </main>
 
 <style>
-    .page {
-        margin: 36px 48px 60px 48px;
-        max-width: 720px;
-
-        font-family: Arial, Helvetica, sans-serif;
-
-        color: #111827;
-    }
-
-    .page-header {
-        margin-bottom: 28px;
-    }
-
-    .eyebrow {
-        margin: 0;
-
-        color: #64748b;
-
-        font-size: 12px;
-        font-weight: 700;
-
-        letter-spacing: 0.1em;
-    }
-
-    h1 {
-        margin: 5px 0 6px 0;
-
-        font-size: 34px;
-    }
-
-    .subtitle {
-        margin: 0;
-
-        color: #64748b;
-
-        font-size: 14px;
-    }
+    .create-page { max-width: 980px; }
 
     .form-card {
+        max-width: 680px;
         padding: 24px;
 
         border: 1px solid #e5e7eb;
         border-radius: 9px;
 
         background: white;
+        box-shadow: 0 2px 8px rgb(15 23 42 / 3%);
     }
 
     .form-group {
@@ -222,5 +192,10 @@
         color: #dc2626;
 
         font-size: 13px;
+    }
+    @media (max-width: 560px) {
+        .form-card { padding: 20px; }
+        .actions { display: grid; grid-template-columns: 1fr 1fr; }
+        .actions button { width: 100%; }
     }
 </style>

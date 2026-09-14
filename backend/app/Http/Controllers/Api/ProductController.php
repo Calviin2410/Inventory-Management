@@ -8,6 +8,15 @@ use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
+    private function ensureAdmin(Request $request): void
+    {
+        abort_unless(
+            $request->user()?->isAdmin(),
+            403,
+            'Only administrators can manage products.'
+        );
+    }
+
     // GET /api/products?search=xxx&low_stock=1
     public function index(Request $request)
     {
@@ -33,6 +42,8 @@ class ProductController extends Controller
     // POST /api/products
     public function store(Request $request)
     {
+        $this->ensureAdmin($request);
+
         $data = $request->validate([
             'sku' => ['required', 'string', 'unique:products,sku'],
             'name' => ['required', 'string', 'max:255'],
@@ -60,6 +71,8 @@ class ProductController extends Controller
     // PUT /api/products/{product}
     public function update(Request $request, Product $product)
     {
+        $this->ensureAdmin($request);
+
         $data = $request->validate([
             'sku' => ['sometimes', 'string', 'unique:products,sku,' . $product->id],
             'name' => ['sometimes', 'string', 'max:255'],
@@ -79,8 +92,10 @@ class ProductController extends Controller
     }
 
     // DELETE /api/products/{product}
-    public function destroy(Product $product)
+    public function destroy(Request $request, Product $product)
     {
+        $this->ensureAdmin($request);
+
         $product->delete();
 
         return response()->json(['message' => '商品已删除'], 204);

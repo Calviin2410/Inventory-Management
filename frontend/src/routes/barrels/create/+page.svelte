@@ -4,9 +4,12 @@
 	import Nav from '$lib/Nav.svelte';
 	import { user } from '$lib/stores/auth.js';
 	import { onMount } from 'svelte';
-	let code = '';
-	let saving = false;
-	let errorMessage = '';
+	import { guardUnsaved } from '$lib/unsaved.js';
+	let code = $state('');
+	let saving = $state(false);
+	let errorMessage = $state('');
+	let formDirty = $state(false);
+	guardUnsaved(() => formDirty);
 
 	async function handleSubmit(event) {
 		event.preventDefault();
@@ -39,6 +42,7 @@
 				result
 			);
 
+			formDirty = false;
 			goto('/barrels');
 
 		} catch (error) {
@@ -58,13 +62,19 @@
 
 <Nav />
 
-<div class="page">
-
-	<h1>Add Barrel</h1>
+<main class="app-page create-page">
+	<header class="page-heading">
+		<div>
+			<p class="eyebrow">BARREL INVENTORY</p>
+			<h1>Add barrel</h1>
+			<p>Register a new barrel and make it available for rental.</p>
+		</div>
+	</header>
 
 	<form
 		class="form-card"
 		onsubmit={handleSubmit}
+		oninput={() => formDirty = true}
 	>
 
 		<div class="form-group">
@@ -102,37 +112,23 @@
 				class="create-button"
 				disabled={saving}
 			>
-				{saving ? 'Adding...' : 'Add Barrel'}
+				{saving ? 'Adding…' : 'Add barrel'}
 			</button>
 
 		</div>
 
 	</form>
-
-</div>
+</main>
 
 <style>
-	.page {
-		margin: 36px 48px;
-		max-width: 700px;
-
-		font-family: Arial, Helvetica, sans-serif;
-	}
-
-	h1 {
-		margin-bottom: 28px;
-
-		font-size: 34px;
-	}
-
-
+	.create-page { max-width: 980px; }
 	.form-card {
-		padding: 25px;
-
-		border: 1px solid #e5e7eb;
-		border-radius: 8px;
-
+		max-width: 680px;
+		padding: 28px;
+		border: 1px solid #e3e8ef;
+		border-radius: 10px;
 		background: white;
+		box-shadow: 0 2px 8px rgb(15 23 42 / 3%);
 	}
 
 
@@ -154,7 +150,7 @@
 		padding: 11px 12px;
 
 		border: 1px solid #d1d5db;
-		border-radius: 6px;
+		border-radius: 8px;
 
 		font-size: 14px;
 	}
@@ -193,5 +189,11 @@
 		background: #2563eb;
 
 		color: white;
+	}
+	.create-button:disabled { opacity: .6; cursor: not-allowed; }
+	@media (max-width: 560px) {
+		.form-card { padding: 20px; }
+		.actions { display: grid; grid-template-columns: 1fr 1fr; }
+		.actions button { width: 100%; }
 	}
 </style>

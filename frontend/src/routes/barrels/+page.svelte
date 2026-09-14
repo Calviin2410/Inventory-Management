@@ -2,6 +2,9 @@
 	import { onMount } from "svelte";
 	import { api } from "$lib/api.js";
 	import Nav from "$lib/Nav.svelte";
+	import ConfirmDialog from "$lib/ConfirmDialog.svelte";
+	import SkeletonTable from "$lib/SkeletonTable.svelte";
+	import Toast from "$lib/Toast.svelte";
 	import { user } from "$lib/stores/auth.js";
 
 	// =========================
@@ -16,6 +19,10 @@
 	let view = $state("table");
 
 	let openMenuId = $state(null);
+	let selectedBarrel = $state(null);
+	let deletingBarrel = $state(false);
+	let deleteError = $state("");
+	let successMessage = $state("");
 
 	let isAdmin = $derived($user?.role === "admin");
 
@@ -100,33 +107,36 @@
 			.length,
 	});
 
-	async function deleteBarrel(barrel) {
+	function requestBarrelDeletion(barrel) {
 		if (!isAdmin) {
 			return;
 		}
+		selectedBarrel = barrel;
+		deleteError = "";
+	}
 
-		if (barrel.status === "rented") {
-			alert("A rented barrel cannot be deleted.");
-
-			return;
+	function closeDeleteDialog() {
+		if (!deletingBarrel) {
+			selectedBarrel = null;
+			deleteError = "";
 		}
+	}
 
-		const confirmed = confirm(`Delete barrel ${barrel.code}?`);
-
-		if (!confirmed) {
-			return;
-		}
+	async function deleteBarrel() {
+		const barrel = selectedBarrel;
+		if (!barrel || deletingBarrel) return;
+		deletingBarrel = true;
 
 		try {
 			await api.deleteBarrel(barrel.id);
-
 			barrels = barrels.filter((item) => item.id !== barrel.id);
-
-			openMenuId = null;
+			selectedBarrel = null;
+			successMessage = `Barrel ${barrel.code} deleted successfully.`;
+			setTimeout(() => successMessage = "", 3500);
 		} catch (error) {
-			console.error(error);
-
-			alert(error?.message ?? "Unable to delete barrel.");
+			deleteError = error?.message ?? "Unable to delete barrel.";
+		} finally {
+			deletingBarrel = false;
 		}
 	}
 
@@ -146,7 +156,7 @@
 		</div>
 
 		{#if isAdmin}
-			<a class="add-button" href="/barrels/create"> + Add Barrel </a>
+			<a class="add-button" href="/barrels/create"> + Add barrel </a>
 		{/if}
 	</header>
 
@@ -166,6 +176,9 @@
 				}
 			}}
 		/>
+		{#if searchCode}
+			<button type="button" class="search-clear" aria-label="Clear search" onclick={() => { searchCode = ""; loadBarrels(1); }}>×</button>
+		{/if}
 
 		<button type="button" class="btn" onclick={() => loadBarrels(1)}>
 			Search
@@ -204,6 +217,7 @@
 				◉ Visual
 			</button>
 		</div>
+		<span class="result-count">{totalBarrels} {totalBarrels === 1 ? "result" : "results"}</span>
 	</div>
 
 	{#if view === "visual" && !loading && !errorMessage && barrels.length > 0}
@@ -233,7 +247,7 @@
 	========================= -->
 	<section class="panel barrels-panel">
 		{#if loading}
-			<div class="state">Loading barrels…</div>
+			<SkeletonTable rows={5} columns={5} />
 		{:else if errorMessage}
 			<div class="state error">
 				{errorMessage}
@@ -400,7 +414,7 @@
 															disabled={barrel.status ===
 																"rented"}
 															onclick={() =>
-																deleteBarrel(
+																requestBarrelDeletion(
 																	barrel,
 																)}
 														>
@@ -453,6 +467,19 @@
 		{/if}
 	</section>
 </main>
+
+<ConfirmDialog
+	open={selectedBarrel !== null}
+	title="Delete this barrel?"
+	message="Please confirm that you want to permanently remove this barrel from inventory."
+	itemName={selectedBarrel?.code ?? ""}
+	confirmLabel="Delete barrel"
+	busy={deletingBarrel}
+	errorMessage={deleteError}
+	oncancel={closeDeleteDialog}
+	onconfirm={deleteBarrel}
+/>
+<Toast message={successMessage} onclose={() => successMessage = ""} />
 
 <style>
 	/* =========================
@@ -1078,8 +1105,38 @@
 	========================= */
 
 	@media (max-width: 760px) {
+		.dropdown-menu {
+			position: fixed;
+			top: auto;
+			right: 12px;
+			bottom: 12px;
+			left: 12px;
+			width: auto;
+			border-radius: 12px;
+			box-shadow: 0 20px 60px rgb(15 23 42 / 28%);
+		}
+		.barrels-panel {
+			min-width: 0;
+			overflow: hidden;
+		}
+
+		.table-card {
+			width: 100%;
+			max-width: 100%;
+			overflow-x: auto;
+			overflow-y: visible;
+			overscroll-behavior-inline: contain;
+			-webkit-overflow-scrolling: touch;
+		}
+
+		.data-table {
+			width: 620px;
+			min-width: 620px;
+		}
+
 		.search {
 			width: 100%;
+			min-width: 0;
 		}
 
 		.view-switch {

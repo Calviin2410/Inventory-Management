@@ -56,6 +56,21 @@ class InvoiceController extends Controller
 
     public function update(Request $request, Invoice $invoice)
     {
+        $managementFields = [
+            'customer_id',
+            'issued_date',
+            'address',
+            'notes',
+        ];
+
+        if ($request->hasAny($managementFields)) {
+            abort_unless(
+                $request->user()?->isAdmin(),
+                403,
+                'Only administrators can edit invoice details.'
+            );
+        }
+
         $data = $request->validate([
             'customer_id' => [
                 'sometimes',

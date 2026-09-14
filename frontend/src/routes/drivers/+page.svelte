@@ -5,6 +5,7 @@
 	import { api } from "$lib/api.js";
 	import { user } from "$lib/stores/auth.js";
 	import Nav from "$lib/Nav.svelte";
+	import SkeletonTable from "$lib/SkeletonTable.svelte";
 
 	let drivers = $state([]);
 	let loading = $state(true);
@@ -106,14 +107,14 @@
 					showAddForm = !showAddForm;
 				}}
 			>
-				{showAddForm ? "Close" : "+ Add Driver"}
+				{showAddForm ? "Close" : "+ Add driver"}
 			</button>
 		{/if}
 	</header>
 
 	{#if isAdmin && showAddForm}
 		<section class="panel add-panel">
-			<h2>Add Driver</h2>
+			<h2>Add driver</h2>
 
 			<form class="driver-form" onsubmit={handleSubmit}>
 				<label>
@@ -156,7 +157,7 @@
 						class="btn btn-primary"
 						disabled={saving}
 					>
-						{saving ? "Adding..." : "Save Driver"}
+						{saving ? "Saving…" : "Save driver"}
 					</button>
 				</div>
 			</form>
@@ -171,7 +172,7 @@
 
 	<section class="panel">
 		{#if loading}
-			<div class="state">Loading drivers...</div>
+			<SkeletonTable rows={4} columns={2} />
 		{:else if drivers.length === 0}
 			<div class="state">
 				<h3>No drivers yet</h3>
@@ -179,7 +180,7 @@
 				<p>Click Add Driver to create your first driver.</p>
 			</div>
 		{:else}
-			<table class="data-table">
+			<table class="data-table driver-table">
 				<thead>
 					<tr>
 						<th> Driver </th>
@@ -310,6 +311,29 @@
 	}
 
 	@media (max-width: 760px) {
+		.panel {
+			overflow-x: hidden;
+		}
+
+		.driver-table {
+			width: 100%;
+			min-width: 0;
+			table-layout: fixed;
+		}
+
+		.driver-table th:first-child,
+		.driver-table td:first-child {
+			position: static;
+			box-shadow: none;
+		}
+
+		.driver-table th,
+		.driver-table td {
+			width: 50%;
+			white-space: normal;
+			word-break: break-word;
+		}
+
 		.driver-form {
 			grid-template-columns: 1fr;
 		}

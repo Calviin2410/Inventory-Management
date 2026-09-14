@@ -5,6 +5,9 @@
 
 	import { api } from "$lib/api.js";
 	import Nav from "$lib/Nav.svelte";
+	import { guardUnsaved } from "$lib/unsaved.js";
+	import SkeletonTable from "$lib/SkeletonTable.svelte";
+	import { formatDate } from "$lib/format.js";
 
 	let invoice = $state(null);
 	let customers = $state([]);
@@ -20,6 +23,8 @@
 	let address = $state("");
 	let notes = $state("");
 	let status = $state("unpaid");
+	let formDirty = $state(false);
+	guardUnsaved(() => formDirty);
 
 	async function loadData() {
 		loading = true;
@@ -94,6 +99,7 @@
 
 			successMessage = "Invoice updated successfully.";
 
+			formDirty = false;
 			goto(`/invoices/${id}`);
 		} catch (error) {
 			console.error("Unable to update invoice:", error);
@@ -127,7 +133,7 @@
 				← Back to invoice
 			</a>
 
-			<h1>Edit Invoice</h1>
+			<h1>Edit invoice</h1>
 
 			{#if invoice}
 				<p class="invoice-number">
@@ -138,13 +144,13 @@
 	</div>
 
 	{#if loading}
-		<div class="card">Loading invoice...</div>
+		<div class="card"><SkeletonTable rows={4} columns={2} /></div>
 	{:else if errorMessage && !invoice}
 		<div class="error-message">
 			{errorMessage}
 		</div>
 	{:else if invoice}
-		<form class="card" onsubmit={handleSubmit}>
+		<form class="card" oninput={() => formDirty = true} onsubmit={handleSubmit}>
 			{#if errorMessage}
 				<div class="error-message">
 					{errorMessage}
@@ -269,11 +275,11 @@
 									</td>
 
 									<td>
-										{item.rental_start ?? "-"}
+										{formatDate(item.rental_start)}
 									</td>
 
 									<td>
-										{item.rental_end ?? "-"}
+										{formatDate(item.rental_end)}
 									</td>
 								</tr>
 							{:else}
@@ -294,7 +300,7 @@
 				</a>
 
 				<button class="save-button" type="submit" disabled={saving}>
-					{saving ? "Saving..." : "Save Changes"}
+					{saving ? "Saving…" : "Save changes"}
 				</button>
 			</div>
 		</form>

@@ -61,6 +61,11 @@
 				Manage products, rentals and invoices from one focused
 				workspace.
 			</h2>
+			<div class="feature-list">
+				<span><i>✓</i> Real-time inventory visibility</span>
+				<span><i>✓</i> Centralised invoice management</span>
+				<span><i>✓</i> Secure role-based access</span>
+			</div>
 		</div>
 
 		<small> Inventory Manager · Built for everyday teams </small>
@@ -113,6 +118,7 @@
 			<button type="submit" disabled={loading}>
 				{loading ? "Signing in…" : "Sign in"}
 			</button>
+			<p class="secure-note">🔒 Your account is protected by secure authentication</p>
 
 			<p class="switch">
 				New here?
@@ -128,7 +134,7 @@
 		display: grid;
 		min-height: 100vh;
 		grid-template-columns: 1.1fr 1fr;
-		background: #fff;
+		background: #f5f7fa;
 	}
 
 	aside {
@@ -138,7 +144,9 @@
 
 		padding: 48px 9vw 48px 5vw;
 
-		background: linear-gradient(145deg, #172752, #284fc5);
+		position: relative;
+		overflow: hidden;
+		background: linear-gradient(145deg, #13224a 0%, #234bbd 70%, #2f65dc 100%);
 
 		color: #fff;
 	}
@@ -202,6 +210,9 @@
 	aside small {
 		color: #aabaf3;
 	}
+	.feature-list { display: grid; gap: 13px; margin-top: 34px; color: #dce5ff; font-size: 12px; }
+	.feature-list span { display: flex; align-items: center; gap: 9px; }
+	.feature-list i { display: grid; width: 21px; height: 21px; place-items: center; border-radius: 50%; background: rgb(255 255 255 / 13%); color: white; font-style: normal; font-size: 10px; }
 
 	main {
 		display: grid;
@@ -209,10 +220,16 @@
 		place-items: center;
 
 		padding: 40px;
+		background: radial-gradient(circle at 100% 0%, #e8eeff 0, transparent 34%);
 	}
 
 	form {
 		width: min(390px, 100%);
+		padding: 38px;
+		border: 1px solid #e3e8ef;
+		border-radius: 14px;
+		background: rgb(255 255 255 / 96%);
+		box-shadow: 0 20px 55px rgb(31 47 76 / 10%);
 	}
 
 	h3 {
@@ -285,12 +302,13 @@
 		border: 0;
 		border-radius: 9px;
 
-		background: #315ee7;
+		background: linear-gradient(180deg, #3264db, #2551bd);
 		color: #fff;
 
 		font-weight: 750;
 
 		cursor: pointer;
+		box-shadow: 0 7px 16px rgb(37 81 189 / 20%);
 	}
 
 	button:disabled {
@@ -329,6 +347,7 @@
 
 		font-size: 12px;
 	}
+	.secure-note { margin: 14px 0 0; color: #98a2b2; text-align: center; font-size: 9px; }
 
 	@media (max-width: 760px) {
 		.auth-page {
@@ -340,7 +359,8 @@
 		}
 
 		main {
-			padding: 28px;
+			padding: 22px;
 		}
+		form { padding: 28px 24px; }
 	}
 </style>

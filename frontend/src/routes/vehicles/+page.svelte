@@ -3,6 +3,9 @@
     import { goto } from "$app/navigation";
     import { api } from "$lib/api.js";
     import Nav from "$lib/Nav.svelte";
+    import ConfirmDialog from "$lib/ConfirmDialog.svelte";
+    import Toast from "$lib/Toast.svelte";
+    import SkeletonTable from "$lib/SkeletonTable.svelte";
     import { user } from "$lib/stores/auth.js";
 
     let vehicles = $state([]);
@@ -12,6 +15,9 @@
     let searchKeyword = $state("");
     let openMenuId = $state(null);
     let deletingVehicleId = $state(null);
+    let selectedVehicle = $state(null);
+    let deleteError = $state("");
+    let successMessage = $state("");
 
     async function loadVehicles() {
         loading = true;
@@ -53,22 +59,32 @@
         openMenuId = openMenuId === vehicleId ? null : vehicleId;
     }
 
-    async function deleteVehicle(vehicle) {
-        const confirmed = confirm(`Delete vehicle ${vehicle.plate_number}?`);
+    function requestVehicleDeletion(vehicle) {
+        selectedVehicle = vehicle;
+        deleteError = "";
+    }
 
-        if (!confirmed) {
-            return;
+    function closeDeleteDialog() {
+        if (deletingVehicleId === null) {
+            selectedVehicle = null;
+            deleteError = "";
         }
+    }
 
+    async function deleteVehicle() {
+        const vehicle = selectedVehicle;
+        if (!vehicle) return;
         deletingVehicleId = vehicle.id;
-        openMenuId = null;
 
         try {
             await api.deleteVehicle(vehicle.id);
 
             vehicles = vehicles.filter((item) => item.id !== vehicle.id);
+            selectedVehicle = null;
+            successMessage = `Vehicle ${vehicle.plate_number} deleted successfully.`;
+            setTimeout(() => successMessage = "", 3500);
         } catch (error) {
-            errorMessage =
+            deleteError =
                 error instanceof Error
                     ? error.message
                     : "Unable to delete vehicle";
@@ -111,7 +127,7 @@
             class="btn btn-primary"
             onclick={() => goto("/vehicles/create")}
         >
-            + Add Vehicle
+            + Add vehicle
         </button>
     </header>
 
@@ -127,15 +143,19 @@
                 }
             }}
         />
+		{#if search}
+			<button type="button" class="search-clear" aria-label="Clear search" onclick={() => { search = ""; searchKeyword = ""; }}>×</button>
+		{/if}
 
         <button class="btn" onclick={handleSearch}> Search </button>
 
         <button class="btn" onclick={handleRefresh}> Refresh </button>
+		<span class="result-count">{filteredVehicles.length} {filteredVehicles.length === 1 ? "result" : "results"}</span>
     </div>
 
     <section class="panel">
         {#if loading}
-            <div class="state">Loading vehicles...</div>
+            <SkeletonTable rows={4} columns={3} />
         {:else if errorMessage}
             <div class="state error">
                 {errorMessage}
@@ -152,7 +172,7 @@
                     class="btn btn-primary"
                     onclick={() => goto("/vehicles/create")}
                 >
-                    + Add Vehicle
+                    + Add vehicle
                 </button>
             </div>
         {:else}
@@ -223,7 +243,9 @@
                                                     disabled={deletingVehicleId ===
                                                         vehicle.id}
                                                     onclick={() =>
-                                                        deleteVehicle(vehicle)}
+                                                        requestVehicleDeletion(
+                                                            vehicle,
+                                                        )}
                                                 >
                                                     {deletingVehicleId ===
                                                     vehicle.id
@@ -242,6 +264,22 @@
         {/if}
     </section>
 </main>
+
+<ConfirmDialog
+    open={selectedVehicle !== null}
+    title="Delete this vehicle?"
+    message="Please confirm that you want to remove this vehicle from the delivery fleet."
+    itemName={selectedVehicle?.plate_number ??
+        selectedVehicle?.plate_no ??
+        selectedVehicle?.number_plate ??
+        ""}
+    confirmLabel="Delete vehicle"
+    busy={deletingVehicleId !== null}
+    errorMessage={deleteError}
+    oncancel={closeDeleteDialog}
+    onconfirm={deleteVehicle}
+/>
+<Toast message={successMessage} onclose={() => successMessage = ""} />
 
 <style>
     .search {
@@ -406,6 +444,16 @@
     }
 
     @media (max-width: 760px) {
+		.dropdown-menu {
+			position: fixed;
+			top: auto;
+			right: 12px;
+			bottom: 12px;
+			left: 12px;
+			width: auto;
+			border-radius: 12px;
+			box-shadow: 0 20px 60px rgb(15 23 42 / 28%);
+		}
         .search {
             width: 100%;
             max-width: none;

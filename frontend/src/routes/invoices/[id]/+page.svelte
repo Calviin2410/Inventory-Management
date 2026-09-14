@@ -4,6 +4,8 @@
 
 	import { api } from "$lib/api.js";
 	import Nav from "$lib/Nav.svelte";
+	import SkeletonTable from "$lib/SkeletonTable.svelte";
+	import { formatDate } from "$lib/format.js";
 	import { openInvoicePrintWindow } from "$lib/invoicePrint.js";
 
 	let invoice = $state(null);
@@ -116,7 +118,7 @@
 	</div>
 
 	{#if loading}
-		<div class="message-card">Loading invoice...</div>
+		<div class="message-card"><SkeletonTable rows={4} columns={3} /></div>
 	{:else if errorMessage}
 		<div class="error">
 			{errorMessage}
@@ -170,7 +172,7 @@
 					<span class="label"> Issued Date </span>
 
 					<p>
-						{invoice.issued_date ?? "-"}
+						{formatDate(invoice.issued_date)}
 					</p>
 				</div>
 			</div>
@@ -220,11 +222,11 @@
 									</td>
 
 									<td>
-										{item.rental_start ?? "-"}
+										{formatDate(item.rental_start)}
 									</td>
 
 									<td>
-										{item.rental_end ?? "-"}
+										{formatDate(item.rental_end)}
 									</td>
 								</tr>
 							{:else}

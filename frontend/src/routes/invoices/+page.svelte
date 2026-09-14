@@ -3,6 +3,8 @@
 	import { api } from "$lib/api.js";
 	import { openInvoicePrintWindow } from "$lib/invoicePrint.js";
 	import Nav from "$lib/Nav.svelte";
+	import SkeletonTable from "$lib/SkeletonTable.svelte";
+	import { formatDate } from "$lib/format.js";
 
 	// =========================
 	// State
@@ -161,7 +163,7 @@
 		</div>
 
 		<a class="btn btn-primary" href="/invoices/create">
-			+ Create Invoice
+			+ Create invoice
 		</a>
 	</header>
 
@@ -181,6 +183,9 @@
 				}
 			}}
 		/>
+		{#if search}
+			<button type="button" class="search-clear" aria-label="Clear search" onclick={() => { search = ""; loadInvoices(1); }}>×</button>
+		{/if}
 
 		<button type="button" class="btn" onclick={() => loadInvoices(1)}>
 			Search
@@ -196,6 +201,7 @@
 		>
 			Refresh
 		</button>
+		<span class="result-count">{totalInvoices} {totalInvoices === 1 ? "result" : "results"}</span>
 	</div>
 
 	<!-- =========================
@@ -204,7 +210,7 @@
 
 	<section class="panel invoice-panel">
 		{#if loading}
-			<p class="loading">Loading invoices...</p>
+			<SkeletonTable rows={6} columns={5} />
 		{:else if errorMessage}
 			<p class="error">
 				{errorMessage}
@@ -248,7 +254,7 @@
 								</td>
 
 								<td>
-									{invoice.issued_date ?? "-"}
+									{formatDate(invoice.issued_date)}
 								</td>
 
 								<!-- =========================
@@ -633,14 +639,6 @@
 	   STATES
 	========================= */
 
-	.loading {
-		margin: 0;
-
-		padding: 20px 0;
-
-		color: #64748b;
-	}
-
 	.error {
 		padding: 12px 14px;
 
@@ -686,6 +684,38 @@
 	========================= */
 
 	@media (max-width: 760px) {
+		.dropdown-menu {
+			position: fixed;
+			top: auto;
+			right: 12px;
+			bottom: 12px;
+			left: 12px;
+			width: auto;
+			border-radius: 12px;
+			box-shadow: 0 20px 60px rgb(15 23 42 / 28%);
+		}
+		.table-card {
+			overflow-x: auto;
+			overscroll-behavior-inline: contain;
+			-webkit-overflow-scrolling: touch;
+		}
+
+		table {
+			min-width: 620px;
+		}
+		th:first-child,
+		td:first-child {
+			position: sticky;
+			left: 0;
+			z-index: 2;
+			background: white;
+			box-shadow: 8px 0 12px -12px rgb(15 23 42 / 45%);
+		}
+		th:first-child {
+			z-index: 3;
+			background: #f8fafc;
+		}
+
 		.search {
 			width: 100%;
 			max-width: none;
