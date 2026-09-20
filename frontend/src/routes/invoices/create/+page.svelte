@@ -64,14 +64,25 @@
 
 	async function findOrCreateCustomer() {
 		const name = customerName.trim();
+
 		if (name) {
-			const customers = await api.getCustomers({ search: name });
+			const result = await api.getCustomers({
+				search: name,
+			});
+
+			const customers = result?.data ?? [];
+
 			const existingCustomer = customers.find(
-				(item) => item.name?.toLowerCase() === name.toLowerCase(),
+				(item) =>
+					item.name?.trim().toLowerCase() ===
+					name.toLowerCase(),
 			);
 
-			if (existingCustomer) return existingCustomer;
+			if (existingCustomer) {
+				return existingCustomer;
+			}
 		}
+
 		return api.createCustomer({
 			name: name || null,
 			phone: phone.trim() || null,
