@@ -12,6 +12,7 @@
     let invoices = $state([]);
     let loading = $state(true);
     let errorMessage = $state("");
+    let statusFilter = $state("");
 
     let currentPage = $state(1);
     let lastPage = $state(1);
@@ -24,9 +25,15 @@
         errorMessage = "";
 
         try {
+            const params = { page: pageNumber };
+
+            if (statusFilter) {
+                params.status = statusFilter;
+            }
+
             const result = await api.getCustomer(
                 page.params.id,
-                { page: pageNumber },
+                params,
             );
 
             customer = result.customer;
@@ -73,6 +80,27 @@
         </div>
     </header>
 
+    <section class="history-toolbar" aria-label="Invoice history filters">
+        <div class="filter-field">
+            <label for="statusFilter">Payment Status</label>
+            <select
+                id="statusFilter"
+                class="control"
+                bind:value={statusFilter}
+                onchange={() => loadCustomer(1)}
+                disabled={loading}
+            >
+                <option value="">All statuses</option>
+                <option value="paid">Paid</option>
+                <option value="unpaid">Unpaid</option>
+            </select>
+        </div>
+
+        <span class="result-count">
+            {totalInvoices} {totalInvoices === 1 ? "invoice" : "invoices"}
+        </span>
+    </section>
+
     <section class="panel">
         {#if loading}
             <SkeletonTable rows={5} columns={5} />
@@ -80,7 +108,9 @@
             <div class="state error">{errorMessage}</div>
         {:else if invoices.length === 0}
             <div class="state">
-                No invoice history found.
+                {statusFilter
+                    ? `No ${statusFilter} invoices found.`
+                    : "No invoice history found."}
             </div>
         {:else}
             <div class="table-card">
@@ -114,7 +144,15 @@
                                 </td>
 
                                 <td>
-                                    {invoice.status}
+                                    <span
+                                        class="status-badge"
+                                        class:paid={invoice.status === "paid"}
+                                        class:unpaid={invoice.status === "unpaid"}
+                                    >
+                                        {invoice.status === "paid"
+                                            ? "Paid"
+                                            : "Unpaid"}
+                                    </span>
                                 </td>
 
                                 <td>
@@ -165,3 +203,72 @@
         {/if}
     </section>
 </main>
+
+<style>
+    .history-toolbar {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 16px;
+        padding: 16px 20px;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        background: white;
+    }
+
+    .filter-field {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        width: min(240px, 100%);
+    }
+
+    .filter-field label {
+        color: #1f2937;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .result-count {
+        padding-bottom: 12px;
+        color: #64748b;
+        font-size: 13px;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 64px;
+        padding: 5px 10px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .status-badge.paid {
+        background: #ccfbf1;
+        color: #0f766e;
+    }
+
+    .status-badge.unpaid {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    @media (max-width: 700px) {
+        .history-toolbar {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .filter-field {
+            width: 100%;
+        }
+
+        .result-count {
+            padding-bottom: 0;
+        }
+    }
+</style>

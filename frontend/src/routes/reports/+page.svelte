@@ -7,12 +7,13 @@
 
     import Nav from "$lib/Nav.svelte";
     import SkeletonTable from "$lib/SkeletonTable.svelte";
-    import { formatDate, formatCurrency } from "$lib/format.js";
+    import { formatDate } from "$lib/format.js";
 
     let invoices = $state([]);
     let filteredInvoices = $state([]);
 
     let loading = $state(true);
+    let exporting = $state(false);
     let errorMessage = $state("");
 
     let fromDate = $state("");
@@ -89,6 +90,150 @@
         await loadReports();
     }
 
+    function excelDate(value) {
+        if (!value) {
+            return null;
+        }
+
+        const [year, month, day] = value.slice(0, 10).split("-").map(Number);
+
+        if (!year || !month || !day) {
+            return null;
+        }
+
+        return new Date(year, month - 1, day);
+    }
+
+    function exportRows() {
+        return filteredInvoices.flatMap((invoice) => {
+            const items = invoice.items?.length ? invoice.items : [null];
+
+            return items.map((item) => ({
+                invoice: invoice.invoice_no ?? "",
+                customer: invoice.customer?.name ?? "",
+                barrel: item?.barrel?.code ?? "",
+                rentalStart: excelDate(item?.rental_start),
+                rentalEnd: excelDate(item?.rental_end),
+                status: invoice.status === "paid" ? "Paid" : "Unpaid",
+            }));
+        });
+    }
+
+    async function exportExcel() {
+        if (exporting || loading || filteredInvoices.length === 0) {
+            return;
+        }
+
+        exporting = true;
+        errorMessage = "";
+
+        try {
+            const ExcelJS = (await import("exceljs")).default;
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet("Rental Report", {
+                views: [{ state: "frozen", ySplit: 6 }],
+            });
+
+            workbook.creator = "Inventory Management System";
+            workbook.created = new Date();
+
+            worksheet.columns = [
+                { key: "invoice", width: 18 },
+                { key: "customer", width: 26 },
+                { key: "barrel", width: 16 },
+                { key: "rentalStart", width: 18 },
+                { key: "rentalEnd", width: 18 },
+                { key: "status", width: 14 },
+            ];
+
+            worksheet.mergeCells("A1:F1");
+            worksheet.getCell("A1").value = "Rental Report";
+            worksheet.getCell("A1").font = {
+                bold: true,
+                color: { argb: "FFFFFFFF" },
+                size: 18,
+            };
+            worksheet.getCell("A1").fill = {
+                type: "pattern",
+                pattern: "solid",
+                fgColor: { argb: "FF2563EB" },
+            };
+            worksheet.getCell("A1").alignment = { vertical: "middle" };
+            worksheet.getRow(1).height = 32;
+
+            worksheet.mergeCells("A2:F2");
+            worksheet.getCell("A2").value = `Period: ${fromDate || "All dates"} to ${toDate || "All dates"}`;
+            worksheet.getCell("A2").font = { color: { argb: "FF475569" } };
+
+            worksheet.mergeCells("A3:F3");
+            worksheet.getCell("A3").value =
+                `Total Invoices: ${totalInvoices}   |   Paid: ${paidInvoices}   |   Unpaid: ${unpaidInvoices}   |   Customers: ${totalCustomers}`;
+            worksheet.getCell("A3").font = { bold: true };
+
+            const headerRow = worksheet.getRow(5);
+            headerRow.values = [
+                "Invoice",
+                "Customer",
+                "Barrel",
+                "Rental Start",
+                "Rental End",
+                "Status",
+            ];
+            headerRow.height = 24;
+            headerRow.eachCell((cell) => {
+                cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+                cell.fill = {
+                    type: "pattern",
+                    pattern: "solid",
+                    fgColor: { argb: "FF1E3A8A" },
+                };
+                cell.alignment = { vertical: "middle" };
+            });
+
+            for (const rowData of exportRows()) {
+                const row = worksheet.addRow(rowData);
+                row.getCell("rentalStart").numFmt = "dd mmm yyyy";
+                row.getCell("rentalEnd").numFmt = "dd mmm yyyy";
+
+                const statusCell = row.getCell("status");
+                statusCell.font = {
+                    bold: true,
+                    color: {
+                        argb:
+                            rowData.status === "Paid"
+                                ? "FF047857"
+                                : "FFDC2626",
+                    },
+                };
+            }
+
+            worksheet.autoFilter = "A5:F5";
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], {
+                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            const period =
+                fromDate || toDate
+                    ? `${fromDate || "start"}-to-${toDate || "latest"}`
+                    : "all-dates";
+
+            link.href = url;
+            link.download = `rental-report-${period}.xlsx`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Unable to export report:", error);
+            errorMessage = "Unable to export the report. Please try again.";
+        } finally {
+            exporting = false;
+        }
+    }
+
     onMount(async () => {
         try {
             const currentUser = await api.me();
@@ -154,8 +299,20 @@
             <div class="filter-actions">
                 <button
                     type="button"
+                    class="btn btn-export"
+                    onclick={exportExcel}
+                    disabled={loading || filteredInvoices.length === 0 || exporting}
+                    aria-busy={exporting}
+                >
+                    <span aria-hidden="true">⇩</span>
+                    {exporting ? "Exporting..." : "Export Excel"}
+                </button>
+
+                <button
+                    type="button"
                     class="btn btn-primary"
                     onclick={generateReport}
+                    disabled={loading}
                 >
                     Generate Report
                 </button>
@@ -380,6 +537,23 @@
         display: flex;
 
         gap: 10px;
+    }
+
+    .btn-export {
+        border-color: #15803d;
+        background: #f0fdf4;
+        color: #166534;
+    }
+
+    .btn-export:hover:not(:disabled) {
+        border-color: #166534;
+        background: #dcfce7;
+    }
+
+    .btn-export span {
+        margin-right: 5px;
+        font-size: 16px;
+        line-height: 1;
     }
 
     /* =========================

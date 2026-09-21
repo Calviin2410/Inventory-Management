@@ -108,7 +108,7 @@ export function buildInvoiceDocument(invoice) {
 				<style>
 					@page {
 						size: A4;
-						margin: 15mm;
+						margin: 0;
 					}
 
 					* {
@@ -139,6 +139,7 @@ export function buildInvoiceDocument(invoice) {
 						width: 100%;
 						max-width: 794px;
 						margin: 0 auto;
+						padding: 15mm;
 					}
 
 					.header {
@@ -368,8 +369,14 @@ export function buildInvoiceDocument(invoice) {
 					}
 
 					@media print {
+						html,
+						body {
+							width: 210mm;
+						}
+
 						.invoice-page {
 							max-width: none;
+							padding: 15mm;
 						}
 					}
 				</style>

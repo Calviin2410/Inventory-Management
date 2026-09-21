@@ -110,11 +110,6 @@
 			onclick={() => (menuOpen = false)}>×</button
 		>
 	</div>
-	<div class="workspace-pill">
-		<span class="workspace-icon">W</span>
-		<div><small>WORKSPACE</small><strong>Operations</strong></div>
-		<span class="chevron">⌄</span>
-	</div>
 	<nav class="nav-links" aria-label="Main navigation">
 		<p class="nav-label">MAIN MENU</p>
 		{#each visibleLinks as link}
@@ -129,7 +124,6 @@
 		{/each}
 	</nav>
 	<div class="sidebar-footer">
-		<div class="system-status"><span></span> All systems operational</div>
 		<div class="account">
 			<div class="avatar">{initials}</div>
 			<div class="account-copy">
@@ -209,49 +203,6 @@
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
 	}
-	.workspace-pill {
-		display: flex;
-		align-items: center;
-		gap: 10px;
-		margin: 26px 2px 18px;
-		padding: 11px;
-		border: 1px solid #e6eaf0;
-		border-radius: 10px;
-		background: #f8fafc;
-	}
-	.workspace-icon {
-		display: grid;
-		width: 29px;
-		height: 29px;
-		place-items: center;
-		border-radius: 7px;
-		background: #e7edff;
-		color: #234cb7;
-		font-size: 11px;
-		font-weight: 800;
-	}
-	.workspace-pill div {
-		min-width: 0;
-		flex: 1;
-	}
-	.workspace-pill small,
-	.workspace-pill strong {
-		display: block;
-	}
-	.workspace-pill small {
-		color: #96a0b0;
-		font-size: 8px;
-		font-weight: 800;
-		letter-spacing: 0.12em;
-	}
-	.workspace-pill strong {
-		margin-top: 2px;
-		color: #2c374b;
-		font-size: 12px;
-	}
-	.chevron {
-		color: #8993a4;
-	}
 	.nav-links {
 		display: flex;
 		flex: 1;
@@ -259,9 +210,9 @@
 		gap: 4px;
 	}
 	.nav-label {
-		margin: 10px 12px 7px;
+		margin: 30px 12px 7px;
 		color: #202938;
-		font-size: 9px;
+		font-size: 11px;
 		font-weight: 800;
 		letter-spacing: 0.14em;
 	}
@@ -299,21 +250,6 @@
 	.sidebar-footer {
 		border-top: 1px solid #edf0f4;
 		padding-top: 14px;
-	}
-	.system-status {
-		display: flex;
-		align-items: center;
-		gap: 7px;
-		margin: 0 8px 13px;
-		color: #8a95a5;
-		font-size: 9px;
-	}
-	.system-status span {
-		width: 6px;
-		height: 6px;
-		border-radius: 99px;
-		background: #21a66b;
-		box-shadow: 0 0 0 3px #ddf6ea;
 	}
 	.account {
 		display: flex;

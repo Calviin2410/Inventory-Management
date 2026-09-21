@@ -14,6 +14,7 @@
 	let loading = $state(true);
 	let errorMessage = $state("");
 	let search = $state("");
+	let statusFilter = $state("");
 
 	let openMenuId = $state(null);
 	let exportingId = $state(null);
@@ -36,6 +37,10 @@
 
 			if (search.trim()) {
 				params.search = search.trim();
+			}
+
+			if (statusFilter) {
+				params.status = statusFilter;
 			}
 
 			const result = await api.getInvoices(params);
@@ -196,11 +201,22 @@
 			class="btn refresh-btn"
 			onclick={() => {
 				search = "";
+				statusFilter = "";
 				loadInvoices(1);
 			}}
 		>
 			Refresh
 		</button>
+		<select
+			class="control status-filter"
+			bind:value={statusFilter}
+			onchange={() => loadInvoices(1)}
+			aria-label="Filter invoices by payment status"
+		>
+			<option value="">All statuses</option>
+			<option value="paid">Paid</option>
+			<option value="unpaid">Unpaid</option>
+		</select>
 		<span class="result-count">{totalInvoices} {totalInvoices === 1 ? "result" : "results"}</span>
 	</div>
 
@@ -217,7 +233,7 @@
 			</p>
 		{:else if invoices.length === 0}
 			<div class="empty-state">
-				{#if search.trim()}
+				{#if search.trim() || statusFilter}
 					<p>No matching invoices found.</p>
 				{:else}
 					<p>No invoices found.</p>
@@ -411,6 +427,11 @@
 
 	.refresh-btn {
 		flex-shrink: 0;
+	}
+
+	.status-filter {
+		min-width: 145px;
+		cursor: pointer;
 	}
 
 	/* =========================
@@ -686,21 +707,6 @@
 
 	.empty-state a:hover {
 		text-decoration: underline;
-	}
-
-	.barrel-code-list {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 6px;
-	}
-
-	.barrel-code-badge {
-		padding: 4px 8px;
-		border-radius: 6px;
-		background: #eef2ff;
-		color: #315ee7;
-		font-size: 12px;
-		font-weight: 600;
 	}
 
 	/* =========================

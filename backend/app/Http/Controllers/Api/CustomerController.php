@@ -57,13 +57,21 @@ class CustomerController extends Controller
         );
     }
 
-    public function show(Customer $customer)
+    public function show(Request $request, Customer $customer)
     {
-        $invoices = $customer->invoices()
+        $query = $customer->invoices()
             ->with('items.barrel:id,code')
             ->latest('issued_date')
-            ->latest('id')
-            ->paginate(20);
+            ->latest('id');
+
+        if (
+            $request->filled('status')
+            && in_array($request->query('status'), ['paid', 'unpaid'], true)
+        ) {
+            $query->where('status', $request->query('status'));
+        }
+
+        $invoices = $query->paginate(20);
 
         return response()->json([
             'customer' => $customer,

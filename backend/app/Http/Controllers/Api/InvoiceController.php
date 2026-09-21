@@ -38,6 +38,13 @@ class InvoiceController extends Controller
             });
         }
 
+        if (
+            $request->filled('status')
+            && in_array($request->query('status'), ['paid', 'unpaid'], true)
+        ) {
+            $query->where('status', $request->query('status'));
+        }
+
         return response()->json(
             $query->paginate(20)
         );
