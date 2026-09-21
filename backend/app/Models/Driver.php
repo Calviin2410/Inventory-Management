@@ -10,6 +10,7 @@ class Driver extends Model
     protected $fillable = [
         'name',
         'phone',
+        'status',
     ];
 
     public function invoices(): HasMany

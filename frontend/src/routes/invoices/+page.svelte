@@ -210,7 +210,7 @@
 
 	<section class="panel invoice-panel">
 		{#if loading}
-			<SkeletonTable rows={6} columns={5} />
+			<SkeletonTable rows={6} columns={6} />
 		{:else if errorMessage}
 			<p class="error">
 				{errorMessage}
@@ -234,6 +234,8 @@
 
 							<th> Customer </th>
 
+							<th> Barrel Code </th>
+
 							<th> Date </th>
 
 							<th class="status-column"> Status </th>
@@ -251,6 +253,13 @@
 
 								<td>
 									{invoice.customer?.name ?? "-"}
+								</td>
+
+								<td class="barrel-codes">
+									{invoice.items
+										?.map((item) => item.barrel?.code)
+										.filter(Boolean)
+										.join(", ") || "—"}
 								</td>
 
 								<td>
@@ -677,6 +686,21 @@
 
 	.empty-state a:hover {
 		text-decoration: underline;
+	}
+
+	.barrel-code-list {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+	}
+
+	.barrel-code-badge {
+		padding: 4px 8px;
+		border-radius: 6px;
+		background: #eef2ff;
+		color: #315ee7;
+		font-size: 12px;
+		font-weight: 600;
 	}
 
 	/* =========================

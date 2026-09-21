@@ -17,11 +17,15 @@ class DriverController extends Controller
         );
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(
-            Driver::orderBy('name')->get()
-        );
+        $query = Driver::query()->orderBy('name');
+
+        if ($request->boolean('available_only')) {
+            $query->where('status', 'available');
+        }
+
+        return response()->json($query->get());
     }
 
     public function store(Request $request)
@@ -48,5 +52,41 @@ class DriverController extends Controller
             $driver,
             201
         );
+    }
+
+    public function show(Request $request, Driver $driver)
+    {
+        $this->ensureAdmin($request);
+
+        return response()->json($driver);
+    }
+
+    public function update(Request $request, Driver $driver)
+    {
+        $this->ensureAdmin($request);
+
+        $data = $request->validate([
+            'name' => [
+                'sometimes',
+                'required',
+                'string',
+                'max:255',
+            ],
+            'phone' => [
+                'sometimes',
+                'nullable',
+                'string',
+                'max:20',
+            ],
+            'status' => [
+                'sometimes',
+                'required',
+                'in:available,unavailable',
+            ],
+        ]);
+
+        $driver->update($data);
+
+        return response()->json($driver->fresh());
     }
 }

@@ -28,16 +28,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/products/{product}/stock-movements', [StockMovementController::class, 'index']);
     Route::post('/products/{product}/stock-movements', [StockMovementController::class, 'store']);
 
-    Route::apiResource('customers', CustomerController::class)->only(['index', 'store']);
     Route::get('/customers/options',[CustomerController::class, 'options']);
+    Route::apiResource('customers', CustomerController::class)->only(['index', 'store', 'show']);
     Route::apiResource('barrels', BarrelController::class)->only(['index', 'store', 'update','destroy']);
     Route::post('/barrels/{barrel}/return', [BarrelController::class, 'markReturned']);
     Route::get('/barrels/available',[BarrelController::class, 'available']);
 
     Route::get('/invoices-next-number',[InvoiceController::class, 'nextInvoiceNo']);
     Route::apiResource('invoices', InvoiceController::class)->only(['index', 'store', 'show', 'update']);
-    Route::apiResource('drivers',DriverController::class)->only(['index','store']);
-    Route::apiResource('vehicles',VehicleController::class)->only(['index','store']);
+    Route::apiResource('drivers',DriverController::class)->only(['index','store','show','update']);
+    Route::apiResource('vehicles',VehicleController::class)->only(['index','store','show','update']);
     Route::get('/vehicles/{vehicle}',[VehicleController::class, 'show']);
     Route::delete('/vehicles/{vehicle}',[VehicleController::class, 'destroy']);
     Route::put('/vehicles/{vehicle}',[VehicleController::class, 'update']);

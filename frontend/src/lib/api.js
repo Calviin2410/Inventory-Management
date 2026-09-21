@@ -77,6 +77,13 @@ export const api = {
 		const query = new URLSearchParams(params).toString();
 		return request(`/customers${query ? `?${query}` : ''}`);
 	},
+	getCustomer: (id, params = {}) => {
+		const query = new URLSearchParams(params).toString();
+
+		return request(
+			`/customers/${id}${query ? `?${query}` : ''}`
+		);
+	},
 	createCustomer: (payload) => request('/customers', { method: 'POST', body: payload }),
 
 	getCustomerOptions: () => request('/customers/options'),
@@ -101,8 +108,27 @@ export const api = {
 	createInvoice: (payload) => request('/invoices', { method: 'POST', body: payload }),
 	updateInvoice: (id, payload) => request(`/invoices/${id}`, { method: 'PATCH', body: payload }),
 
-	getDrivers: () => request('/drivers'),
-	createDriver: (payload) => request('/drivers', { method: 'POST', body: payload }),
+	getDrivers: (params = {}) => {
+		const query = new URLSearchParams(params).toString();
+
+		return request(
+			`/drivers${query ? `?${query}` : ''}`
+		);
+	},
+
+	getDriver: (id) => request(`/drivers/${id}`),
+
+	createDriver: (payload) =>
+		request('/drivers', {
+			method: 'POST',
+			body: payload,
+		}),
+
+	updateDriver: (id, payload) =>
+		request(`/drivers/${id}`, {
+			method: 'PATCH',
+			body: payload,
+	}),
 
 	getVehicles: () => request('/vehicles'),
 	getVehicle: (id) => request(`/vehicles/${id}`),

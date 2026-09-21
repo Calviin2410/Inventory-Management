@@ -15,6 +15,9 @@
 	let phone = $state("");
 	let saving = $state(false);
 
+	let openMenuId = $state(null);
+	let updatingStatusId = $state(null);
+
 	let showAddForm = $state(false);
 
 	let isAdmin = $derived($user?.role === "admin");
@@ -66,6 +69,37 @@
 			errorMessage = error?.message || "Unable to add driver.";
 		} finally {
 			saving = false;
+		}
+	}
+
+	async function updateDriverStatus(driver) {
+		if (!isAdmin || updatingStatusId !== null) {
+			return;
+		}
+
+		updatingStatusId = driver.id;
+		errorMessage = "";
+
+		const nextStatus =
+			driver.status === "available"
+				? "unavailable"
+				: "available";
+
+		try {
+			const updated = await api.updateDriver(driver.id, {
+				status: nextStatus,
+			});
+
+			drivers = drivers.map((item) =>
+				item.id === driver.id ? updated : item,
+			);
+
+			openMenuId = null;
+		} catch (error) {
+			errorMessage =
+				error?.message || "Unable to update driver status.";
+		} finally {
+			updatingStatusId = null;
 		}
 	}
 
@@ -172,7 +206,7 @@
 
 	<section class="panel">
 		{#if loading}
-			<SkeletonTable rows={4} columns={2} />
+			<SkeletonTable rows={4} columns={4} />
 		{:else if drivers.length === 0}
 			<div class="state">
 				<h3>No drivers yet</h3>
@@ -184,8 +218,9 @@
 				<thead>
 					<tr>
 						<th> Driver </th>
-
 						<th> Phone </th>
+						<th>Status</th>
+   						<th class="action-column">Action</th>
 					</tr>
 				</thead>
 
@@ -198,6 +233,64 @@
 
 							<td>
 								{driver.phone || "—"}
+							</td>
+
+							<td>
+								<span
+									class="status-badge"
+									class:available={driver.status === "available"}
+									class:unavailable={driver.status === "unavailable"}
+								>
+									{driver.status === "available"
+										? "Available"
+										: "Unavailable"}
+								</span>
+							</td>
+
+							<td class="action-cell">
+								<div class="action-menu">
+									<button
+										type="button"
+										class="more-button"
+										aria-label="Driver actions"
+										onclick={() => {
+											openMenuId =
+												openMenuId === driver.id
+													? null
+													: driver.id;
+										}}
+									>
+										•••
+									</button>
+
+									{#if openMenuId === driver.id}
+										<div class="dropdown-menu">
+											<button
+												type="button"
+												class="dropdown-item"
+												onclick={() =>
+													goto(`/drivers/${driver.id}/edit`)}
+											>
+												Edit Driver
+											</button>
+
+											<button
+												type="button"
+												class="dropdown-item"
+												disabled={updatingStatusId === driver.id}
+												onclick={() => updateDriverStatus(driver)}
+											>
+												{#if updatingStatusId === driver.id}
+													Updating...
+												{:else if driver.status === "available"}
+													Set Unavailable
+												{:else}
+													Set Available
+												{/if}
+											</button>
+										</div>
+									{/if}
+								</div>
 							</td>
 						</tr>
 					{/each}
@@ -308,6 +401,78 @@
 
 	.state p {
 		margin: 0;
+	}
+
+	.action-column,
+	.action-cell {
+		width: 120px;
+		text-align: right;
+	}
+
+	.action-menu {
+		position: relative;
+		display: inline-block;
+	}
+
+	.more-button {
+		width: 38px;
+		height: 36px;
+		border: 1px solid #d7dce5;
+		border-radius: 8px;
+		background: white;
+		color: #536078;
+		font-size: 18px;
+		font-weight: 700;
+		cursor: pointer;
+	}
+
+	.dropdown-menu {
+		position: absolute;
+		top: 42px;
+		right: 0;
+		z-index: 100;
+		min-width: 170px;
+		padding: 6px;
+		border: 1px solid #e5e7eb;
+		border-radius: 8px;
+		background: white;
+		box-shadow: 0 10px 30px rgb(15 23 42 / 14%);
+	}
+
+	.dropdown-item {
+		display: block;
+		width: 100%;
+		padding: 10px;
+		border: 0;
+		border-radius: 6px;
+		background: transparent;
+		color: #202939;
+		text-align: left;
+		cursor: pointer;
+	}
+
+	.dropdown-item:hover {
+		background: #f3f4f6;
+	}
+
+	.status-badge {
+		display: inline-flex;
+		min-width: 82px;
+		justify-content: center;
+		padding: 5px 10px;
+		border-radius: 999px;
+		font-size: 12px;
+		font-weight: 700;
+	}
+
+	.status-badge.available {
+		background: #dcfce7;
+		color: #166534;
+	}
+
+	.status-badge.unavailable {
+		background: #fee2e2;
+		color: #b91c1c;
 	}
 
 	@media (max-width: 760px) {

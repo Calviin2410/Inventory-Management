@@ -149,7 +149,16 @@
 
         <button class="btn" onclick={handleSearch}> Search </button>
 
-        <button class="btn" onclick={handleRefresh}> Refresh </button>
+        <button
+            class="btn"
+            onclick={() => {
+                search = "";
+                searchKeyword = "";
+                loadVehicles();
+            }}
+        >
+            Refresh
+        </button>
 		<span class="result-count">{filteredVehicles.length} {filteredVehicles.length === 1 ? "result" : "results"}</span>
     </div>
 
@@ -282,6 +291,10 @@
 <Toast message={successMessage} onclose={() => successMessage = ""} />
 
 <style>
+    .table-card {
+        overflow: visible;
+    }
+
     .search {
         flex: 1;
         max-width: 520px;

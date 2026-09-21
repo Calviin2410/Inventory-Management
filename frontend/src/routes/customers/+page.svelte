@@ -160,11 +160,15 @@
 							<tr>
 								<td class="strong">
 									<span class="avatar">
-										{customer.name?.[0]?.toUpperCase() ||
-											"W"}
+										{customer.name?.[0]?.toUpperCase() || "W"}
 									</span>
 
-									{customer.name || "Walk-in customer"}
+									<a
+										class="customer-link"
+										href={`/customers/${customer.id}`}
+									>
+										{customer.name || "Walk-in customer"}
+									</a>
 								</td>
 
 								<td>
@@ -243,6 +247,16 @@
 
 		font-size: 12px;
 		font-weight: 700;
+	}
+
+	.customer-link {
+		color: #1e293b;
+		text-decoration: none;
+	}
+
+	.customer-link:hover {
+		color: #315ee7;
+		text-decoration: underline;
 	}
 
 	/* =========================

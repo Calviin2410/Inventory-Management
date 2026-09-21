@@ -14,7 +14,10 @@ class InvoiceController extends Controller
     // GET /api/invoices?limit=5
     public function index(Request $request)
     {
-        $query = Invoice::with('customer')
+        $query = Invoice::with([
+            'customer',
+            'items.barrel:id,code',
+        ])  
             ->latest('issued_date')
             ->latest('id');
 
@@ -44,6 +47,13 @@ class InvoiceController extends Controller
     // GET /api/invoices/{invoice}
     public function show(Invoice $invoice)
     {
+
+        abort_unless(
+            request()->user()?->isAdmin(),
+            403,
+            'Only administrators can manage invoices.'
+        );
+
         return response()->json(
             $invoice->load([
                 'customer',
@@ -56,6 +66,12 @@ class InvoiceController extends Controller
 
     public function update(Request $request, Invoice $invoice)
     {
+
+        abort_unless(
+            request()->user()?->isAdmin(),
+            403,
+            'Only administrators can manage invoices.'
+        );
         $managementFields = [
             'customer_id',
             'issued_date',
@@ -132,7 +148,10 @@ class InvoiceController extends Controller
 
             'driver_id' => [
                 'required',
-                'exists:drivers,id'
+                Rule::exists('drivers', 'id')->where(
+                    fn ($query) =>
+                        $query->where('status', 'available')
+                ),
             ],
 
             'vehicle_id' => [

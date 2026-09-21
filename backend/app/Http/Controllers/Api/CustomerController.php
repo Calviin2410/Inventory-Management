@@ -56,4 +56,18 @@ class CustomerController extends Controller
                 ])
         );
     }
+
+    public function show(Customer $customer)
+    {
+        $invoices = $customer->invoices()
+            ->with('items.barrel:id,code')
+            ->latest('issued_date')
+            ->latest('id')
+            ->paginate(20);
+
+        return response()->json([
+            'customer' => $customer,
+            'invoices' => $invoices,
+        ]);
+    }
 }

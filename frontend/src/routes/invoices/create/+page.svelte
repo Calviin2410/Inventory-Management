@@ -37,7 +37,9 @@
 				await Promise.all([
 					api.getNextInvoiceNo(),
 					api.getAvailableBarrels(),
-					api.getDrivers(),
+					api.getDrivers({
+						available_only: 1,
+					}),
 					api.getVehicles(),
 				]);
 
