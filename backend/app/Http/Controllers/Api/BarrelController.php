@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Barrel;
+use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
@@ -81,6 +82,17 @@ class BarrelController extends Controller
             'status' => 'available',
         ]);
 
+        ActivityLog::record(
+            $request,
+            'created',
+            'Barrel',
+            $barrel->id,
+            $barrel->code,
+            'Created barrel '.$barrel->code,
+            null,
+            $barrel->only(['code', 'status'])
+        );
+
         return response()->json(
             $barrel,
             201
@@ -112,12 +124,26 @@ class BarrelController extends Controller
         }
 
         if ($data['status'] === 'available') {
-            return $this->markReturned($barrel);
+            return $this->markReturned($request, $barrel);
         }
+
+        $before = $barrel->only(['status', 'current_customer_id']);
 
         $barrel->update([
             'status' => $data['status']
         ]);
+
+        ActivityLog::record(
+            $request,
+            'updated',
+            'Barrel',
+            $barrel->id,
+            $barrel->code,
+            'Changed barrel '.$barrel->code.' status from '
+                .$before['status'].' to '.$data['status'],
+            $before,
+            $barrel->fresh()->only(['status', 'current_customer_id'])
+        );
 
         return response()->json(
             $barrel
@@ -127,8 +153,21 @@ class BarrelController extends Controller
     }
 
 
-    public function markReturned(Barrel $barrel)
+    public function markReturned(Request $request, Barrel $barrel)
     {
+        // Returning a barrel is idempotent. A repeated click or network retry must
+        // not create an "available -> available" activity log entry.
+        if (
+            $barrel->status === 'available'
+            && $barrel->current_customer_id === null
+        ) {
+            return response()->json(
+                $barrel->fresh()->load('currentCustomer')
+            );
+        }
+
+        $before = $barrel->only(['status', 'current_customer_id']);
+
         $barrel->update([
             'status' => 'available',
             'current_customer_id' => null,
@@ -146,6 +185,17 @@ class BarrelController extends Controller
                     now()->toDateString()
             ]);
         }
+
+        ActivityLog::record(
+            $request,
+            'returned',
+            'Barrel',
+            $barrel->id,
+            $barrel->code,
+            'Marked barrel '.$barrel->code.' as returned',
+            $before,
+            $barrel->fresh()->only(['status', 'current_customer_id'])
+        );
 
         return response()->json(
             $barrel->fresh()
@@ -170,7 +220,25 @@ class BarrelController extends Controller
             ], 422);
         }
 
+        $snapshot = $barrel->only([
+            'code',
+            'status',
+            'current_customer_id',
+        ]);
+        $barrelId = $barrel->id;
+        $barrelCode = $barrel->code;
+
         $barrel->delete();
+
+        ActivityLog::record(
+            $request,
+            'deleted',
+            'Barrel',
+            $barrelId,
+            $barrelCode,
+            'Deleted barrel '.$barrelCode,
+            $snapshot
+        );
 
         return response()->json([
             'message' =>

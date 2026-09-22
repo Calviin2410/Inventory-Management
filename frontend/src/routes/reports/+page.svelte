@@ -18,39 +18,36 @@
 
     let fromDate = $state("");
     let toDate = $state("");
+	let currentPage = $state(1);
+	let lastPage = $state(1);
+	let totalInvoices = $state(0);
+	let paidInvoices = $state(0);
+	let unpaidInvoices = $state(0);
+	let totalCustomers = $state(0);
 
-    let isAdmin = $derived($user?.role === "admin");
+    function reportParams(page = 1) {
+		const params = { page };
+		if (fromDate) params.from_date = fromDate;
+		if (toDate) params.to_date = toDate;
+		return params;
+	}
 
-    // 统计
-    let totalInvoices = $derived(filteredInvoices.length);
-
-    let paidInvoices = $derived(
-        filteredInvoices.filter((invoice) => invoice.status === "paid").length,
-    );
-
-    let unpaidInvoices = $derived(
-        filteredInvoices.filter((invoice) => invoice.status === "unpaid")
-            .length,
-    );
-
-    let totalCustomers = $derived(
-        new Set(
-            filteredInvoices
-                .map((invoice) => invoice.customer_id)
-                .filter(Boolean),
-        ).size,
-    );
-
-    async function loadReports(params = {}) {
+    async function loadReports(page = 1) {
         loading = true;
         errorMessage = "";
 
         try {
-            const result = await api.getRentalReport(params);
+            const result = await api.getRentalReport(reportParams(page));
 
-            invoices = Array.isArray(result) ? result : [];
+            invoices = result?.data ?? [];
 
             filteredInvoices = invoices;
+			currentPage = result?.current_page ?? 1;
+			lastPage = result?.last_page ?? 1;
+			totalInvoices = result?.summary?.total_invoices ?? result?.total ?? 0;
+			paidInvoices = result?.summary?.paid_invoices ?? 0;
+			unpaidInvoices = result?.summary?.unpaid_invoices ?? 0;
+			totalCustomers = result?.summary?.total_customers ?? 0;
         } catch (error) {
             errorMessage =
                 error instanceof Error
@@ -65,29 +62,19 @@
         errorMessage = "";
 
         if (fromDate && toDate && fromDate > toDate) {
-            errorMessage = "From Date cannot be later than To Date.";
+            errorMessage = "From Invoice Date cannot be later than To Invoice Date.";
 
             return;
         }
 
-        const params = {};
-
-        if (fromDate) {
-            params.from_date = fromDate;
-        }
-
-        if (toDate) {
-            params.to_date = toDate;
-        }
-
-        await loadReports(params);
+        await loadReports(1);
     }
 
     async function clearFilter() {
         fromDate = "";
         toDate = "";
 
-        await loadReports();
+        await loadReports(1);
     }
 
     function excelDate(value) {
@@ -104,12 +91,13 @@
         return new Date(year, month - 1, day);
     }
 
-    function exportRows() {
-        return filteredInvoices.flatMap((invoice) => {
+    function exportRows(sourceInvoices) {
+        return sourceInvoices.flatMap((invoice) => {
             const items = invoice.items?.length ? invoice.items : [null];
 
             return items.map((item) => ({
                 invoice: invoice.invoice_no ?? "",
+				invoiceDate: excelDate(invoice.issued_date),
                 customer: invoice.customer?.name ?? "",
                 barrel: item?.barrel?.code ?? "",
                 rentalStart: excelDate(item?.rental_start),
@@ -128,6 +116,10 @@
         errorMessage = "";
 
         try {
+			const exportInvoices = await api.getRentalReport({
+				...reportParams(),
+				export: 1,
+			});
             const ExcelJS = (await import("exceljs")).default;
             const workbook = new ExcelJS.Workbook();
             const worksheet = workbook.addWorksheet("Rental Report", {
@@ -139,6 +131,7 @@
 
             worksheet.columns = [
                 { key: "invoice", width: 18 },
+				{ key: "invoiceDate", width: 18 },
                 { key: "customer", width: 26 },
                 { key: "barrel", width: 16 },
                 { key: "rentalStart", width: 18 },
@@ -146,7 +139,7 @@
                 { key: "status", width: 14 },
             ];
 
-            worksheet.mergeCells("A1:F1");
+            worksheet.mergeCells("A1:G1");
             worksheet.getCell("A1").value = "Rental Report";
             worksheet.getCell("A1").font = {
                 bold: true,
@@ -161,18 +154,22 @@
             worksheet.getCell("A1").alignment = { vertical: "middle" };
             worksheet.getRow(1).height = 32;
 
-            worksheet.mergeCells("A2:F2");
-            worksheet.getCell("A2").value = `Period: ${fromDate || "All dates"} to ${toDate || "All dates"}`;
+            worksheet.mergeCells("A2:G2");
+            worksheet.getCell("A2").value = `Invoice Date Period: ${fromDate || "All dates"} to ${toDate || "All dates"}`;
             worksheet.getCell("A2").font = { color: { argb: "FF475569" } };
 
-            worksheet.mergeCells("A3:F3");
+            worksheet.mergeCells("A3:G3");
+			const exportPaid = exportInvoices.filter((invoice) => invoice.status === "paid").length;
+			const exportUnpaid = exportInvoices.filter((invoice) => invoice.status === "unpaid").length;
+			const exportCustomers = new Set(exportInvoices.map((invoice) => invoice.customer_id).filter(Boolean)).size;
             worksheet.getCell("A3").value =
-                `Total Invoices: ${totalInvoices}   |   Paid: ${paidInvoices}   |   Unpaid: ${unpaidInvoices}   |   Customers: ${totalCustomers}`;
+                `Total Invoices: ${exportInvoices.length}   |   Paid: ${exportPaid}   |   Unpaid: ${exportUnpaid}   |   Customers: ${exportCustomers}`;
             worksheet.getCell("A3").font = { bold: true };
 
             const headerRow = worksheet.getRow(5);
             headerRow.values = [
                 "Invoice",
+				"Invoice Date",
                 "Customer",
                 "Barrel",
                 "Rental Start",
@@ -190,8 +187,9 @@
                 cell.alignment = { vertical: "middle" };
             });
 
-            for (const rowData of exportRows()) {
+            for (const rowData of exportRows(exportInvoices)) {
                 const row = worksheet.addRow(rowData);
+				row.getCell("invoiceDate").numFmt = "dd mmm yyyy";
                 row.getCell("rentalStart").numFmt = "dd mmm yyyy";
                 row.getCell("rentalEnd").numFmt = "dd mmm yyyy";
 
@@ -207,7 +205,7 @@
                 };
             }
 
-            worksheet.autoFilter = "A5:F5";
+            worksheet.autoFilter = "A5:G5";
 
             const buffer = await workbook.xlsx.writeBuffer();
             const blob = new Blob([buffer], {
@@ -245,7 +243,7 @@
                 return;
             }
 
-            await loadReports();
+            await loadReports(1);
         } catch (error) {
             console.error("Unable to verify user:", error);
 
@@ -266,7 +264,7 @@
             <h1>Rental Report</h1>
 
             <p class="subtitle">
-                Review rental activity within a selected date range.
+                Review rental activity by invoice date.
             </p>
         </div>
     </header>
@@ -275,7 +273,7 @@
     <section class="filter-card">
         <div class="filter-grid">
             <div class="field">
-                <label for="fromDate"> From Date </label>
+                <label for="fromDate"> From Invoice Date </label>
 
                 <input
                     id="fromDate"
@@ -286,7 +284,7 @@
             </div>
 
             <div class="field">
-                <label for="toDate"> To Date </label>
+                <label for="toDate"> To Invoice Date </label>
 
                 <input
                     id="toDate"
@@ -394,6 +392,8 @@
                             <tr>
                                 <th> Invoice </th>
 
+								<th> Invoice Date </th>
+
                                 <th> Customer </th>
 
                                 <th> Barrel </th>
@@ -414,6 +414,8 @@
                                             <td class="invoice-number">
                                                 {invoice.invoice_no}
                                             </td>
+
+											<td>{formatDate(invoice.issued_date)}</td>
 
                                             <td>
                                                 {invoice.customer?.name ?? "-"}
@@ -452,6 +454,8 @@
                                             {invoice.invoice_no}
                                         </td>
 
+									<td>{formatDate(invoice.issued_date)}</td>
+
                                         <td>
                                             {invoice.customer?.name ?? "-"}
                                         </td>
@@ -481,6 +485,16 @@
                         </tbody>
                     </table>
                 </div>
+
+				<div class="pagination">
+					<div class="pagination-info">
+						Page {currentPage} of {lastPage} · {totalInvoices} invoices
+					</div>
+					<div class="pagination-actions">
+						<button type="button" disabled={currentPage <= 1 || loading} onclick={() => loadReports(currentPage - 1)}>Previous</button>
+						<button type="button" disabled={currentPage >= lastPage || loading} onclick={() => loadReports(currentPage + 1)}>Next</button>
+					</div>
+				</div>
             {/if}
         </section>
     {/if}
@@ -758,7 +772,7 @@
             -webkit-overflow-scrolling: touch;
         }
         .table-card table {
-            min-width: 760px;
+            min-width: 900px;
         }
         .table-card th:first-child,
         .table-card td:first-child {

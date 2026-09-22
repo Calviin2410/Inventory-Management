@@ -39,8 +39,27 @@ class ReportController extends Controller
             );
         }
 
-        return response()->json(
-            $query->get()
-        );
+        if ($request->boolean('export')) {
+            return response()->json($query->get());
+        }
+
+        $summaryQuery = clone $query;
+        $summaryInvoices = $summaryQuery->get([
+            'id',
+            'customer_id',
+            'status',
+        ]);
+
+        $results = $query->paginate(20);
+
+        return response()->json(array_merge(
+            $results->toArray(),
+            ['summary' => [
+                'total_invoices' => $summaryInvoices->count(),
+                'paid_invoices' => $summaryInvoices->where('status', 'paid')->count(),
+                'unpaid_invoices' => $summaryInvoices->where('status', 'unpaid')->count(),
+                'total_customers' => $summaryInvoices->pluck('customer_id')->filter()->unique()->count(),
+            ]]
+        ));
     }
 }

@@ -120,11 +120,6 @@
 			</button>
 			<p class="secure-note">🔒 Your account is protected by secure authentication</p>
 
-			<p class="switch">
-				New here?
-
-				<a href="/register"> Create an account </a>
-			</p>
 		</form>
 	</main>
 </div>
@@ -315,24 +310,6 @@
 		opacity: 0.65;
 
 		cursor: not-allowed;
-	}
-
-	.switch {
-		margin-top: 18px;
-
-		text-align: center;
-
-		color: #7a8496;
-
-		font-size: 13px;
-	}
-
-	.switch a {
-		color: #315ee7;
-
-		font-weight: 750;
-
-		text-decoration: none;
 	}
 
 	.auth-error {

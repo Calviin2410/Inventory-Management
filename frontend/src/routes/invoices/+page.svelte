@@ -252,7 +252,7 @@
 
 							<th> Barrel Code </th>
 
-							<th> Date </th>
+							<th> Invoice Date </th>
 
 							<th class="status-column"> Status </th>
 

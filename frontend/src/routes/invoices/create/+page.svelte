@@ -3,6 +3,7 @@
 	import { onMount } from "svelte";
 	import { api } from "$lib/api.js";
 	import Nav from "$lib/Nav.svelte";
+	import ExistingCustomerDialog from "$lib/ExistingCustomerDialog.svelte";
 	import { guardUnsaved } from "$lib/unsaved.js";
 
 	let invoiceId = $state("");
@@ -26,6 +27,7 @@
 	let drivers = $state([]);
 	let vehicles = $state([]);
 	let formDirty = $state(false);
+	let matchedCustomer = $state(null);
 	guardUnsaved(() => formDirty);
 
 	async function loadFormData() {
@@ -66,6 +68,27 @@
 
 	async function findOrCreateCustomer() {
 		const name = customerName.trim();
+		const enteredPhone = phone.trim();
+
+		if (enteredPhone) {
+			const result = await api.getCustomers({
+				phone_exact: enteredPhone,
+			});
+			const existingCustomer = result?.data?.[0];
+
+			if (existingCustomer) {
+				if (
+					name &&
+					existingCustomer.name?.trim().toLowerCase() !==
+						name.toLowerCase()
+				) {
+					matchedCustomer = existingCustomer;
+					return null;
+				}
+
+				return existingCustomer;
+			}
+		}
 
 		if (name) {
 			const result = await api.getCustomers({
@@ -85,10 +108,42 @@
 			}
 		}
 
-		return api.createCustomer({
+		const customer = await api.createCustomer({
 			name: name || null,
-			phone: phone.trim() || null,
+			phone: enteredPhone || null,
 		});
+
+		if (
+			customer.already_exists &&
+			name &&
+			customer.name?.trim().toLowerCase() !== name.toLowerCase()
+		) {
+			matchedCustomer = customer;
+			return null;
+		}
+
+		return customer;
+	}
+
+	async function createInvoiceForCustomer(customer) {
+		await api.createInvoice({
+			customer_id: customer.id,
+			driver_id: Number(driverId),
+			vehicle_id: Number(vehicleId),
+			address: address.trim(),
+			notes: null,
+			items: [
+				{
+					barrel_id: Number(barrelId),
+					description: description.trim() || null,
+					rental_start: rentalStart,
+					rental_end: rentalEnd || null,
+				},
+			],
+		});
+
+		formDirty = false;
+		goto("/invoices");
 	}
 
 	async function handleSubmit() {
@@ -127,35 +182,33 @@
 
 		try {
 			const customer = await findOrCreateCustomer();
-			await api.createInvoice({
-				customer_id: customer.id,
 
-				driver_id: Number(driverId),
-				vehicle_id: Number(vehicleId),
+			if (!customer) return;
 
-				issued_date: rentalStart,
-
-				address: address.trim(),
-				notes: null,
-				items: [
-					{
-						barrel_id: Number(barrelId),
-						description: description.trim() || null,
-
-						rental_start: rentalStart,
-						rental_end: rentalEnd || null,
-					},
-				],
-			});
-
-			formDirty = false;
-			goto("/invoices");
+			await createInvoiceForCustomer(customer);
 		} catch (error) {
 			console.error("Create invoice failed:", error);
 			pageError =
 				error instanceof Error
 					? error.message
 					: "Failed to create invoice.";
+		} finally {
+			isSubmitting = false;
+		}
+	}
+
+	async function useMatchedCustomer() {
+		const customer = matchedCustomer;
+		if (!customer || isSubmitting) return;
+
+		matchedCustomer = null;
+		isSubmitting = true;
+		pageError = "";
+
+		try {
+			await createInvoiceForCustomer(customer);
+		} catch (error) {
+			pageError = error?.message || "Failed to create invoice.";
 		} finally {
 			isSubmitting = false;
 		}
@@ -208,6 +261,7 @@
 						type="text"
 						placeholder="e.g. Alex Tan"
 						bind:value={customerName}
+						maxlength="255"
 					/>
 				</label>
 
@@ -217,6 +271,7 @@
 						type="tel"
 						placeholder="e.g. 012-345 6789"
 						bind:value={phone}
+						maxlength="20"
 					/>
 				</label>
 
@@ -342,6 +397,15 @@
 		</div>
 	</form>
 </main>
+
+<ExistingCustomerDialog
+	open={matchedCustomer !== null}
+	existingName={matchedCustomer?.name ?? ""}
+	existingPhone={matchedCustomer?.phone ?? ""}
+	enteredName={customerName.trim()}
+	oncancel={() => (matchedCustomer = null)}
+	onconfirm={useMatchedCustomer}
+/>
 
 <style>
 	:global(body) {

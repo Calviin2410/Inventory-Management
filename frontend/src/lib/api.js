@@ -50,10 +50,19 @@ async function request(path, { method = 'GET', body, headers = {} } = {}) {
 export const api = {
 	// 认证
 	login: (email, password) => request('/login', { method: 'POST', body: { email, password } }),
-	register: (name, email, password) =>
-		request('/register', { method: 'POST', body: { name, email, password } }),
 	logout: () => request('/logout', { method: 'POST' }),
 	me: () => request('/me'),
+	getStaff: () => request('/staff'),
+	createStaff: (payload) => request('/staff', { method: 'POST', body: payload }),
+	resetStaffPassword: (id, payload) =>
+		request(`/staff/${id}/password`, {
+			method: 'PATCH',
+			body: payload,
+		}),
+	getActivityLogs: (params = {}) => {
+		const query = new URLSearchParams(params).toString();
+		return request(`/activity-logs${query ? `?${query}` : ''}`);
+	},
 
 	getDashboardSummary: () =>
 		request('/dashboard-summary'),
@@ -129,6 +138,11 @@ export const api = {
 			method: 'PATCH',
 			body: payload,
 	}),
+
+	deleteDriver: (id) =>
+		request(`/drivers/${id}`, {
+			method: 'DELETE',
+		}),
 
 	getVehicles: () => request('/vehicles'),
 	getVehicle: (id) => request(`/vehicles/${id}`),

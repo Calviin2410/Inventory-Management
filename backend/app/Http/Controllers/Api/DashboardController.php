@@ -39,7 +39,7 @@ class DashboardController extends Controller
             'recent_invoices' => Invoice::with('customer')
                 ->latest('issued_date')
                 ->latest('id')
-                ->limit(5)
+                ->limit(20)
                 ->get(),
         ]);
     }

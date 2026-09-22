@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
+use App\Models\ActivityLog;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 
 class CustomerController extends Controller
@@ -13,7 +15,12 @@ class CustomerController extends Controller
         $query = Customer::query()
             ->latest('id');
 
-        if ($search = $request->query('search')) {
+        if ($request->filled('phone_exact')) {
+            $query->where(
+                'phone_normalized',
+                Customer::normalizePhone($request->query('phone_exact'))
+            );
+        } elseif ($search = $request->query('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where(
                     'name',
@@ -40,7 +47,62 @@ class CustomerController extends Controller
             'phone' => ['nullable', 'string', 'max:20'],
         ]);
 
-        $customer = Customer::create($data);
+        $normalizedPhone = Customer::normalizePhone($data['phone'] ?? null);
+
+        if ($normalizedPhone !== null && strlen($normalizedPhone) < 7) {
+            return response()->json([
+                'message' => 'Please enter a valid phone number.',
+                'errors' => [
+                    'phone' => ['The phone number must contain at least 7 digits.'],
+                ],
+            ], 422);
+        }
+
+        if ($normalizedPhone !== null) {
+            $existingCustomer = Customer::where(
+                'phone_normalized',
+                $normalizedPhone
+            )->first();
+
+            if ($existingCustomer) {
+                $existingCustomer->setAttribute('already_exists', true);
+
+                return response()->json($existingCustomer);
+            }
+        }
+
+        try {
+            $customer = Customer::create([
+                'name' => $data['name'] ?? null,
+                'phone' => $data['phone'] ?? null,
+                'phone_normalized' => $normalizedPhone,
+            ]);
+        } catch (QueryException $error) {
+            if ($normalizedPhone === null) {
+                throw $error;
+            }
+
+            $customer = Customer::where(
+                'phone_normalized',
+                $normalizedPhone
+            )->firstOrFail();
+            $customer->setAttribute('already_exists', true);
+
+            return response()->json($customer);
+        }
+
+        $customer->setAttribute('already_exists', false);
+
+        ActivityLog::record(
+            $request,
+            'created',
+            'Customer',
+            $customer->id,
+            $customer->name ?: $customer->phone,
+            'Created customer '.($customer->name ?: 'Walk-in customer'),
+            null,
+            $customer->only(['name', 'phone'])
+        );
 
         return response()->json($customer, 201);
     }

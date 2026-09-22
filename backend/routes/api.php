@@ -10,10 +10,11 @@ use App\Http\Controllers\Api\DriverController;
 use App\Http\Controllers\Api\VehicleController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\StaffController;
+use App\Http\Controllers\Api\ActivityLogController;
 use Illuminate\Support\Facades\Route;
 
 // ---- 公开路由(不需要登录) ----
-Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
 // ---- 需要登录(Sanctum token)的路由 ----
@@ -22,6 +23,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
+
+    Route::get('/staff', [StaffController::class, 'index']);
+    Route::post('/staff', [StaffController::class, 'store']);
+    Route::patch('/staff/{staff}/password', [StaffController::class, 'resetPassword']);
+    Route::get('/activity-logs', [ActivityLogController::class, 'index']);
 
     Route::apiResource('products', ProductController::class);
 
@@ -36,7 +42,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/invoices-next-number',[InvoiceController::class, 'nextInvoiceNo']);
     Route::apiResource('invoices', InvoiceController::class)->only(['index', 'store', 'show', 'update']);
-    Route::apiResource('drivers',DriverController::class)->only(['index','store','show','update']);
+    Route::apiResource('drivers',DriverController::class)->only(['index','store','show','update','destroy']);
     Route::apiResource('vehicles',VehicleController::class)->only(['index','store','show','update']);
     Route::get('/vehicles/{vehicle}',[VehicleController::class, 'show']);
     Route::delete('/vehicles/{vehicle}',[VehicleController::class, 'destroy']);

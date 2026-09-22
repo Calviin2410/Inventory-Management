@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Driver;
+use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 
 class DriverController extends Controller
@@ -48,6 +49,17 @@ class DriverController extends Controller
 
         $driver = Driver::create($data);
 
+        ActivityLog::record(
+            $request,
+            'created',
+            'Driver',
+            $driver->id,
+            $driver->name,
+            'Created driver '.$driver->name,
+            null,
+            $driver->only(['name', 'phone', 'status'])
+        );
+
         return response()->json(
             $driver,
             201
@@ -85,8 +97,48 @@ class DriverController extends Controller
             ],
         ]);
 
+        $before = $driver->only(['name', 'phone', 'status']);
+
         $driver->update($data);
 
+        $after = $driver->fresh()->only(['name', 'phone', 'status']);
+
+        ActivityLog::record(
+            $request,
+            'updated',
+            'Driver',
+            $driver->id,
+            $driver->name,
+            'Updated driver '.$driver->name,
+            $before,
+            $after
+        );
+
         return response()->json($driver->fresh());
+    }
+
+    public function destroy(Request $request, Driver $driver)
+    {
+        $this->ensureAdmin($request);
+
+        $snapshot = $driver->only(['name', 'phone', 'status']);
+        $driverId = $driver->id;
+        $driverName = $driver->name;
+
+        $driver->delete();
+
+        ActivityLog::record(
+            $request,
+            'deleted',
+            'Driver',
+            $driverId,
+            $driverName,
+            'Deleted driver '.$driverName,
+            $snapshot
+        );
+
+        return response()->json([
+            'message' => 'Driver deleted successfully.',
+        ]);
     }
 }

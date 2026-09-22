@@ -145,7 +145,7 @@
 
 								<th> Customer </th>
 
-								<th> Date </th>
+								<th> Invoice Date </th>
 
 								<th> Status </th>
 							</tr>

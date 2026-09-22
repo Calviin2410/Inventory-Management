@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Barrel;
 use App\Models\Invoice;
+use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
@@ -124,7 +125,46 @@ class InvoiceController extends Controller
             ],
         ]);
 
+        $trackedFields = [
+            'customer_id',
+            'issued_date',
+            'address',
+            'notes',
+            'status',
+        ];
+        $before = $invoice->only($trackedFields);
+
         $invoice->update($data);
+
+        $after = $invoice->fresh()->only($trackedFields);
+        $changedBefore = [];
+        $changedAfter = [];
+
+        foreach ($trackedFields as $field) {
+            if (($before[$field] ?? null) !== ($after[$field] ?? null)) {
+                $changedBefore[$field] = $before[$field] ?? null;
+                $changedAfter[$field] = $after[$field] ?? null;
+            }
+        }
+
+        if ($changedAfter !== []) {
+            $description = array_key_exists('status', $changedAfter)
+                ? 'Changed invoice '.$invoice->invoice_no.' status from '
+                    .($changedBefore['status'] ?? 'unknown').' to '
+                    .$changedAfter['status']
+                : 'Updated invoice '.$invoice->invoice_no;
+
+            ActivityLog::record(
+                $request,
+                'updated',
+                'Invoice',
+                $invoice->id,
+                $invoice->invoice_no,
+                $description,
+                $changedBefore,
+                $changedAfter
+            );
+        }
 
         return response()->json(
             $invoice->load([
@@ -167,11 +207,6 @@ class InvoiceController extends Controller
                     fn ($query) =>
                         $query->where('status', 'available')
                 ),
-            ],
-
-            'issued_date' => [
-                'required',
-                'date'
             ],
 
             'address' => [
@@ -278,8 +313,10 @@ class InvoiceController extends Controller
                     'user_id' =>
                         $request->user()?->id,
 
+                    // The invoice date is the date the document is created,
+                    // independent from the rental start date.
                     'issued_date' =>
-                        $data['issued_date'],
+                        now('Asia/Kuala_Lumpur')->toDateString(),
 
                     'address' => $data['address'],
                     
@@ -320,6 +357,24 @@ class InvoiceController extends Controller
 
                 return $invoice;
             }
+        );
+
+        ActivityLog::record(
+            $request,
+            'created',
+            'Invoice',
+            $invoice->id,
+            $invoice->invoice_no,
+            'Created invoice '.$invoice->invoice_no,
+            null,
+            $invoice->only([
+                'invoice_no',
+                'customer_id',
+                'driver_id',
+                'vehicle_id',
+                'issued_date',
+                'status',
+            ])
         );
 
 

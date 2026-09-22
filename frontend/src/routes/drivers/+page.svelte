@@ -5,6 +5,8 @@
 	import { api } from "$lib/api.js";
 	import { user } from "$lib/stores/auth.js";
 	import Nav from "$lib/Nav.svelte";
+	import ConfirmDialog from "$lib/ConfirmDialog.svelte";
+	import Toast from "$lib/Toast.svelte";
 	import SkeletonTable from "$lib/SkeletonTable.svelte";
 
 	let drivers = $state([]);
@@ -17,6 +19,10 @@
 
 	let openMenuId = $state(null);
 	let updatingStatusId = $state(null);
+	let selectedDriver = $state(null);
+	let deletingDriverId = $state(null);
+	let deleteError = $state("");
+	let successMessage = $state("");
 
 	let showAddForm = $state(false);
 
@@ -100,6 +106,45 @@
 				error?.message || "Unable to update driver status.";
 		} finally {
 			updatingStatusId = null;
+		}
+	}
+
+	function requestDriverDeletion(driver) {
+		selectedDriver = driver;
+		deleteError = "";
+	}
+
+	function closeDeleteDialog() {
+		if (deletingDriverId === null) {
+			selectedDriver = null;
+			deleteError = "";
+		}
+	}
+
+	async function deleteDriver() {
+		const driver = selectedDriver;
+
+		if (!driver || deletingDriverId !== null) {
+			return;
+		}
+
+		deletingDriverId = driver.id;
+		deleteError = "";
+
+		try {
+			await api.deleteDriver(driver.id);
+
+			drivers = drivers.filter((item) => item.id !== driver.id);
+			selectedDriver = null;
+			successMessage = `Driver ${driver.name} deleted successfully.`;
+
+			setTimeout(() => {
+				successMessage = "";
+			}, 3500);
+		} catch (error) {
+			deleteError = error?.message || "Unable to delete driver.";
+		} finally {
+			deletingDriverId = null;
 		}
 	}
 
@@ -288,6 +333,14 @@
 													Set Available
 												{/if}
 											</button>
+
+											<button
+												type="button"
+												class="dropdown-item delete-item"
+												onclick={() => requestDriverDeletion(driver)}
+											>
+												Delete Driver
+											</button>
 										</div>
 									{/if}
 								</div>
@@ -299,6 +352,20 @@
 		{/if}
 	</section>
 </main>
+
+<ConfirmDialog
+	open={selectedDriver !== null}
+	title="Delete this driver?"
+	message="Please confirm that you want to remove this driver. Existing invoices will be kept, but will no longer be linked to this driver."
+	itemName={selectedDriver?.name ?? ""}
+	confirmLabel="Delete driver"
+	busy={deletingDriverId !== null}
+	errorMessage={deleteError}
+	oncancel={closeDeleteDialog}
+	onconfirm={deleteDriver}
+/>
+
+<Toast message={successMessage} onclose={() => (successMessage = "")} />
 
 <style>
 	.add-panel {
@@ -453,6 +520,14 @@
 
 	.dropdown-item:hover {
 		background: #f3f4f6;
+	}
+
+	.dropdown-item.delete-item {
+		color: #c62828;
+	}
+
+	.dropdown-item.delete-item:hover {
+		background: #fff1f1;
 	}
 
 	.status-badge {

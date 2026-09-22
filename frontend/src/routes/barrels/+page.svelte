@@ -23,6 +23,7 @@
 	let deletingBarrel = $state(false);
 	let deleteError = $state("");
 	let successMessage = $state("");
+	let updatingBarrelId = $state(null);
 
 	let isAdmin = $derived($user?.role === "admin");
 
@@ -72,6 +73,9 @@
 	// Update Status
 	// =========================
 	async function handleStatusUpdate(barrel, newStatus) {
+		if (updatingBarrelId === barrel.id) return;
+		updatingBarrelId = barrel.id;
+
 		try {
 			/*
 				之后如果 backend 已经有 update API，
@@ -91,6 +95,8 @@
 			openMenuId = null;
 		} catch (error) {
 			errorMessage = error?.message || "Unable to update barrel status";
+		} finally {
+			updatingBarrelId = null;
 		}
 	}
 
@@ -357,6 +363,7 @@
 										<div class="action-menu">
 											<button
 												type="button"
+												disabled={updatingBarrelId === barrel.id}
 												class="more-button"
 												onclick={() => {
 													openMenuId =
@@ -369,9 +376,10 @@
 											</button>
 
 											{#if openMenuId === barrel.id}
-												<div class="dropdown-menu">
-													<button
-														type="button"
+								<div class="dropdown-menu">
+									<button
+										type="button"
+										disabled={updatingBarrelId === barrel.id}
 														onclick={() =>
 															handleStatusUpdate(
 																barrel,
@@ -381,8 +389,9 @@
 														Set Available
 													</button>
 
-													<button
-														type="button"
+									<button
+										type="button"
+										disabled={updatingBarrelId === barrel.id}
 														onclick={() =>
 															handleStatusUpdate(
 																barrel,
@@ -392,8 +401,9 @@
 														Set Rented
 													</button>
 
-													<button
-														type="button"
+									<button
+										type="button"
+										disabled={updatingBarrelId === barrel.id}
 														onclick={() =>
 															handleStatusUpdate(
 																barrel,
