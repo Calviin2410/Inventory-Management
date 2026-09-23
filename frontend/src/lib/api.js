@@ -1,6 +1,8 @@
-// 简单的 fetch 封装,自动带上 Authorization header
-// 后端地址按需修改,建议放进 .env 里用 import.meta.env.VITE_API_BASE_URL
-const API_BASE_URL = 'http://localhost:8000/api';
+// Railway injects the public backend URL at build time. Keep localhost as
+// the development fallback so the same code works on both environments.
+const API_BASE_URL = (
+	import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
+).replace(/\/$/, '');
 
 function getToken() {
 	if (typeof localStorage === 'undefined') return null;
