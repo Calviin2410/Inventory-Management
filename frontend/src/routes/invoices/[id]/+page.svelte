@@ -12,6 +12,15 @@
 	let loading = $state(true);
 	let errorMessage = $state("");
 	let exporting = $state(false);
+	const terms = [
+		"Each order is valid for one delivery address only. Additional delivery addresses will be subject to extra charges.",
+		"Bin rental/service period is limited to 14 days per order. Additional charges will apply for any period exceeding 14 days.",
+		"Additional charges may apply for overloading, prohibited/undeclared waste, waiting time, or additional disposal.",
+		"Overloaded or unsafe bins may be refused for collection until the issue is rectified.",
+		"Any invoice dispute must be raised within 7 days from the invoice date.",
+		"Delivery and collection are subject to site accessibility, traffic, vehicle availability and disposal facility conditions.",
+		"By accepting the service, the customer agrees to these Terms & Conditions.",
+	];
 
 	async function loadInvoice() {
 		loading = true;
@@ -125,6 +134,10 @@
 		</div>
 	{:else if invoice}
 		<section class="invoice-card">
+			<div class="company-header">
+				<img src="/images/tks-logo.png" alt="TKS Waste Management" />
+			</div>
+
 			<!-- =========================
 			     INVOICE DETAILS
 			========================= -->
@@ -175,6 +188,20 @@
 						{formatDate(invoice.issued_date)}
 					</p>
 				</div>
+
+				{#if invoice.status === "paid"}
+					<div class="detail-item">
+						<span class="label"> Paid By </span>
+						<p class="strong">
+							{invoice.payment_method === "bank_in" ? "Bank In" : "Cash"}
+						</p>
+					</div>
+
+					<div class="detail-item">
+						<span class="label"> Payment Date </span>
+						<p>{formatDate(invoice.payment_date)}</p>
+					</div>
+				{/if}
 			</div>
 
 			<!-- =========================
@@ -240,6 +267,15 @@
 					</table>
 				</div>
 			</div>
+
+			<div class="section terms-section">
+				<h2>Terms &amp; Conditions</h2>
+				<ol>
+					{#each terms as term}
+						<li>{term}</li>
+					{/each}
+				</ol>
+			</div>
 		</section>
 	{/if}
 </main>
@@ -266,6 +302,18 @@
 		border-radius: 10px;
 
 		background: white;
+	}
+
+	.company-header {
+		margin: -8px -8px 24px;
+		padding-bottom: 20px;
+		border-bottom: 1px solid #e5e7eb;
+	}
+
+	.company-header img {
+		display: block;
+		width: min(100%, 760px);
+		height: auto;
 	}
 
 	/* DETAILS */
@@ -349,6 +397,18 @@
 
 		font-size: 18px;
 		font-weight: 700;
+	}
+
+	.terms-section ol {
+		margin: 0;
+		padding-left: 22px;
+		color: #334155;
+		font-size: 13px;
+		line-height: 1.55;
+	}
+
+	.terms-section li + li {
+		margin-top: 8px;
 	}
 
 	/* TABLE */

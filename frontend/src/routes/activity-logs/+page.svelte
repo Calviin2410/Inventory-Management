@@ -6,6 +6,7 @@
 	import { user } from "$lib/stores/auth.js";
 	import Nav from "$lib/Nav.svelte";
 	import SkeletonTable from "$lib/SkeletonTable.svelte";
+	import { formatDate } from "$lib/format.js";
 
 	let logs = $state([]);
 	let loading = $state(true);
@@ -43,9 +44,24 @@
 		return Object.entries(values)
 			.map(
 				([key, value]) =>
-					`${key.replaceAll("_", " ")}: ${value ?? "—"}`,
+					`${key.replaceAll("_", " ")}: ${formatChangeValue(key, value)}`,
 			)
 			.join("\n");
+	}
+
+	function formatChangeValue(key, value) {
+		if (value === null || value === undefined || value === "") return "—";
+
+		if (["issued_date", "payment_date"].includes(key)) {
+			const dateOnly = String(value).match(/^\d{4}-\d{2}-\d{2}/)?.[0];
+			return formatDate(dateOnly || value);
+		}
+
+		if (key === "payment_method") {
+			return value === "bank_in" ? "Bank In" : "Cash";
+		}
+
+		return String(value);
 	}
 
 	function formatRecordLabel(log) {

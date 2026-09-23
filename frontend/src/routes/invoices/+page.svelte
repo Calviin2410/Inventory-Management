@@ -18,6 +18,11 @@
 
 	let openMenuId = $state(null);
 	let exportingId = $state(null);
+	let paymentInvoice = $state(null);
+	let paymentMethod = $state("cash");
+	let paymentDate = $state("");
+	let paymentSaving = $state(false);
+	let paymentError = $state("");
 
 	let currentPage = $state(1);
 	let lastPage = $state(1);
@@ -99,6 +104,43 @@
 				error instanceof Error
 					? error.message
 					: "Unable to update invoice status";
+		}
+	}
+
+	function openPaymentDialog(invoice) {
+		const now = new Date();
+		paymentInvoice = invoice;
+		paymentMethod = "cash";
+		paymentDate = new Date(now.getTime() - now.getTimezoneOffset() * 60_000)
+			.toISOString()
+			.slice(0, 10);
+		paymentError = "";
+		openMenuId = null;
+	}
+
+	function closePaymentDialog() {
+		if (!paymentSaving) paymentInvoice = null;
+	}
+
+	async function markInvoicePaid() {
+		if (!paymentInvoice || !paymentMethod || !paymentDate) return;
+		paymentSaving = true;
+		paymentError = "";
+
+		try {
+			const updated = await api.updateInvoice(paymentInvoice.id, {
+				status: "paid",
+				payment_method: paymentMethod,
+				payment_date: paymentDate,
+			});
+			invoices = invoices.map((item) =>
+				item.id === paymentInvoice.id ? updated : item,
+			);
+			paymentInvoice = null;
+		} catch (error) {
+			paymentError = error?.message || "Unable to record payment";
+		} finally {
+			paymentSaving = false;
 		}
 	}
 
@@ -334,11 +376,7 @@
 													type="button"
 													disabled={invoice.status ===
 														"paid"}
-													onclick={() =>
-														updateInvoiceStatus(
-															invoice,
-															"paid",
-														)}
+												onclick={() => openPaymentDialog(invoice)}
 												>
 													Set Paid
 												</button>
@@ -413,6 +451,35 @@
 			</div>
 		{/if}
 	</section>
+
+	{#if paymentInvoice}
+		<div class="dialog-layer" role="presentation" onclick={(event) => event.currentTarget === event.target && closePaymentDialog()}>
+			<form class="payment-dialog" onsubmit={(event) => { event.preventDefault(); markInvoicePaid(); }}>
+				<h2>Record Payment</h2>
+				<p>Mark {paymentInvoice.invoice_no} as paid.</p>
+
+				{#if paymentError}<div class="dialog-error" role="alert">{paymentError}</div>{/if}
+
+				<label>Payment Method
+					<select bind:value={paymentMethod} required>
+						<option value="cash">Cash</option>
+						<option value="bank_in">Bank In</option>
+					</select>
+				</label>
+
+				<label>Payment Date
+					<input type="date" bind:value={paymentDate} required />
+				</label>
+
+				<div class="dialog-actions">
+					<button type="button" class="btn" onclick={closePaymentDialog} disabled={paymentSaving}>Cancel</button>
+					<button type="submit" class="btn btn-primary" disabled={paymentSaving}>
+						{paymentSaving ? "Saving..." : "Confirm Paid"}
+					</button>
+				</div>
+			</form>
+		</div>
+	{/if}
 </main>
 
 <style>
@@ -708,6 +775,32 @@
 	.empty-state a:hover {
 		text-decoration: underline;
 	}
+
+	.dialog-layer {
+		position: fixed;
+		inset: 0;
+		z-index: 100;
+		display: grid;
+		place-items: center;
+		padding: 20px;
+		background: rgb(15 23 42 / 45%);
+	}
+
+	.payment-dialog {
+		width: min(100%, 430px);
+		padding: 24px;
+		border-radius: 12px;
+		background: white;
+		box-shadow: 0 24px 70px rgb(15 23 42 / 24%);
+	}
+
+	.payment-dialog h2 { margin: 0 0 6px; }
+	.payment-dialog > p { margin: 0 0 20px; color: #64748b; }
+	.payment-dialog label { display: grid; gap: 7px; margin-top: 16px; font-size: 14px; font-weight: 600; }
+	.payment-dialog select,
+	.payment-dialog input { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: white; font: inherit; }
+	.dialog-error { margin-bottom: 12px; padding: 10px 12px; border-radius: 8px; background: #fef2f2; color: #b42318; }
+	.dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
 
 	/* =========================
 	   RESPONSIVE

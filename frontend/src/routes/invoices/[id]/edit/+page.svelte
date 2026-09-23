@@ -23,6 +23,8 @@
 	let address = $state("");
 	let notes = $state("");
 	let status = $state("unpaid");
+	let paymentMethod = $state("cash");
+	let paymentDate = $state("");
 	let formDirty = $state(false);
 	guardUnsaved(() => formDirty);
 
@@ -51,6 +53,8 @@
 			notes = invoice.notes ?? "";
 
 			status = invoice.status ?? "unpaid";
+			paymentMethod = invoice.payment_method ?? "cash";
+			paymentDate = invoice.payment_date ?? "";
 		} catch (error) {
 			console.error("Unable to load invoice:", error);
 
@@ -91,6 +95,8 @@
 				notes: notes.trim() || null,
 
 				status,
+				payment_method: status === "paid" ? paymentMethod : null,
+				payment_date: status === "paid" ? paymentDate : null,
 			};
 
 			const updatedInvoice = await api.updateInvoice(id, payload);
@@ -208,6 +214,21 @@
 						<option value="paid"> Paid </option>
 					</select>
 				</div>
+
+				{#if status === "paid"}
+					<div class="field">
+						<label for="payment-method"> Payment Method </label>
+						<select id="payment-method" bind:value={paymentMethod} required>
+							<option value="cash"> Cash </option>
+							<option value="bank_in"> Bank In </option>
+						</select>
+					</div>
+
+					<div class="field">
+						<label for="payment-date"> Payment Date </label>
+						<input id="payment-date" type="date" bind:value={paymentDate} required />
+					</div>
+				{/if}
 
 				<!-- ADDRESS -->
 

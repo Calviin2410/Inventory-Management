@@ -92,20 +92,12 @@
 			{/if}
 		{/each}
 	</nav>
-	<div class="topbar-meta">
-		<span class="today">Inventory operations</span>
-		<span class="top-avatar">{initials}</span>
-	</div>
 </header>
 
 <aside class="sidebar" class:open={menuOpen}>
 	<div class="brand-row">
 		<a class="brand" href="/dashboard" onclick={() => (menuOpen = false)}>
-			<span class="brand-mark">IM</span>
-			<span
-				><strong>Inventory</strong><small>Management System</small
-				></span
-			>
+			<img class="brand-logo" src="/images/tks-brand-logo.png" alt="TKS Waste Management" />
 		</a>
 		<button
 			class="mobile-close"
@@ -173,39 +165,16 @@
 		padding: 0 7px;
 	}
 	.brand {
-		display: flex;
-		align-items: center;
-		gap: 11px;
+		display: block;
 		color: #172033;
 		text-decoration: none;
 	}
-	.brand-mark {
-		display: grid;
-		width: 38px;
-		height: 38px;
-		place-items: center;
-		border-radius: 10px;
-		background: linear-gradient(145deg, #1f4fd0, #173ba4);
-		color: white;
-		font-size: 12px;
-		font-weight: 800;
-		box-shadow: 0 7px 16px rgb(31 79 208 / 22%);
-	}
-	.brand strong,
-	.brand small {
+	.brand-logo {
 		display: block;
-	}
-	.brand strong {
-		font-size: 14px;
-		letter-spacing: -0.01em;
-	}
-	.brand small {
-		margin-top: 2px;
-		color: #8993a4;
-		font-size: 9px;
-		font-weight: 700;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
+		width: 196px;
+		height: 72px;
+		object-fit: contain;
+		object-position: left center;
 	}
 	.nav-links {
 		display: flex;
@@ -364,27 +333,6 @@
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
-	.topbar-meta {
-		display: flex;
-		align-items: center;
-		gap: 14px;
-	}
-	.today {
-		color: #8a95a6;
-		font-size: 10px;
-		font-weight: 600;
-	}
-	.top-avatar {
-		display: grid;
-		width: 29px;
-		height: 29px;
-		place-items: center;
-		border-radius: 50%;
-		background: #e7edff;
-		color: #2851b3;
-		font-size: 9px;
-		font-weight: 800;
-	}
 	@media (max-width: 820px) {
 		.sidebar {
 			transform: translateX(-105%);
@@ -436,14 +384,8 @@
 			height: 70px;
 			padding: 0 16px 0 68px;
 		}
-		.today {
-			display: none;
-		}
 	}
 	@media (max-width: 480px) {
-		.topbar-meta {
-			display: none;
-		}
 		.breadcrumbs {
 			gap: 6px;
 			font-size: 10px;

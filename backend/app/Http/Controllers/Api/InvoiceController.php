@@ -55,13 +55,6 @@ class InvoiceController extends Controller
     // GET /api/invoices/{invoice}
     public function show(Invoice $invoice)
     {
-
-        abort_unless(
-            request()->user()?->isAdmin(),
-            403,
-            'Only administrators can manage invoices.'
-        );
-
         return response()->json(
             $invoice->load([
                 'customer',
@@ -74,12 +67,6 @@ class InvoiceController extends Controller
 
     public function update(Request $request, Invoice $invoice)
     {
-
-        abort_unless(
-            request()->user()?->isAdmin(),
-            403,
-            'Only administrators can manage invoices.'
-        );
         $managementFields = [
             'customer_id',
             'issued_date',
@@ -94,6 +81,23 @@ class InvoiceController extends Controller
                 'Only administrators can edit invoice details.'
             );
         }
+
+        $staffAllowedFields = [
+            'status',
+            'payment_method',
+            'payment_date',
+        ];
+
+        if (! $request->user()?->isAdmin()) {
+            abort_if(
+                collect($request->all())->keys()->diff($staffAllowedFields)->isNotEmpty(),
+                403,
+                'Staff can only update invoice payment details.'
+            );
+        }
+
+        $isBeingMarkedPaid = $request->input('status') === 'paid'
+            && $invoice->status !== 'paid';
 
         $data = $request->validate([
             'customer_id' => [
@@ -123,7 +127,22 @@ class InvoiceController extends Controller
                 'required',
                 'in:unpaid,paid,cancelled'
             ],
+
+            'payment_method' => [
+                $isBeingMarkedPaid ? 'required' : 'nullable',
+                'in:cash,bank_in',
+            ],
+
+            'payment_date' => [
+                $isBeingMarkedPaid ? 'required' : 'nullable',
+                'date',
+            ],
         ]);
+
+        if (($data['status'] ?? null) === 'unpaid') {
+            $data['payment_method'] = null;
+            $data['payment_date'] = null;
+        }
 
         $trackedFields = [
             'customer_id',
@@ -131,6 +150,8 @@ class InvoiceController extends Controller
             'address',
             'notes',
             'status',
+            'payment_method',
+            'payment_date',
         ];
         $before = $invoice->only($trackedFields);
 

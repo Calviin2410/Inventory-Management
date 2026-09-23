@@ -42,33 +42,13 @@
 
 <div class="auth-page">
 	<aside>
-		<div class="auth-brand">
-			<span>IM</span>
-
-			Inventory Manager
-		</div>
-
-		<div>
-			<p>SMARTER OPERATIONS</p>
-
-			<h1>
-				Everything in stock.
-				<br />
-				Everything in sight.
-			</h1>
-
-			<h2>
-				Manage products, rentals and invoices from one focused
-				workspace.
-			</h2>
-			<div class="feature-list">
-				<span><i>✓</i> Real-time inventory visibility</span>
-				<span><i>✓</i> Centralised invoice management</span>
-				<span><i>✓</i> Secure role-based access</span>
+		<div class="brand-stage">
+			<div class="auth-brand">
+				<img src="/images/tks-brand-logo.png" alt="TKS Waste Management" />
 			</div>
 		</div>
 
-		<small> Inventory Manager · Built for everyday teams </small>
+		<small> TKS Waste Management · Operations System </small>
 	</aside>
 
 	<main>
@@ -135,9 +115,8 @@
 	aside {
 		display: flex;
 		flex-direction: column;
-		justify-content: space-between;
 
-		padding: 48px 9vw 48px 5vw;
+		padding: 48px 5vw;
 
 		position: relative;
 		overflow: hidden;
@@ -146,68 +125,29 @@
 		color: #fff;
 	}
 
-	.auth-brand {
-		display: flex;
-		align-items: center;
-		gap: 10px;
-
-		font-weight: 750;
-	}
-
-	.auth-brand span {
+	.brand-stage {
 		display: grid;
-
-		width: 36px;
-		height: 36px;
-
+		flex: 1;
 		place-items: center;
+	}
 
-		border-radius: 10px;
-
+	.auth-brand {
+		width: min(430px, 88%);
+		padding: 14px 18px;
+		border-radius: 16px;
 		background: #fff;
-		color: #315ee7;
-
-		font-size: 12px;
+		box-shadow: 0 18px 45px rgb(5 18 55 / 16%);
 	}
 
-	aside p {
-		font-size: 11px;
-		font-weight: 800;
-
-		letter-spacing: 0.15em;
-
-		opacity: 0.7;
-	}
-
-	aside h1 {
-		margin: 16px 0;
-
-		font-size: clamp(36px, 4vw, 58px);
-
-		line-height: 1.08;
-
-		letter-spacing: -0.045em;
-	}
-
-	aside h2 {
-		max-width: 520px;
-
-		margin: 0;
-
-		color: #cbd6ff;
-
-		font-size: 16px;
-		font-weight: 400;
-
-		line-height: 1.6;
+	.auth-brand img {
+		display: block;
+		width: 100%;
+		height: auto;
 	}
 
 	aside small {
 		color: #aabaf3;
 	}
-	.feature-list { display: grid; gap: 13px; margin-top: 34px; color: #dce5ff; font-size: 12px; }
-	.feature-list span { display: flex; align-items: center; gap: 9px; }
-	.feature-list i { display: grid; width: 21px; height: 21px; place-items: center; border-radius: 50%; background: rgb(255 255 255 / 13%); color: white; font-style: normal; font-size: 10px; }
 
 	main {
 		display: grid;

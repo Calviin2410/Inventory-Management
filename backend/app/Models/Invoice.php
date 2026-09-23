@@ -20,9 +20,19 @@ class Invoice extends Model
         'issued_date',
         'address',
         'status',
+        'payment_method',
+        'payment_date',
         'total_amount',
         'notes',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'issued_date' => 'date:Y-m-d',
+            'payment_date' => 'date:Y-m-d',
+        ];
+    }
 
     public function customer(): BelongsTo
     {
