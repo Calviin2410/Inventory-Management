@@ -1110,6 +1110,26 @@
 		overflow: visible;
 	}
 
+	.state {
+		padding: 28px;
+		color: #64748b;
+		font-size: 14px;
+		text-align: center;
+	}
+
+	.state h3 {
+		margin: 0 0 6px;
+		color: #111827;
+	}
+
+	.state p {
+		margin: 0;
+	}
+
+	.state.error {
+		color: #dc2626;
+	}
+
 	/* =========================
 	   RESPONSIVE
 	========================= */

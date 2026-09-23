@@ -169,21 +169,12 @@
             <div class="state error">
                 {errorMessage}
             </div>
-        {:else if filteredVehicles.length === 0}
-            <div class="empty-state">
-                <div class="empty-icon">🚚</div>
+		{:else if filteredVehicles.length === 0}
+			<div class="empty-state">
+				<h3>No vehicles found</h3>
 
-                <h3>No vehicles found</h3>
-
-                <p>Add a vehicle to start managing your delivery fleet.</p>
-
-                <button
-                    class="btn btn-primary"
-                    onclick={() => goto("/vehicles/create")}
-                >
-                    + Add vehicle
-                </button>
-            </div>
+				<p>Click Add Vehicle to create your first vehicle.</p>
+			</div>
         {:else}
             <div class="table-card">
                 <table class="data-table">
@@ -359,33 +350,22 @@
         color: #dc2626;
     }
 
-    .empty-state {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding: 60px 24px;
-        border: 1px dashed #d1d5db;
-        border-radius: 10px;
-        background: white;
-        text-align: center;
-    }
-
-    .empty-icon {
-        margin-bottom: 14px;
-        font-size: 34px;
-    }
+	.empty-state {
+		padding: 28px;
+		color: #64748b;
+		font-size: 14px;
+		text-align: center;
+	}
 
     .empty-state h3 {
         margin: 0 0 7px;
         color: #111827;
-        font-size: 18px;
-    }
+	}
 
     .empty-state p {
-        margin: 0 0 22px;
-        color: #64748b;
-        font-size: 14px;
-    }
+		margin: 0;
+		color: #64748b;
+	}
     .action-menu {
         position: relative;
         display: inline-block;

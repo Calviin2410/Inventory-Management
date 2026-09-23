@@ -264,11 +264,12 @@
 	========================= */
 
 	.state {
-		padding: 24px;
+		padding: 28px;
 
 		color: #64748b;
 
 		font-size: 14px;
+		text-align: center;
 	}
 
 	.state h3 {

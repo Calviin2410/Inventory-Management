@@ -5,4 +5,11 @@
 </script>
 
 <Nav /><main class="app-page"><header class="page-heading"><div><p class="eyebrow">INVENTORY</p><h1>Products</h1><p>Browse products, prices and current stock levels.</p></div><a class="btn btn-primary" href="/products/create">+ Add product</a></header><form class="toolbar" onsubmit={(event)=>{event.preventDefault();loadProducts();}}><input class="control search" placeholder="Search name, SKU or barcode…" bind:value={search}/>{#if search}<button type="button" class="search-clear" aria-label="Clear search" onclick={() => { search = ''; loadProducts(); }}>×</button>{/if}<button class="btn" type="submit">Search</button><span class="result-count">{products.length} {products.length === 1 ? 'result' : 'results'}</span></form><section class="panel">{#if loading}<SkeletonTable rows={5} columns={6} />{:else if errorMessage}<div class="state error">{errorMessage}</div>{:else if products.length === 0}<div class="state"><h3>No products found</h3><p>Add your first product to begin tracking inventory.</p></div>{:else}<table class="data-table"><thead><tr><th>Product</th><th>SKU</th><th>Category</th><th>Stock</th><th>Cost</th><th>Selling price</th></tr></thead><tbody>{#each products as product (product.id)}<tr><td class="strong">{product.name}</td><td>{product.sku}</td><td>{product.category?.name || 'Uncategorised'}</td><td><span class="stock" class:low={product.is_low_stock}>{product.quantity}{product.is_low_stock ? ' · Low' : ''}</span></td><td>{formatCurrency(product.cost_price)}</td><td>{formatCurrency(product.sell_price)}</td></tr>{/each}</tbody></table>{/if}</section></main>
-<style>.stock{font-weight:700;color:#087a55}.stock.low{color:#b42318}</style>
+<style>
+	.stock { font-weight: 700; color: #087a55; }
+	.stock.low { color: #b42318; }
+	.state { padding: 28px; color: #64748b; font-size: 14px; text-align: center; }
+	.state h3 { margin: 0 0 6px; color: #111827; }
+	.state p { margin: 0; }
+	.state.error { color: #dc2626; }
+</style>

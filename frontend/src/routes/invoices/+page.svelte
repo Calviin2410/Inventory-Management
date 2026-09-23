@@ -276,11 +276,11 @@
 		{:else if invoices.length === 0}
 			<div class="empty-state">
 				{#if search.trim() || statusFilter}
-					<p>No matching invoices found.</p>
+					<h3>No matching invoices found</h3>
+					<p>Try another invoice number or status.</p>
 				{:else}
-					<p>No invoices found.</p>
-
-					<a href="/invoices/create"> Create your first invoice </a>
+					<h3>No invoices yet</h3>
+					<p>Click Add Invoice to create your first invoice.</p>
 				{/if}
 			</div>
 		{:else}
@@ -750,30 +750,19 @@
 	}
 
 	.empty-state {
-		padding: 30px;
-
-		border: 1px solid #e5e7eb;
-		border-radius: 8px;
-
-		background: white;
-
+		padding: 28px;
 		color: #64748b;
+		font-size: 14px;
+		text-align: center;
+	}
+
+	.empty-state h3 {
+		margin: 0 0 6px;
+		color: #111827;
 	}
 
 	.empty-state p {
-		margin: 0 0 10px;
-	}
-
-	.empty-state a {
-		color: #2563eb;
-
-		font-weight: 500;
-
-		text-decoration: none;
-	}
-
-	.empty-state a:hover {
-		text-decoration: underline;
+		margin: 0;
 	}
 
 	.dialog-layer {
