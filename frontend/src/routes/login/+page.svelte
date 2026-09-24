@@ -1,32 +1,45 @@
 <script>
+	import { onMount } from "svelte";
 	import { goto } from "$app/navigation";
-	import { api, setToken } from "$lib/api.js";
+	import { api, getToken, setToken } from "$lib/api.js";
 	import { user } from "$lib/stores/auth.js";
 
 	let email = $state("");
 	let password = $state("");
+	let remember = $state(false);
 
 	let errorMessage = $state("");
 	let loading = $state(false);
+
+	onMount(async () => {
+		if (!getToken()) return;
+
+		loading = true;
+		try {
+			const currentUser = await api.me();
+			user.set(currentUser);
+			await goto("/dashboard");
+		} catch {
+			setToken(null);
+		} finally {
+			loading = false;
+		}
+	});
 
 	async function handleLogin() {
 		errorMessage = "";
 		loading = true;
 
 		try {
-			const data = await api.login(email, password);
-
-			console.log("Login response:", data);
+			const data = await api.login(email, password, remember);
 
 			if (!data?.token) {
 				throw new Error("Login succeeded but token was not returned.");
 			}
 
-			setToken(data.token);
+			setToken(data.token, remember);
 
 			user.set(data.user ?? null);
-
-			console.log("Saved token:", localStorage.getItem("token"));
 
 			goto("/dashboard");
 		} catch (error) {
@@ -78,6 +91,7 @@
 
 				<input
 					type="email"
+					autocomplete="email"
 					placeholder="you@company.com"
 					bind:value={email}
 					required
@@ -89,10 +103,16 @@
 
 				<input
 					type="password"
+					autocomplete="current-password"
 					placeholder="Enter your password"
 					bind:value={password}
 					required
 				/>
+			</label>
+
+			<label class="remember-option">
+				<input type="checkbox" bind:checked={remember} />
+				<span>Remember me</span>
 			</label>
 
 			<button type="submit" disabled={loading}>
@@ -226,6 +246,22 @@
 		border-color: #315ee7;
 
 		box-shadow: 0 0 0 3px rgb(49 94 231 / 12%);
+	}
+
+	.remember-option {
+		flex-direction: row;
+		align-items: center;
+		gap: 9px;
+		margin: 4px 0 16px;
+		font-weight: 600;
+		cursor: pointer;
+	}
+
+	.remember-option input {
+		width: 16px;
+		height: 16px;
+		margin: 0;
+		accent-color: #315ee7;
 	}
 
 	button {

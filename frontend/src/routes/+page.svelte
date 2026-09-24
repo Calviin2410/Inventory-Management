@@ -1,9 +1,9 @@
 <script>
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { getToken } from '$lib/api.js';
 
 	onMount(() => {
-		const hasToken = typeof localStorage !== 'undefined' && localStorage.getItem('token');
-		goto(hasToken ? '/dashboard' : '/login');
+		goto(getToken() ? '/dashboard' : '/login');
 	});
 </script>

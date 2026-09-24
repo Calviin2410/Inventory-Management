@@ -4,17 +4,19 @@ const API_BASE_URL = (
 	import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
 ).replace(/\/$/, '');
 
-function getToken() {
-	if (typeof localStorage === 'undefined') return null;
-	return localStorage.getItem('token');
+export function getToken() {
+	if (typeof window === 'undefined') return null;
+	return sessionStorage.getItem('token') || localStorage.getItem('token');
 }
 
-export function setToken(token) {
-	if (typeof localStorage === 'undefined') return;
+export function setToken(token, remember = false) {
+	if (typeof window === 'undefined') return;
+	localStorage.removeItem('token');
+	sessionStorage.removeItem('token');
+
 	if (token) {
-		localStorage.setItem('token', token);
-	} else {
-		localStorage.removeItem('token');
+		const storage = remember ? localStorage : sessionStorage;
+		storage.setItem('token', token);
 	}
 }
 
@@ -51,7 +53,8 @@ async function request(path, { method = 'GET', body, headers = {} } = {}) {
 
 export const api = {
 	// 认证
-	login: (email, password) => request('/login', { method: 'POST', body: { email, password } }),
+	login: (email, password, remember = false) =>
+		request('/login', { method: 'POST', body: { email, password, remember } }),
 	logout: () => request('/logout', { method: 'POST' }),
 	me: () => request('/me'),
 	getStaff: () => request('/staff'),

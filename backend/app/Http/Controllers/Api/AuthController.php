@@ -15,6 +15,7 @@ class AuthController extends Controller
         $data = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
+            'remember' => ['sometimes', 'boolean'],
         ]);
 
         $user = User::where('email', $data['email'])->first();
@@ -25,7 +26,9 @@ class AuthController extends Controller
             ]);
         }
 
-        $token = $user->createToken('inventory-app')->plainTextToken;
+        $remember = (bool) ($data['remember'] ?? false);
+        $expiresAt = $remember ? now()->addDays(30) : now()->addHours(12);
+        $token = $user->createToken('inventory-app', ['*'], $expiresAt)->plainTextToken;
 
         return response()->json([
             'user' => $user,

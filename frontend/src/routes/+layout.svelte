@@ -4,7 +4,7 @@
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 
-	import { api } from '$lib/api.js';
+	import { api, getToken, setToken } from '$lib/api.js';
 	import { user } from '$lib/stores/auth.js';
 	let { children } = $props();
 
@@ -13,8 +13,7 @@
 			return;
 		}
 
-		const savedToken =
-			localStorage.getItem('token');
+		const savedToken = getToken();
 
 		if (!savedToken) {
 			user.set(null);
@@ -32,7 +31,7 @@
 				error
 			);
 
-			localStorage.removeItem('token');
+			setToken(null);
 			user.set(null);
 		}
 	});
