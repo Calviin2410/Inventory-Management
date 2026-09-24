@@ -22,6 +22,10 @@ class Invoice extends Model
         'status',
         'payment_method',
         'payment_date',
+        'settlement_status',
+        'settlement_remark',
+        'settled_at',
+        'settled_by',
         'total_amount',
         'notes',
     ];
@@ -31,6 +35,7 @@ class Invoice extends Model
         return [
             'issued_date' => 'date:Y-m-d',
             'payment_date' => 'date:Y-m-d',
+            'settled_at' => 'datetime',
         ];
     }
 
@@ -52,5 +57,10 @@ class Invoice extends Model
     public function vehicle(): BelongsTo
     {
         return $this->belongsTo(Vehicle::class);
+    }
+
+    public function settledByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'settled_by');
     }
 }

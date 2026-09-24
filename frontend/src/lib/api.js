@@ -65,6 +65,12 @@ export const api = {
 		const query = new URLSearchParams(params).toString();
 		return request(`/activity-logs${query ? `?${query}` : ''}`);
 	},
+	getSettlements: (params = {}) => {
+		const query = new URLSearchParams(params).toString();
+		return request(`/settlements${query ? `?${query}` : ''}`);
+	},
+	updateSettlement: (id, payload) =>
+		request(`/settlements/${id}`, { method: 'PATCH', body: payload }),
 
 	getDashboardSummary: () =>
 		request('/dashboard-summary'),

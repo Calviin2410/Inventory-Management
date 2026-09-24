@@ -128,7 +128,7 @@ export function buildInvoiceDocument(invoice) {
 							Arial,
 							Helvetica,
 							sans-serif;
-						font-size: 13px;
+						font-size: 15px;
 						line-height: 1.5;
 
 						-webkit-print-color-adjust: exact;
@@ -146,11 +146,8 @@ export function buildInvoiceDocument(invoice) {
 						display: flex;
 						align-items: flex-start;
 						justify-content: space-between;
-
-						gap: 32px;
-
+						gap: 10px;
 						padding-bottom: 24px;
-
 						border-bottom: 2px solid #315ee7;
 					}
 
@@ -159,11 +156,35 @@ export function buildInvoiceDocument(invoice) {
 						min-width: 0;
 					}
 
+					.company-logo-wrap {
+						position: relative;
+						width: 100%;
+						max-width: 600px;
+					}
+
 					.company-logo {
 						display: block;
 						width: 100%;
-						max-width: 470px;
 						height: auto;
+					}
+
+					.company-contact {
+						position: absolute;
+						top: 47%;
+						right: 0;
+						width: 69%;
+						padding: 2px 0 4px 3px;
+						background: #fff;
+						color: #172033;
+						font-family: "Arial Narrow", Arial, sans-serif;
+						font-size: 15px;
+						font-weight: 700;
+						line-height: 1.3;
+						text-align: left;
+					}
+
+					.company-number {
+						font-style: italic;
 					}
 
 					h1 {
@@ -181,28 +202,26 @@ export function buildInvoiceDocument(invoice) {
 					.subtitle {
 						color: #697386;
 
-						font-size: 13px;
+						font-size: 15px;
 					}
 
 					.header-right {
-						min-width: 200px;
+						min-width: 90px;
 
 						text-align: right;
 					}
 
 					.invoice-no {
 						margin-bottom: 7px;
-
 						color: #315ee7;
-
-						font-size: 20px;
+						font-size: 22px;
 						font-weight: 700;
 					}
 
 					.issued-date {
 						color: #697386;
 
-						font-size: 12px;
+						font-size: 14px;
 					}
 
 					.meta {
@@ -226,7 +245,7 @@ export function buildInvoiceDocument(invoice) {
 
 						color: #7a8496;
 
-						font-size: 10px;
+						font-size: 12px;
 						font-weight: 700;
 
 						letter-spacing: 0.12em;
@@ -258,7 +277,7 @@ export function buildInvoiceDocument(invoice) {
 
 						border-radius: 999px;
 
-						font-size: 11px;
+						font-size: 12px;
 						font-weight: 700;
 					}
 
@@ -296,7 +315,7 @@ export function buildInvoiceDocument(invoice) {
 
 						text-align: left;
 
-						font-size: 10px;
+						font-size: 12px;
 						font-weight: 700;
 
 						letter-spacing: 0.05em;
@@ -329,7 +348,7 @@ export function buildInvoiceDocument(invoice) {
 
 						color: #697386;
 
-						font-size: 11px;
+						font-size: 13px;
 					}
 
 					.notes {
@@ -348,7 +367,7 @@ export function buildInvoiceDocument(invoice) {
 
 						color: #596579;
 
-						font-size: 10px;
+						font-size: 12px;
 						font-weight: 700;
 
 						letter-spacing: 0.08em;
@@ -362,16 +381,24 @@ export function buildInvoiceDocument(invoice) {
 						white-space: pre-line;
 					}
 
-					.terms {
-						margin-top: 24px;
+					.invoice-bottom {
+						margin-top: 40px;
+						display: grid;
+						grid-template-columns: minmax(0, 1.8fr) minmax(180px, 0.8fr);
+						gap: 34px;
+						align-items: end;
 						break-inside: avoid;
 						page-break-inside: avoid;
 					}
 
+					.terms {
+						min-width: 0;
+					}
+
 					.terms-title {
-						margin-bottom: 10px;
+						margin-bottom: 6px;
 						color: #172033;
-						font-size: 13px;
+						font-size: 11px;
 						font-weight: 700;
 						letter-spacing: 0.06em;
 						text-transform: uppercase;
@@ -379,18 +406,35 @@ export function buildInvoiceDocument(invoice) {
 
 					.terms ol {
 						margin: 0;
-						padding-left: 20px;
+						padding-left: 16px;
 						color: #596579;
-						font-size: 11px;
-						line-height: 1.55;
+						font-size: 10px;
+						line-height: 1.4;
 					}
 
 					.terms li + li {
-						margin-top: 5px;
+						margin-top: 3px;
+					}
+
+					.signature {
+						padding-bottom: 4px;
+						text-align: center;
+					}
+
+					.signature-line {
+						width: 100%;
+						margin-bottom: 7px;
+						border-top: 1px solid #172033;
+					}
+
+					.signature-label {
+						color: #172033;
+						font-size: 10px;
+						font-weight: 700;
 					}
 
 					.footer {
-						margin-top: 48px;
+						margin-top: 24px;
 
 						padding-top: 16px;
 
@@ -400,7 +444,7 @@ export function buildInvoiceDocument(invoice) {
 
 						text-align: center;
 
-						font-size: 10px;
+						font-size: 11px;
 					}
 
 					@media print {
@@ -421,17 +465,20 @@ export function buildInvoiceDocument(invoice) {
 				<div class="invoice-page">
 					<header class="header">
 						<div class="header-left">
-							<img class="company-logo" src="/images/tks-logo.png" alt="TKS Waste Management">
+							<div class="company-logo-wrap">
+								<img class="company-logo" src="/images/tks-logo.png" alt="TKS Waste Management">
+								<div class="company-contact">
+									<div class="company-number">(Co No. SA0221614-V)</div>
+									<div>H/P: 012-989 6221 (TKS) / 010-231 1687 (PENG)</div>
+									<div>OFFICE: 03-31677966</div>
+								</div>
+							</div>
 						</div>
-
 						<div class="header-right">
-							<div class="invoice-no">
-								${escapeHtml(
+							<div class="invoice-no">${escapeHtml(
 		invoice?.invoice_no ||
 		"—",
-	)}
-							</div>
-
+	)}</div>
 						</div>
 					</header>
 
@@ -558,18 +605,24 @@ export function buildInvoiceDocument(invoice) {
 			: ""
 		}
 
-					<section class="terms">
-						<div class="terms-title">Terms &amp; Conditions</div>
-						<ol>
-							<li>Each order is valid for one delivery address only. Additional delivery addresses will be subject to extra charges.</li>
-							<li>Bin rental/service period is limited to 14 days per order. Additional charges will apply for any period exceeding 14 days.</li>
-							<li>Additional charges may apply for overloading, prohibited/undeclared waste, waiting time, or additional disposal.</li>
-							<li>Overloaded or unsafe bins may be refused for collection until the issue is rectified.</li>
-							<li>Any invoice dispute must be raised within 7 days from the invoice date.</li>
-							<li>Delivery and collection are subject to site accessibility, traffic, vehicle availability and disposal facility conditions.</li>
-							<li>By accepting the service, the customer agrees to these Terms &amp; Conditions.</li>
-						</ol>
-					</section>
+					<div class="invoice-bottom">
+						<section class="terms">
+							<div class="terms-title">Terms &amp; Conditions</div>
+							<ol>
+								<li>Each order is valid for one delivery address only. Additional delivery addresses will be subject to extra charges.</li>
+								<li>Bin rental/service period is limited to 14 days per order. Additional charges will apply for any period exceeding 14 days.</li>
+								<li>Additional charges may apply for overloading, prohibited/undeclared waste, waiting time, or additional disposal.</li>
+								<li>Overloaded or unsafe bins may be refused for collection until the issue is rectified.</li>
+								<li>Any invoice dispute must be raised within 7 days from the invoice date.</li>
+								<li>Delivery and collection are subject to site accessibility, traffic, vehicle availability and disposal facility conditions.</li>
+								<li>By accepting the service, the customer agrees to these Terms &amp; Conditions.</li>
+							</ol>
+						</section>
+						<div class="signature">
+							<div class="signature-line"></div>
+							<div class="signature-label">Authorised Signature</div>
+						</div>
+					</div>
 
 					<div class="footer">
 						Generated by TKS Waste Management

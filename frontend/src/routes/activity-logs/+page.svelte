@@ -26,6 +26,8 @@
 		deleted: "Deleted",
 		returned: "Returned",
 		password_reset: "Password reset",
+		settled: "Settled",
+		reopened: "Reopened",
 	};
 
 	function formatDateTime(value) {
@@ -38,23 +40,33 @@
 		}).format(new Date(value));
 	}
 
-	function formatValues(values) {
+	function formatValues(values, actorName = "") {
 		if (!values || Object.keys(values).length === 0) return "None";
 
 		return Object.entries(values)
 			.map(
 				([key, value]) =>
-					`${key.replaceAll("_", " ")}: ${formatChangeValue(key, value)}`,
+					`${key.replaceAll("_", " ")}: ${formatChangeValue(key, value, actorName)}`,
 			)
 			.join("\n");
 	}
 
-	function formatChangeValue(key, value) {
+	function formatChangeValue(key, value, actorName = "") {
 		if (value === null || value === undefined || value === "") return "—";
 
 		if (["issued_date", "payment_date"].includes(key)) {
 			const dateOnly = String(value).match(/^\d{4}-\d{2}-\d{2}/)?.[0];
 			return formatDate(dateOnly || value);
+		}
+
+		if (key === "settled_at") {
+			return formatDateTime(value);
+		}
+
+		if (key === "settled_by") {
+			return typeof value === "number" || /^\d+$/.test(String(value))
+				? actorName || `User #${value}`
+				: String(value);
 		}
 
 		if (key === "payment_method") {
@@ -273,12 +285,14 @@
 													<strong>Before</strong>
 													<pre>{formatValues(
 															log.old_values,
+															log.actor_name,
 														)}</pre>
 												</div>
 												<div>
 													<strong>After</strong>
 													<pre>{formatValues(
 															log.new_values,
+															log.actor_name,
 														)}</pre>
 												</div>
 											</div>

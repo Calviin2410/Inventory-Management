@@ -13,6 +13,7 @@
 		{ href: "/drivers", label: "Drivers", icon: "◉", adminOnly: true },
 		{ href: "/vehicles", label: "Vehicles", icon: "▰", adminOnly: true },
 		{ href: "/staff", label: "Staff", icon: "♟", adminOnly: true },
+		{ href: "/settlement", label: "Settlement", icon: "✓", adminOnly: true },
 		{ href: "/activity-logs", label: "Activity log", icon: "≡", adminOnly: true },
 		{ href: "/reports", label: "Reports", icon: "⌁", adminOnly: true },
 	];
@@ -30,6 +31,7 @@
 		drivers: "Drivers",
 		vehicles: "Vehicles",
 		staff: "Staff",
+		settlement: "Settlement",
 		"activity-logs": "Activity log",
 		reports: "Reports",
 		products: "Products",

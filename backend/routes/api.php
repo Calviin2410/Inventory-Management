@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\StaffController;
 use App\Http\Controllers\Api\ActivityLogController;
+use App\Http\Controllers\Api\SettlementController;
 use Illuminate\Support\Facades\Route;
 
 // ---- 公开路由(不需要登录) ----
@@ -28,6 +29,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/staff', [StaffController::class, 'store']);
     Route::patch('/staff/{staff}/password', [StaffController::class, 'resetPassword']);
     Route::get('/activity-logs', [ActivityLogController::class, 'index']);
+    Route::get('/settlements', [SettlementController::class, 'index']);
+    Route::patch('/settlements/{invoice}', [SettlementController::class, 'update']);
 
     Route::apiResource('products', ProductController::class);
 
