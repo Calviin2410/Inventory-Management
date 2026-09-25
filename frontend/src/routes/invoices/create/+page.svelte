@@ -30,6 +30,10 @@
 	let matchedCustomer = $state(null);
 	guardUnsaved(() => formDirty);
 
+	function handlePhoneInput(event) {
+		phone = event.currentTarget.value.replace(/\D/g, "").slice(0, 11);
+	}
+
 	async function loadFormData() {
 		isLoading = true;
 		pageError = "";
@@ -269,9 +273,14 @@
 					<span>Phone <small>Optional</small></span>
 					<input
 						type="tel"
-						placeholder="e.g. 012-345 6789"
-						bind:value={phone}
-						maxlength="20"
+						inputmode="numeric"
+						autocomplete="tel"
+						placeholder="e.g. 0123456789"
+						value={phone}
+						oninput={handlePhoneInput}
+						minlength="10"
+						maxlength="11"
+						pattern="[0-9]{10,11}"
 					/>
 				</label>
 

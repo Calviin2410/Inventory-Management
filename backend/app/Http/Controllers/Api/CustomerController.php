@@ -21,7 +21,9 @@ class CustomerController extends Controller
                 Customer::normalizePhone($request->query('phone_exact'))
             );
         } elseif ($search = $request->query('search')) {
-            $query->where(function ($q) use ($search) {
+            $normalizedSearch = Customer::normalizePhone($search);
+
+            $query->where(function ($q) use ($search, $normalizedSearch) {
                 $q->where(
                     'name',
                     'like',
@@ -32,6 +34,14 @@ class CustomerController extends Controller
                     'like',
                     '%' . $search . '%'
                 );
+
+                if ($normalizedSearch !== null) {
+                    $q->orWhere(
+                        'phone_normalized',
+                        'like',
+                        '%' . $normalizedSearch . '%'
+                    );
+                }
             });
         }
 
@@ -49,11 +59,14 @@ class CustomerController extends Controller
 
         $normalizedPhone = Customer::normalizePhone($data['phone'] ?? null);
 
-        if ($normalizedPhone !== null && strlen($normalizedPhone) < 7) {
+        if (
+            $normalizedPhone !== null
+            && ! in_array(strlen($normalizedPhone), [10, 11], true)
+        ) {
             return response()->json([
                 'message' => 'Please enter a valid phone number.',
                 'errors' => [
-                    'phone' => ['The phone number must contain at least 7 digits.'],
+                    'phone' => ['The phone number must contain 10 or 11 digits.'],
                 ],
             ], 422);
         }
@@ -74,7 +87,7 @@ class CustomerController extends Controller
         try {
             $customer = Customer::create([
                 'name' => $data['name'] ?? null,
-                'phone' => $data['phone'] ?? null,
+                'phone' => $normalizedPhone,
                 'phone_normalized' => $normalizedPhone,
             ]);
         } catch (QueryException $error) {
@@ -99,7 +112,7 @@ class CustomerController extends Controller
             'Customer',
             $customer->id,
             $customer->name ?: $customer->phone,
-            'Created customer '.($customer->name ?: 'Walk-in customer'),
+            'Created customer '.($customer->name ?: '-'),
             null,
             $customer->only(['name', 'phone'])
         );

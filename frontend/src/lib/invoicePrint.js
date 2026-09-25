@@ -492,7 +492,7 @@ export function buildInvoiceDocument(invoice) {
 								<strong>
 									${escapeHtml(
 		invoice?.customer?.name ||
-		"Walk-in customer",
+		"-",
 	)}
 								</strong>
 							</div>

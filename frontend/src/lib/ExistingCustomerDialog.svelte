@@ -79,7 +79,7 @@
 				<div class="comparison">
 					<div>
 						<span>Existing customer</span><strong
-							>{existingName || "Walk-in customer"}</strong
+							>{existingName || "-"}</strong
 						>
 					</div>
 					<div>

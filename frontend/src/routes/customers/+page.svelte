@@ -167,7 +167,7 @@
 										class="customer-link"
 										href={`/customers/${customer.id}`}
 									>
-										{customer.name || "Walk-in customer"}
+										{customer.name || "-"}
 									</a>
 								</td>
 

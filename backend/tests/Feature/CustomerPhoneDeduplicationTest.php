@@ -31,6 +31,7 @@ class CustomerPhoneDeduplicationTest extends TestCase
 
         $this->assertSame($original['id'], $matched['id']);
         $this->assertSame('John Tan', $matched['name']);
+        $this->assertSame('0123456789', $matched['phone']);
         $this->assertSame(1, Customer::count());
     }
 
@@ -47,5 +48,52 @@ class CustomerPhoneDeduplicationTest extends TestCase
         $this->getJson('/api/customers?phone_exact=0312345678')
             ->assertOk()
             ->assertJsonPath('data.0.id', $customer->id);
+    }
+
+    public function test_phone_only_creates_a_walk_in_customer_with_digits_only(): void
+    {
+        Sanctum::actingAs(User::factory()->create());
+
+        $this->postJson('/api/customers', [
+            'name' => null,
+            'phone' => '011-9182 8210',
+        ])
+            ->assertCreated()
+            ->assertJsonPath('name', null)
+            ->assertJsonPath('phone', '01191828210');
+
+        $this->assertDatabaseHas('customers', [
+            'name' => null,
+            'phone' => '01191828210',
+            'phone_normalized' => '01191828210',
+        ]);
+    }
+
+    public function test_customer_search_ignores_phone_spacing_and_dashes(): void
+    {
+        Sanctum::actingAs(User::factory()->create());
+
+        $customer = Customer::create([
+            'name' => null,
+            'phone' => '0129182717',
+            'phone_normalized' => '0129182717',
+        ]);
+
+        foreach (['012 9182717', '012-9182717', '0129182717'] as $search) {
+            $this->getJson('/api/customers?search='.urlencode($search))
+                ->assertOk()
+                ->assertJsonPath('data.0.id', $customer->id);
+        }
+    }
+
+    public function test_phone_must_have_ten_or_eleven_digits(): void
+    {
+        Sanctum::actingAs(User::factory()->create());
+
+        $this->postJson('/api/customers', [
+            'phone' => '012-345',
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('phone');
     }
 }
