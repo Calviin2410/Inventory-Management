@@ -4,6 +4,7 @@
 	import { api } from "$lib/api.js";
 	import Nav from "$lib/Nav.svelte";
 	import ExistingCustomerDialog from "$lib/ExistingCustomerDialog.svelte";
+	import DateInput from "$lib/DateInput.svelte";
 	import { guardUnsaved } from "$lib/unsaved.js";
 
 	let invoiceId = $state("");
@@ -11,7 +12,8 @@
 
 	let phone = $state("");
 
-	let rentalStart = $state(new Date().toISOString().slice(0, 10));
+	const today = new Date().toISOString().slice(0, 10);
+	let rentalStart = $state(today);
 	let rentalEnd = $state("");
 	let address = $state("");
 	let barrelId = $state("");
@@ -28,11 +30,13 @@
 	let vehicles = $state([]);
 	let formDirty = $state(false);
 	let matchedCustomer = $state(null);
+	const phonePattern = "[0-9]{10,11}";
 	guardUnsaved(() => formDirty);
 
 	function handlePhoneInput(event) {
 		phone = event.currentTarget.value.replace(/\D/g, "").slice(0, 11);
 	}
+
 
 	async function loadFormData() {
 		isLoading = true;
@@ -280,7 +284,7 @@
 						oninput={handlePhoneInput}
 						minlength="10"
 						maxlength="11"
-						pattern="[0-9]{10,11}"
+						pattern={phonePattern}
 					/>
 				</label>
 
@@ -365,17 +369,12 @@
 				</label>
 				<label>
 					<span>Rental start <b>Required</b></span>
-					<input type="date" bind:value={rentalStart} required />
+					<DateInput bind:value={rentalStart} required ariaLabel="Select rental start date" />
 				</label>
 				<label>
 					<span>Rental end <b>Required</b></span>
 
-					<input
-						type="date"
-						min={rentalStart}
-						bind:value={rentalEnd}
-						required
-					/>
+					<DateInput bind:value={rentalEnd} min={rentalStart} required ariaLabel="Select rental end date" />
 				</label>
 				<label class="full-width">
 					<span>Description <small>Optional</small></span>

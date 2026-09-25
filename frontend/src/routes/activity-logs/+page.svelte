@@ -6,6 +6,7 @@
 	import { user } from "$lib/stores/auth.js";
 	import Nav from "$lib/Nav.svelte";
 	import SkeletonTable from "$lib/SkeletonTable.svelte";
+	import DateInput from "$lib/DateInput.svelte";
 	import { formatDate } from "$lib/format.js";
 
 	let logs = $state([]);
@@ -203,19 +204,19 @@
 		</select>
 
 		<label
-			><span>From</span><input
-				class="control"
-				type="date"
+			><span>From</span><DateInput
 				bind:value={fromDate}
+				max={toDate}
 				onchange={() => loadLogs(1)}
+				ariaLabel="Select activity from date"
 			/></label
 		>
 		<label
-			><span>To</span><input
-				class="control"
-				type="date"
+			><span>To</span><DateInput
 				bind:value={toDate}
+				min={fromDate}
 				onchange={() => loadLogs(1)}
+				ariaLabel="Select activity to date"
 			/></label
 		>
 

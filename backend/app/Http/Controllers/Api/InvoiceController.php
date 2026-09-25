@@ -72,6 +72,7 @@ class InvoiceController extends Controller
             'issued_date',
             'address',
             'notes',
+            'items',
         ];
 
         if ($request->hasAny($managementFields)) {
@@ -137,6 +138,21 @@ class InvoiceController extends Controller
                 $isBeingMarkedPaid ? 'required' : 'nullable',
                 'date',
             ],
+
+            'items' => ['sometimes', 'array'],
+            'items.*.id' => [
+                'required',
+                'integer',
+                Rule::exists('invoice_items', 'id')->where(
+                    fn ($query) => $query->where('invoice_id', $invoice->id)
+                ),
+            ],
+            'items.*.rental_start' => ['required', 'date'],
+            'items.*.rental_end' => [
+                'nullable',
+                'date',
+                'after_or_equal:items.*.rental_start',
+            ],
         ]);
 
         if (($data['status'] ?? null) === 'unpaid') {
@@ -154,8 +170,23 @@ class InvoiceController extends Controller
             'payment_date',
         ];
         $before = $invoice->only($trackedFields);
+        $beforeItems = $invoice->items()
+            ->orderBy('id')
+            ->get(['id', 'rental_start', 'rental_end'])
+            ->toArray();
 
-        $invoice->update($data);
+        DB::transaction(function () use ($invoice, $data) {
+            $invoice->update(collect($data)->except('items')->all());
+
+            foreach ($data['items'] ?? [] as $itemData) {
+                $invoice->items()
+                    ->whereKey($itemData['id'])
+                    ->update([
+                        'rental_start' => $itemData['rental_start'],
+                        'rental_end' => $itemData['rental_end'] ?? null,
+                    ]);
+            }
+        });
 
         $after = $invoice->fresh()->only($trackedFields);
         $changedBefore = [];
@@ -166,6 +197,16 @@ class InvoiceController extends Controller
                 $changedBefore[$field] = $before[$field] ?? null;
                 $changedAfter[$field] = $after[$field] ?? null;
             }
+        }
+
+        $afterItems = $invoice->items()
+            ->orderBy('id')
+            ->get(['id', 'rental_start', 'rental_end'])
+            ->toArray();
+
+        if ($beforeItems !== $afterItems) {
+            $changedBefore['items'] = $beforeItems;
+            $changedAfter['items'] = $afterItems;
         }
 
         if ($changedAfter !== []) {

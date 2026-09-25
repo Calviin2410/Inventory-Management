@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Customer;
+use App\Models\Barrel;
 use App\Models\Invoice;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -92,5 +93,51 @@ class InvoicePaymentTest extends TestCase
         $this->getJson("/api/invoices/{$invoice->id}")
             ->assertOk()
             ->assertJsonFragment(['invoice_no' => 'KT09999']);
+    }
+
+    public function test_admin_can_update_invoice_item_rental_dates(): void
+    {
+        Sanctum::actingAs(User::factory()->create(['role' => 'admin']));
+        $invoice = $this->invoice();
+        $barrel = Barrel::create(['code' => 'DATE-001']);
+        $item = $invoice->items()->create([
+            'barrel_id' => $barrel->id,
+            'rental_start' => '2026-09-25',
+            'rental_end' => '2026-10-09',
+        ]);
+
+        $this->patchJson("/api/invoices/{$invoice->id}", [
+            'items' => [[
+                'id' => $item->id,
+                'rental_start' => '2026-09-26',
+                'rental_end' => '2026-10-12',
+            ]],
+        ])->assertOk();
+
+        $this->assertDatabaseHas('invoice_items', [
+            'id' => $item->id,
+            'rental_start' => '2026-09-26',
+            'rental_end' => '2026-10-12',
+        ]);
+    }
+
+    public function test_staff_cannot_update_invoice_item_rental_dates(): void
+    {
+        Sanctum::actingAs(User::factory()->create(['role' => 'normal_staff']));
+        $invoice = $this->invoice();
+        $barrel = Barrel::create(['code' => 'DATE-002']);
+        $item = $invoice->items()->create([
+            'barrel_id' => $barrel->id,
+            'rental_start' => '2026-09-25',
+            'rental_end' => '2026-10-09',
+        ]);
+
+        $this->patchJson("/api/invoices/{$invoice->id}", [
+            'items' => [[
+                'id' => $item->id,
+                'rental_start' => '2026-09-26',
+                'rental_end' => '2026-10-12',
+            ]],
+        ])->assertForbidden();
     }
 }

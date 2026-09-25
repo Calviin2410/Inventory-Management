@@ -7,6 +7,7 @@
 
     import Nav from "$lib/Nav.svelte";
     import SkeletonTable from "$lib/SkeletonTable.svelte";
+    import DateInput from "$lib/DateInput.svelte";
     import { formatDate } from "$lib/format.js";
 
     let invoices = $state([]);
@@ -275,23 +276,13 @@
             <div class="field">
                 <label for="fromDate"> From Invoice Date </label>
 
-                <input
-                    id="fromDate"
-                    class="control"
-                    type="date"
-                    bind:value={fromDate}
-                />
+                <DateInput id="fromDate" bind:value={fromDate} max={toDate} ariaLabel="Select report from date" />
             </div>
 
             <div class="field">
                 <label for="toDate"> To Invoice Date </label>
 
-                <input
-                    id="toDate"
-                    class="control"
-                    type="date"
-                    bind:value={toDate}
-                />
+                <DateInput id="toDate" bind:value={toDate} min={fromDate} ariaLabel="Select report to date" />
             </div>
 
             <div class="filter-actions">
@@ -541,10 +532,6 @@
 
         font-size: 13px;
         font-weight: 600;
-    }
-
-    .field .control {
-        width: 100%;
     }
 
     .filter-actions {

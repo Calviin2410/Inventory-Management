@@ -5,6 +5,7 @@
 	import Nav from "$lib/Nav.svelte";
 	import SkeletonTable from "$lib/SkeletonTable.svelte";
 	import Toast from "$lib/Toast.svelte";
+	import DateInput from "$lib/DateInput.svelte";
 
 	let invoices = $state([]);
 	let loading = $state(true);
@@ -130,10 +131,10 @@
 
 	<form class="toolbar date-toolbar" onsubmit={(event) => { event.preventDefault(); loadSettlements(); }}>
 		<label>From
-			<input class="control" type="date" bind:value={fromDate} max={toDate} required />
+			<DateInput bind:value={fromDate} max={toDate} required ariaLabel="Select from date" />
 		</label>
 		<label>To
-			<input class="control" type="date" bind:value={toDate} min={fromDate} required />
+			<DateInput bind:value={toDate} min={fromDate} required ariaLabel="Select to date" />
 		</label>
 		<button class="btn btn-primary" type="submit" disabled={loading || !fromDate || !toDate}>View</button>
 		<button class="btn" type="button" onclick={() => { fromDate = malaysiaToday(); toDate = malaysiaToday(); loadSettlements(); }} disabled={loading}>Today</button>
@@ -232,7 +233,6 @@
 	.summary-card div span { color: #64748b; font-size: 12px; font-weight: 650; }
 	.date-toolbar { align-items: flex-end; margin-bottom: 20px; }
 	.date-toolbar label { display: grid; gap: 6px; color: #536078; font-size: 11px; font-weight: 700; }
-	.date-toolbar .control { min-width: 170px; }
 	.refresh-button { margin-left: 0; }
 	.state { padding: 28px; color: #64748b; text-align: center; }
 	.state h3 { margin: 0 0 6px; color: #111827; }
@@ -261,6 +261,6 @@
 	textarea:focus { border-color: #315ee7; box-shadow: 0 0 0 3px rgb(49 94 231 / 12%); }
 	.dialog-error { margin-bottom: 16px; padding: 10px 12px; border-radius: 8px; background: #fef2f2; color: #b42318; font-size: 12px; }
 	.dialog-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 22px; }
-	@media (max-width: 760px) { .payment-summary { grid-template-columns: 1fr 1fr; } .date-toolbar label, .date-toolbar .control { width: 100%; } .refresh-button { margin-left: 0; } .data-table { min-width: 980px; } .action-cell { display: table-cell; white-space: nowrap; } .table-action + .table-action { margin-left: 5px; } }
+	@media (max-width: 760px) { .payment-summary { grid-template-columns: 1fr 1fr; } .date-toolbar label { width: 100%; } .refresh-button { margin-left: 0; } .data-table { min-width: 980px; } .action-cell { display: table-cell; white-space: nowrap; } .table-action + .table-action { margin-left: 5px; } }
 	@media (max-width: 480px) { .payment-summary { grid-template-columns: 1fr; } }
 </style>

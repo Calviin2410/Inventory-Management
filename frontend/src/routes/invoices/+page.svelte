@@ -4,6 +4,7 @@
 	import { openInvoicePrintWindow } from "$lib/invoicePrint.js";
 	import Nav from "$lib/Nav.svelte";
 	import SkeletonTable from "$lib/SkeletonTable.svelte";
+	import DateInput from "$lib/DateInput.svelte";
 	import { formatDate } from "$lib/format.js";
 
 	// =========================
@@ -468,7 +469,7 @@
 				</label>
 
 				<label>Payment Date
-					<input type="date" bind:value={paymentDate} required />
+					<DateInput bind:value={paymentDate} required ariaLabel="Select payment date" />
 				</label>
 
 				<div class="dialog-actions">
@@ -786,8 +787,7 @@
 	.payment-dialog h2 { margin: 0 0 6px; }
 	.payment-dialog > p { margin: 0 0 20px; color: #64748b; }
 	.payment-dialog label { display: grid; gap: 7px; margin-top: 16px; font-size: 14px; font-weight: 600; }
-	.payment-dialog select,
-	.payment-dialog input { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: white; font: inherit; }
+	.payment-dialog select { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: white; font: inherit; }
 	.dialog-error { margin-bottom: 12px; padding: 10px 12px; border-radius: 8px; background: #fef2f2; color: #b42318; }
 	.dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
 

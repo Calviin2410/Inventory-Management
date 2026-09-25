@@ -4,9 +4,11 @@
 	import { goto } from "$app/navigation";
 
 	import { api } from "$lib/api.js";
+	import { user } from "$lib/stores/auth.js";
 	import Nav from "$lib/Nav.svelte";
 	import { guardUnsaved } from "$lib/unsaved.js";
 	import SkeletonTable from "$lib/SkeletonTable.svelte";
+	import DateInput from "$lib/DateInput.svelte";
 	import { formatDate } from "$lib/format.js";
 
 	let invoice = $state(null);
@@ -25,6 +27,8 @@
 	let status = $state("unpaid");
 	let paymentMethod = $state("cash");
 	let paymentDate = $state("");
+	let invoiceItems = $state([]);
+	let isAdmin = $derived($user?.role === "admin");
 	let formDirty = $state(false);
 	guardUnsaved(() => formDirty);
 
@@ -55,6 +59,11 @@
 			status = invoice.status ?? "unpaid";
 			paymentMethod = invoice.payment_method ?? "cash";
 			paymentDate = invoice.payment_date ?? "";
+			invoiceItems = (invoice.items ?? []).map((item) => ({
+				...item,
+				rental_start: item.rental_start ?? "",
+				rental_end: item.rental_end ?? "",
+			}));
 		} catch (error) {
 			console.error("Unable to load invoice:", error);
 
@@ -97,6 +106,15 @@
 				status,
 				payment_method: status === "paid" ? paymentMethod : null,
 				payment_date: status === "paid" ? paymentDate : null,
+				...(isAdmin
+					? {
+						items: invoiceItems.map((item) => ({
+							id: item.id,
+							rental_start: item.rental_start,
+							rental_end: item.rental_end || null,
+						})),
+					}
+					: {}),
 			};
 
 			const updatedInvoice = await api.updateInvoice(id, payload);
@@ -195,12 +213,7 @@
 				<div class="field">
 					<label for="issued-date"> Issued Date </label>
 
-					<input
-						id="issued-date"
-						type="date"
-						bind:value={issuedDate}
-						required
-					/>
+					<DateInput id="issued-date" bind:value={issuedDate} required ariaLabel="Select issued date" />
 				</div>
 
 				<!-- STATUS -->
@@ -226,7 +239,7 @@
 
 					<div class="field">
 						<label for="payment-date"> Payment Date </label>
-						<input id="payment-date" type="date" bind:value={paymentDate} required />
+						<DateInput id="payment-date" bind:value={paymentDate} required ariaLabel="Select payment date" />
 					</div>
 				{/if}
 
@@ -264,7 +277,7 @@
 					<div>
 						<h2>Invoice Items</h2>
 
-						<p>Barrel items are view-only for now.</p>
+						<p>{isAdmin ? "Administrators can update rental dates." : "Rental dates are view-only."}</p>
 					</div>
 				</div>
 
@@ -283,7 +296,7 @@
 						</thead>
 
 						<tbody>
-							{#each invoice.items ?? [] as item}
+							{#each invoiceItems as item}
 								<tr>
 									<td>
 										<strong>
@@ -296,11 +309,19 @@
 									</td>
 
 									<td>
-										{formatDate(item.rental_start)}
+										{#if isAdmin}
+											<DateInput compact bind:value={item.rental_start} required ariaLabel="Select rental start date" />
+										{:else}
+											{formatDate(item.rental_start)}
+										{/if}
 									</td>
 
 									<td>
-										{formatDate(item.rental_end)}
+										{#if isAdmin}
+											<DateInput compact min={item.rental_start} bind:value={item.rental_end} ariaLabel="Select rental end date" />
+										{:else}
+											{formatDate(item.rental_end)}
+										{/if}
 									</td>
 								</tr>
 							{:else}
@@ -382,7 +403,6 @@
 		font-weight: 600;
 	}
 
-	input,
 	select,
 	textarea {
 		width: 100%;
@@ -404,7 +424,6 @@
 		outline: none;
 	}
 
-	input:focus,
 	select:focus,
 	textarea:focus {
 		border-color: #315ee7;
@@ -463,6 +482,7 @@
 
 		white-space: nowrap;
 	}
+
 
 	th {
 		background: #f9fafb;
