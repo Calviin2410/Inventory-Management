@@ -1,5 +1,6 @@
 <script>
 	import { tick } from "svelte";
+	import PasswordVisibilityIcon from "$lib/PasswordVisibilityIcon.svelte";
 
 	let {
 		open = false,
@@ -14,6 +15,8 @@
 	let passwordInput = $state();
 	let password = $state("");
 	let passwordConfirmation = $state("");
+	let showPassword = $state(false);
+	let showPasswordConfirmation = $state(false);
 	let localError = $state("");
 	let previouslyFocused;
 
@@ -23,6 +26,8 @@
 		previouslyFocused = document.activeElement;
 		password = "";
 		passwordConfirmation = "";
+		showPassword = false;
+		showPasswordConfirmation = false;
 		localError = "";
 		tick().then(() => passwordInput?.focus());
 
@@ -111,27 +116,18 @@
 
 					<label>
 						<span>New Password</span>
-						<input
-							bind:this={passwordInput}
-							bind:value={password}
-							type="password"
-							autocomplete="new-password"
-							minlength="8"
-							disabled={busy}
-							required
-						/>
+						<div class="password-field">
+							<input bind:this={passwordInput} bind:value={password} type={showPassword ? "text" : "password"} autocomplete="new-password" minlength="8" disabled={busy} required />
+							<button class="password-toggle" type="button" aria-label={showPassword ? "Hide password" : "Show password"} aria-pressed={showPassword} disabled={busy} onclick={() => (showPassword = !showPassword)}><PasswordVisibilityIcon visible={showPassword} /></button>
+						</div>
 					</label>
 
 					<label>
 						<span>Confirm New Password</span>
-						<input
-							bind:value={passwordConfirmation}
-							type="password"
-							autocomplete="new-password"
-							minlength="8"
-							disabled={busy}
-							required
-						/>
+						<div class="password-field">
+							<input bind:value={passwordConfirmation} type={showPasswordConfirmation ? "text" : "password"} autocomplete="new-password" minlength="8" disabled={busy} required />
+							<button class="password-toggle" type="button" aria-label={showPasswordConfirmation ? "Hide password" : "Show password"} aria-pressed={showPasswordConfirmation} disabled={busy} onclick={() => (showPasswordConfirmation = !showPasswordConfirmation)}><PasswordVisibilityIcon visible={showPasswordConfirmation} /></button>
+						</div>
 					</label>
 
 					<p class="hint">Use at least 8 characters.</p>
@@ -249,6 +245,11 @@
 		border-color: #315ee7;
 		box-shadow: 0 0 0 3px rgb(49 94 231 / 12%);
 	}
+	.password-field { position: relative; width: 100%; }
+	.password-field input { padding-right: 44px; }
+	.password-toggle { position: absolute; top: 50%; right: 6px; display: grid; width: 34px; height: 34px; padding: 0; place-items: center; transform: translateY(-50%); border: 0; border-radius: 6px; background: transparent; color: #667085; cursor: pointer; }
+	.password-toggle:hover { color: #315ee7; }
+	.password-toggle:focus-visible { outline: 2px solid #315ee7; outline-offset: 1px; }
 	.hint {
 		margin: 7px 0 0;
 		color: #8a95a5;

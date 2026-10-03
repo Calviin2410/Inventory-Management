@@ -1,4 +1,6 @@
 <script>
+	import PasswordVisibilityIcon from "$lib/PasswordVisibilityIcon.svelte";
+
 	let {
 		open = false,
 		busy = false,
@@ -11,6 +13,8 @@
 	let email = $state("");
 	let password = $state("");
 	let passwordConfirmation = $state("");
+	let showPassword = $state(false);
+	let showPasswordConfirmation = $state(false);
 
 	function close() {
 		if (!busy) oncancel();
@@ -31,6 +35,8 @@
 			email = "";
 			password = "";
 			passwordConfirmation = "";
+			showPassword = false;
+			showPasswordConfirmation = false;
 		}
 	});
 </script>
@@ -47,8 +53,8 @@
 			<form onsubmit={(event) => { event.preventDefault(); submit(); }}>
 				<label>Full name<input bind:value={name} autocomplete="name" required maxlength="255" /></label>
 				<label>Email address<input type="email" bind:value={email} autocomplete="email" required /></label>
-				<label>Temporary password<input type="password" bind:value={password} autocomplete="new-password" minlength="8" required /></label>
-				<label>Confirm password<input type="password" bind:value={passwordConfirmation} autocomplete="new-password" minlength="8" required /></label>
+				<label>Temporary password<div class="password-field"><input type={showPassword ? "text" : "password"} bind:value={password} autocomplete="new-password" minlength="8" required /><button class="password-toggle" type="button" aria-label={showPassword ? "Hide password" : "Show password"} aria-pressed={showPassword} onclick={() => (showPassword = !showPassword)}><PasswordVisibilityIcon visible={showPassword} /></button></div></label>
+				<label>Confirm password<div class="password-field"><input type={showPasswordConfirmation ? "text" : "password"} bind:value={passwordConfirmation} autocomplete="new-password" minlength="8" required /><button class="password-toggle" type="button" aria-label={showPasswordConfirmation ? "Hide password" : "Show password"} aria-pressed={showPasswordConfirmation} onclick={() => (showPasswordConfirmation = !showPasswordConfirmation)}><PasswordVisibilityIcon visible={showPasswordConfirmation} /></button></div></label>
 
 				<div class="actions">
 					<button class="btn" type="button" disabled={busy} onclick={close}>Cancel</button>
@@ -70,6 +76,11 @@
 	label { gap: 6px; color: #344054; font-size: 11px; font-weight: 700; }
 	input { height: 43px; padding: 0 12px; border: 1px solid #ccd4e0; border-radius: 8px; outline: none; }
 	input:focus { border-color: #315ee7; box-shadow: 0 0 0 3px rgb(49 94 231 / 12%); }
+	.password-field { position: relative; width: 100%; }
+	.password-field input { width: 100%; padding-right: 44px; }
+	.password-toggle { position: absolute; top: 50%; right: 6px; display: grid; width: 34px; height: 34px; padding: 0; place-items: center; transform: translateY(-50%); border: 0; background: transparent; color: #667085; cursor: pointer; }
+	.password-toggle:hover { color: #315ee7; }
+	.password-toggle:focus-visible { outline: 2px solid #315ee7; outline-offset: 1px; }
 	.error { margin-bottom: 14px; padding: 10px 12px; border-radius: 8px; background: #fef2f2; color: #b42318; font-size: 11px; }
 	.actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 6px; }
 	.primary { border-color: #315ee7; background: #315ee7; color: #fff; }

@@ -2,10 +2,12 @@
 	import { onMount } from "svelte";
 	import { goto } from "$app/navigation";
 	import { api, getToken, setToken } from "$lib/api.js";
+	import PasswordVisibilityIcon from "$lib/PasswordVisibilityIcon.svelte";
 	import { user } from "$lib/stores/auth.js";
 
 	let email = $state("");
 	let password = $state("");
+	let showPassword = $state(false);
 	let remember = $state(false);
 
 	let errorMessage = $state("");
@@ -101,13 +103,24 @@
 			<label>
 				Password
 
-				<input
-					type="password"
-					autocomplete="current-password"
-					placeholder="Enter your password"
-					bind:value={password}
-					required
-				/>
+				<div class="password-field">
+					<input
+						type={showPassword ? "text" : "password"}
+						autocomplete="current-password"
+						placeholder="Enter your password"
+						bind:value={password}
+						required
+					/>
+					<button
+						class="password-toggle"
+						type="button"
+						aria-label={showPassword ? "Hide password" : "Show password"}
+						aria-pressed={showPassword}
+						onclick={() => (showPassword = !showPassword)}
+					>
+						<PasswordVisibilityIcon visible={showPassword} />
+					</button>
+				</div>
 			</label>
 
 			<label class="remember-option">
@@ -247,6 +260,27 @@
 
 		box-shadow: 0 0 0 3px rgb(49 94 231 / 12%);
 	}
+
+	.password-field { position: relative; }
+	.password-field input { width: 100%; padding-right: 44px; }
+	.password-toggle {
+		position: absolute;
+		top: 50%;
+		right: 7px;
+		width: 34px;
+		height: 34px;
+		margin: 0;
+		padding: 0;
+		transform: translateY(-50%);
+		border: 0;
+		background: transparent;
+		color: #667085;
+		box-shadow: none;
+		display: grid;
+		place-items: center;
+	}
+	.password-toggle:hover { color: #315ee7; }
+	.password-toggle:focus-visible { outline: 2px solid #315ee7; outline-offset: 1px; }
 
 	.remember-option {
 		flex-direction: row;
