@@ -1,7 +1,8 @@
-// Railway injects the public backend URL at build time. Keep localhost as
-// the development fallback so the same code works on both environments.
+// Use the same-domain Laravel API in production while keeping localhost for
+// local development. A deployment can still override this at build time.
 const API_BASE_URL = (
-	import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
+	import.meta.env.VITE_API_BASE_URL ||
+	(import.meta.env.PROD ? '/api' : 'http://localhost:8000/api')
 ).replace(/\/$/, '');
 
 export function getToken() {
