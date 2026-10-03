@@ -352,9 +352,9 @@ class InvoiceController extends Controller
                 /*
                  * Generate invoice number:
                  *
-                 * KT00001
-                 * KT00002
-                 * KT00003
+                 * TKS00001
+                 * TKS00002
+                 * TKS00003
                  */
                 $invoiceNo =
                     $this->generateNextInvoiceNo();
@@ -456,42 +456,38 @@ class InvoiceController extends Controller
      * Generate the next invoice number.
      *
      * Examples:
-     * KT00001
-     * KT00002
-     * KT00003
+     * TKS00001
+     * TKS00002
+     * TKS00003
      */
     private function generateNextInvoiceNo(): string
     {
         /*
          * Only look for invoices
-         * using the KT format.
+         * using the TKS format.
          */
         $lastInvoice = Invoice::where(
             'invoice_no',
             'like',
-            'KT%'
+            'TKS%'
         )
             ->orderByDesc('id')
             ->first();
 
 
         /*
-         * No KT invoice yet.
+         * No TKS invoice yet.
          */
         if (!$lastInvoice) {
-            return 'KT00001';
+            return 'TKS00001';
         }
 
 
         /*
-         * KT00001
-         *     ↓
-         * 00001
-         *     ↓
-         * 1
+         * TKS00001 -> 00001 -> 1
          */
         $lastNumber = (int) str_replace(
-            'KT',
+            'TKS',
             '',
             $lastInvoice->invoice_no
         );
@@ -506,9 +502,9 @@ class InvoiceController extends Controller
          * ↓
          * 00002
          * ↓
-         * KT00002
+         * TKS00002
          */
-        return 'KT' . str_pad(
+        return 'TKS' . str_pad(
             (string) $nextNumber,
             5,
             '0',

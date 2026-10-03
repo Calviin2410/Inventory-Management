@@ -157,34 +157,24 @@ export function buildInvoiceDocument(invoice) {
 					}
 
 					.company-logo-wrap {
-						position: relative;
+						display: flex;
+						align-items: center;
 						width: 100%;
 						max-width: 600px;
+						gap: 10px;
 					}
 
-					.company-logo {
+					.company-truck {
 						display: block;
-						width: 100%;
+						width: 168px;
+						height: 112px;
+						object-fit: contain;
+					}
+
+					.company-wordmark {
+						display: block;
+						width: min(410px, calc(100% - 178px));
 						height: auto;
-					}
-
-					.company-contact {
-						position: absolute;
-						top: 47%;
-						right: 0;
-						width: 69%;
-						padding: 2px 0 4px 3px;
-						background: #fff;
-						color: #172033;
-						font-family: "Arial Narrow", Arial, sans-serif;
-						font-size: 15px;
-						font-weight: 700;
-						line-height: 1.3;
-						text-align: left;
-					}
-
-					.company-number {
-						font-style: italic;
 					}
 
 					h1 {
@@ -466,12 +456,8 @@ export function buildInvoiceDocument(invoice) {
 					<header class="header">
 						<div class="header-left">
 							<div class="company-logo-wrap">
-								<img class="company-logo" src="/images/tks-logo.png" alt="TKS Waste Management">
-								<div class="company-contact">
-									<div class="company-number">(Co No. SA0221614-V)</div>
-									<div>H/P: 012-989 6221 (TKS) / 010-231 1687 (PENG)</div>
-									<div>OFFICE: 03-31677966</div>
-								</div>
+								<img class="company-truck" src="/images/tks-truck-transparent.png" alt="">
+								<img class="company-wordmark" src="/images/tks-wordmark-contact-transparent.png" alt="TKS Waste Management, Co No. SA0221614-V, H/P 012-989 6221 (TKS) / 010-231 1687 (PENG), Office 03-31677966">
 							</div>
 						</div>
 						<div class="header-right">
