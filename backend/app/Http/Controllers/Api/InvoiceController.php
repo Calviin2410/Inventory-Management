@@ -240,6 +240,60 @@ class InvoiceController extends Controller
         );
     }
 
+    public function destroy(Request $request, Invoice $invoice)
+    {
+        abort_unless(
+            $request->user()?->isAdmin(),
+            403,
+            'Only administrators can delete invoices.'
+        );
+
+        $invoice->load('items');
+        $barrelIds = $invoice->items->pluck('barrel_id')->unique()->values();
+        $snapshot = $invoice->only([
+            'invoice_no',
+            'customer_id',
+            'vehicle_id',
+            'user_id',
+            'issued_date',
+            'status',
+        ]);
+        $invoiceId = $invoice->id;
+        $invoiceNo = $invoice->invoice_no;
+
+        DB::transaction(function () use ($invoice, $barrelIds) {
+            $invoice->delete();
+
+            foreach ($barrelIds as $barrelId) {
+                $remainingRental = \App\Models\InvoiceItem::query()
+                    ->with('invoice:id,customer_id')
+                    ->where('barrel_id', $barrelId)
+                    ->whereNull('rental_end')
+                    ->latest('id')
+                    ->first();
+
+                Barrel::whereKey($barrelId)->update([
+                    'status' => $remainingRental ? 'rented' : 'available',
+                    'current_customer_id' => $remainingRental?->invoice?->customer_id,
+                ]);
+            }
+        });
+
+        ActivityLog::record(
+            $request,
+            'deleted',
+            'Invoice',
+            $invoiceId,
+            $invoiceNo,
+            'Deleted invoice '.$invoiceNo,
+            $snapshot
+        );
+
+        return response()->json([
+            'message' => 'Invoice deleted successfully.',
+        ]);
+    }
+
 
     // GET /api/invoices-next-number
     public function nextInvoiceNo()

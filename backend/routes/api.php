@@ -43,7 +43,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/barrels/available',[BarrelController::class, 'available']);
 
     Route::get('/invoices-next-number',[InvoiceController::class, 'nextInvoiceNo']);
-    Route::apiResource('invoices', InvoiceController::class)->only(['index', 'store', 'show', 'update']);
+    Route::apiResource('invoices', InvoiceController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
     Route::apiResource('vehicles',VehicleController::class)->only(['index','store','show','update']);
     Route::get('/vehicles/{vehicle}',[VehicleController::class, 'show']);
     Route::delete('/vehicles/{vehicle}',[VehicleController::class, 'destroy']);

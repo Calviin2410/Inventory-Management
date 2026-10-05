@@ -5,7 +5,9 @@
 	import Nav from "$lib/Nav.svelte";
 	import SkeletonTable from "$lib/SkeletonTable.svelte";
 	import DateInput from "$lib/DateInput.svelte";
+	import ConfirmDialog from "$lib/ConfirmDialog.svelte";
 	import { formatDate } from "$lib/format.js";
+	import { user } from "$lib/stores/auth.js";
 
 	// =========================
 	// State
@@ -25,10 +27,44 @@
 	let paymentDate = $state("");
 	let paymentSaving = $state(false);
 	let paymentError = $state("");
+	let selectedInvoice = $state(null);
+	let deletingInvoice = $state(false);
+	let deleteError = $state("");
+	let isAdmin = $derived($user?.role === "admin");
 
 	let currentPage = $state(1);
 	let lastPage = $state(1);
 	let totalInvoices = $state(0);
+
+	function requestInvoiceDeletion(invoice) {
+		if (!isAdmin) return;
+		selectedInvoice = invoice;
+		deleteError = "";
+		openMenuId = null;
+	}
+
+	function closeDeleteDialog() {
+		if (!deletingInvoice) selectedInvoice = null;
+	}
+
+	async function deleteInvoice() {
+		if (!selectedInvoice || deletingInvoice) return;
+		deletingInvoice = true;
+		deleteError = "";
+
+		try {
+			await api.deleteInvoice(selectedInvoice.id);
+			selectedInvoice = null;
+			const targetPage = invoices.length === 1 && currentPage > 1
+				? currentPage - 1
+				: currentPage;
+			await loadInvoices(targetPage);
+		} catch (error) {
+			deleteError = error?.message || "Unable to delete this invoice.";
+		} finally {
+			deletingInvoice = false;
+		}
+	}
 
 	function toggleActionMenu(invoiceId, event) {
 		if (openMenuId === invoiceId) {
@@ -440,6 +476,17 @@
 														? "Preparing..."
 														: "Export PDF"}
 												</button>
+
+												{#if isAdmin}
+													<div class="menu-divider"></div>
+													<button
+														type="button"
+														class="delete-action"
+														onclick={() => requestInvoiceDeletion(invoice)}
+													>
+														Delete Invoice
+													</button>
+												{/if}
 											</div>
 										{/if}
 									</div>
@@ -513,6 +560,18 @@
 			</form>
 		</div>
 	{/if}
+
+	<ConfirmDialog
+		open={selectedInvoice !== null}
+		title="Delete this invoice?"
+		message="The invoice will be permanently removed. Any barrel that is no longer linked to an active rental will become available again."
+		itemName={selectedInvoice?.invoice_no ?? ""}
+		confirmLabel="Delete invoice"
+		busy={deletingInvoice}
+		errorMessage={deleteError}
+		oncancel={closeDeleteDialog}
+		onconfirm={deleteInvoice}
+	/>
 </main>
 
 <style>
@@ -749,6 +808,14 @@
 	.dropdown-menu button:hover,
 	.menu-link:hover {
 		background: #f3f4f6;
+	}
+
+	.dropdown-menu .delete-action {
+		color: #c53030;
+	}
+
+	.dropdown-menu .delete-action:hover {
+		background: #fff1f1;
 	}
 
 	.dropdown-menu button:disabled {

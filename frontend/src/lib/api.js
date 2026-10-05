@@ -128,6 +128,7 @@ export const api = {
 	getInvoice: (id) => request(`/invoices/${id}`),
 	createInvoice: (payload) => request('/invoices', { method: 'POST', body: payload }),
 	updateInvoice: (id, payload) => request(`/invoices/${id}`, { method: 'PATCH', body: payload }),
+	deleteInvoice: (id) => request(`/invoices/${id}`, { method: 'DELETE' }),
 
 	getVehicles: () => request('/vehicles'),
 	getVehicle: (id) => request(`/vehicles/${id}`),

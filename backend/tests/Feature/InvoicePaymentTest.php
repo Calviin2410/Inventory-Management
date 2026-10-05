@@ -171,4 +171,45 @@ class InvoicePaymentTest extends TestCase
             ]],
         ])->assertForbidden();
     }
+
+    public function test_admin_can_delete_an_invoice_and_release_its_barrel(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $invoice = $this->invoice();
+        $barrel = Barrel::create([
+            'code' => 'DELETE-001',
+            'status' => 'rented',
+            'current_customer_id' => $invoice->customer_id,
+        ]);
+        $invoice->items()->create([
+            'barrel_id' => $barrel->id,
+            'rental_start' => '2026-10-06',
+            'rental_end' => null,
+        ]);
+        Sanctum::actingAs($admin);
+
+        $this->deleteJson("/api/invoices/{$invoice->id}")
+            ->assertOk()
+            ->assertJsonFragment(['message' => 'Invoice deleted successfully.']);
+
+        $this->assertDatabaseMissing('invoices', ['id' => $invoice->id]);
+        $this->assertDatabaseMissing('invoice_items', ['invoice_id' => $invoice->id]);
+        $this->assertDatabaseHas('barrels', [
+            'id' => $barrel->id,
+            'status' => 'available',
+            'current_customer_id' => null,
+        ]);
+    }
+
+    public function test_staff_cannot_delete_an_invoice(): void
+    {
+        $staff = User::factory()->create(['role' => 'normal_staff']);
+        $invoice = $this->invoice();
+        Sanctum::actingAs($staff);
+
+        $this->deleteJson("/api/invoices/{$invoice->id}")
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('invoices', ['id' => $invoice->id]);
+    }
 }
