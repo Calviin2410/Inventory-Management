@@ -1146,7 +1146,7 @@
 		}
 
 		.data-table {
-			width: 620px;
+			width: 100%;
 			min-width: 620px;
 		}
 
