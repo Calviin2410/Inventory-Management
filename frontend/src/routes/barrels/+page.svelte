@@ -624,7 +624,7 @@
 	}
 
 	.legend i.rented {
-		background: #e29a35;
+		background: #dc2626;
 	}
 
 	.legend i.returning {
@@ -744,8 +744,8 @@
 
 	.badge.rented,
 	.barrel-code-badge.rented {
-		background: #fff3df;
-		color: #b87519;
+		background: #fee2e2;
+		color: #b91c1c;
 	}
 
 	.badge.returning,
@@ -795,11 +795,11 @@
 	}
 
 	.barrel-card.rented {
-		--status-color: #e29a35;
+		--status-color: #dc2626;
 
-		--barrel-light: #ffebc8;
-		--barrel-main: #f1b85d;
-		--barrel-dark: #b87519;
+		--barrel-light: #fecaca;
+		--barrel-main: #ef4444;
+		--barrel-dark: #b91c1c;
 	}
 
 	.barrel-card.returning {
