@@ -437,27 +437,6 @@
 				</table>
 			</div>
 
-			{#if menuInvoice}
-				<div
-					class="dropdown-menu floating-action-menu"
-					style:--menu-top={`${actionMenuPosition.top}px`}
-					style:--menu-left={`${actionMenuPosition.left}px`}
-				>
-					<a class="menu-link" href={`/invoices/${menuInvoice.id}`}>View Invoice</a>
-					<div class="menu-divider"></div>
-					<button type="button" disabled={menuInvoice.status === "paid"} onclick={() => openPaymentDialog(menuInvoice)}>Set Paid</button>
-					<button type="button" disabled={menuInvoice.status === "unpaid"} onclick={() => updateInvoiceStatus(menuInvoice, "unpaid")}>Set Unpaid</button>
-					<div class="menu-divider"></div>
-					<button type="button" disabled={exportingId === menuInvoice.id} onclick={() => exportPdf(menuInvoice)}>
-						{exportingId === menuInvoice.id ? "Preparing..." : "Export PDF"}
-					</button>
-					{#if isAdmin}
-						<div class="menu-divider"></div>
-						<button type="button" class="delete-action" onclick={() => requestInvoiceDeletion(menuInvoice)}>Delete Invoice</button>
-					{/if}
-				</div>
-			{/if}
-
 			<!-- =========================
 			     PAGINATION
 			========================= -->
@@ -492,6 +471,27 @@
 			</div>
 		{/if}
 	</section>
+
+	{#if menuInvoice}
+		<div
+			class="dropdown-menu floating-action-menu"
+			style:--menu-top={`${actionMenuPosition.top}px`}
+			style:--menu-left={`${actionMenuPosition.left}px`}
+		>
+			<a class="menu-link" href={`/invoices/${menuInvoice.id}`}>View Invoice</a>
+			<div class="menu-divider"></div>
+			<button type="button" disabled={menuInvoice.status === "paid"} onclick={() => openPaymentDialog(menuInvoice)}>Set Paid</button>
+			<button type="button" disabled={menuInvoice.status === "unpaid"} onclick={() => updateInvoiceStatus(menuInvoice, "unpaid")}>Set Unpaid</button>
+			<div class="menu-divider"></div>
+			<button type="button" disabled={exportingId === menuInvoice.id} onclick={() => exportPdf(menuInvoice)}>
+				{exportingId === menuInvoice.id ? "Preparing..." : "Export PDF"}
+			</button>
+			{#if isAdmin}
+				<div class="menu-divider"></div>
+				<button type="button" class="delete-action" onclick={() => requestInvoiceDeletion(menuInvoice)}>Delete Invoice</button>
+			{/if}
+		</div>
+	{/if}
 
 	{#if paymentInvoice}
 		<div class="dialog-layer" role="presentation" onclick={(event) => event.currentTarget === event.target && closePaymentDialog()}>

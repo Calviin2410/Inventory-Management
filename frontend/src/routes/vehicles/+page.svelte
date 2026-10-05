@@ -257,20 +257,21 @@
                 </table>
             </div>
 
-            {#if menuVehicle}
-                <div
-                    class="dropdown-menu floating-action-menu"
-                    style:--menu-top={`${actionMenuPosition.top}px`}
-                    style:--menu-left={`${actionMenuPosition.left}px`}
-                >
-                    <button class="dropdown-item" onclick={() => goto(`/vehicles/${menuVehicle.id}/edit`)}>Edit</button>
-                    <button class="dropdown-item delete-item" disabled={deletingVehicleId === menuVehicle.id} onclick={() => requestVehicleDeletion(menuVehicle)}>
-                        {deletingVehicleId === menuVehicle.id ? "Deleting..." : "Delete"}
-                    </button>
-                </div>
-            {/if}
         {/if}
     </section>
+
+    {#if menuVehicle}
+        <div
+            class="dropdown-menu floating-action-menu"
+            style:--menu-top={`${actionMenuPosition.top}px`}
+            style:--menu-left={`${actionMenuPosition.left}px`}
+        >
+            <button class="dropdown-item" onclick={() => goto(`/vehicles/${menuVehicle.id}/edit`)}>Edit</button>
+            <button class="dropdown-item delete-item" disabled={deletingVehicleId === menuVehicle.id} onclick={() => requestVehicleDeletion(menuVehicle)}>
+                {deletingVehicleId === menuVehicle.id ? "Deleting..." : "Delete"}
+            </button>
+        </div>
+    {/if}
 </main>
 
 <ConfirmDialog
@@ -463,5 +464,19 @@
         .vehicle-icon {
             display: none;
         }
+
+		.data-table th:first-child,
+		.data-table td:first-child {
+			position: sticky;
+			left: 0;
+			z-index: 2;
+			background: white;
+			box-shadow: 8px 0 12px -12px rgb(15 23 42 / 45%);
+		}
+
+		.data-table th:first-child {
+			z-index: 3;
+			background: #f7f9fb;
+		}
     }
 </style>

@@ -410,22 +410,6 @@
 				</div>
 			{/if}
 
-			{#if menuBarrel}
-				<div
-					class="dropdown-menu floating-action-menu"
-					style:--menu-top={`${actionMenuPosition.top}px`}
-					style:--menu-left={`${actionMenuPosition.left}px`}
-				>
-					<button type="button" disabled={updatingBarrelId === menuBarrel.id} onclick={() => handleStatusUpdate(menuBarrel, "available")}>Set Available</button>
-					<button type="button" disabled={updatingBarrelId === menuBarrel.id} onclick={() => handleStatusUpdate(menuBarrel, "rented")}>Set Rented</button>
-					<button type="button" disabled={updatingBarrelId === menuBarrel.id} onclick={() => handleStatusUpdate(menuBarrel, "returning")}>Set Returning</button>
-					{#if isAdmin}
-						<div class="menu-divider"></div>
-						<button type="button" class="delete-action" disabled={menuBarrel.status === "rented"} onclick={() => requestBarrelDeletion(menuBarrel)}>Delete Barrel</button>
-					{/if}
-				</div>
-			{/if}
-
 			<!-- =========================
 		     PAGINATION
 		========================= -->
@@ -460,6 +444,22 @@
 			</div>
 		{/if}
 	</section>
+
+	{#if menuBarrel}
+		<div
+			class="dropdown-menu floating-action-menu"
+			style:--menu-top={`${actionMenuPosition.top}px`}
+			style:--menu-left={`${actionMenuPosition.left}px`}
+		>
+			<button type="button" disabled={updatingBarrelId === menuBarrel.id} onclick={() => handleStatusUpdate(menuBarrel, "available")}>Set Available</button>
+			<button type="button" disabled={updatingBarrelId === menuBarrel.id} onclick={() => handleStatusUpdate(menuBarrel, "rented")}>Set Rented</button>
+			<button type="button" disabled={updatingBarrelId === menuBarrel.id} onclick={() => handleStatusUpdate(menuBarrel, "returning")}>Set Returning</button>
+			{#if isAdmin}
+				<div class="menu-divider"></div>
+				<button type="button" class="delete-action" disabled={menuBarrel.status === "rented"} onclick={() => requestBarrelDeletion(menuBarrel)}>Delete Barrel</button>
+			{/if}
+		</div>
+	{/if}
 </main>
 
 <ConfirmDialog
@@ -1177,6 +1177,20 @@
 		.data-table th,
 		.data-table td {
 			padding: 12px 10px;
+		}
+
+		.data-table th:first-child,
+		.data-table td:first-child {
+			position: sticky;
+			left: 0;
+			z-index: 2;
+			background: white;
+			box-shadow: 8px 0 12px -12px rgb(15 23 42 / 45%);
+		}
+
+		.data-table th:first-child {
+			z-index: 3;
+			background: #f7f9fb;
 		}
 	}
 </style>
