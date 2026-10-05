@@ -6,7 +6,6 @@ use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\StockMovementController;
-use App\Http\Controllers\Api\DriverController;
 use App\Http\Controllers\Api\VehicleController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\DashboardController;
@@ -45,7 +44,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/invoices-next-number',[InvoiceController::class, 'nextInvoiceNo']);
     Route::apiResource('invoices', InvoiceController::class)->only(['index', 'store', 'show', 'update']);
-    Route::apiResource('drivers',DriverController::class)->only(['index','store','show','update','destroy']);
     Route::apiResource('vehicles',VehicleController::class)->only(['index','store','show','update']);
     Route::get('/vehicles/{vehicle}',[VehicleController::class, 'show']);
     Route::delete('/vehicles/{vehicle}',[VehicleController::class, 'destroy']);

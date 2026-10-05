@@ -58,7 +58,6 @@ class InvoiceController extends Controller
         return response()->json(
             $invoice->load([
                 'customer',
-                'driver',
                 'vehicle',
                 'items.barrel'
             ])
@@ -255,14 +254,6 @@ class InvoiceController extends Controller
                 'exists:customers,id'
             ],
 
-            'driver_id' => [
-                'required',
-                Rule::exists('drivers', 'id')->where(
-                    fn ($query) =>
-                        $query->where('status', 'available')
-                ),
-            ],
-
             'vehicle_id' => [
                 'nullable',
                 Rule::exists('vehicles', 'id')->where(
@@ -366,9 +357,6 @@ class InvoiceController extends Controller
                     'customer_id' =>
                         $data['customer_id'],
 
-                    'driver_id' =>
-                        $data['driver_id'],
-
                     'vehicle_id' =>
                         $data['vehicle_id'],
 
@@ -432,7 +420,6 @@ class InvoiceController extends Controller
             $invoice->only([
                 'invoice_no',
                 'customer_id',
-                'driver_id',
                 'vehicle_id',
                 'issued_date',
                 'status',
@@ -443,7 +430,6 @@ class InvoiceController extends Controller
         return response()->json(
             $invoice->load([
                 'customer',
-                'driver',
                 'vehicle',
                 'items.barrel'
             ]),

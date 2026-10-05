@@ -81,7 +81,7 @@
 		const label = log.subject_label || `#${log.subject_id}`;
 
 		if (
-			["Driver", "Vehicle"].includes(log.subject_type) &&
+			log.subject_type === "Vehicle" &&
 			log.subject_id
 		) {
 			return `${label} (ID: ${log.subject_id})`;
@@ -198,7 +198,6 @@
 			<option value="Invoice">Invoices</option>
 			<option value="Customer">Customers</option>
 			<option value="Barrel">Barrels</option>
-			<option value="Driver">Drivers</option>
 			<option value="Vehicle">Vehicles</option>
 			<option value="Staff">Staff</option>
 		</select>

@@ -23,10 +23,8 @@
 	let isSubmitting = $state(false);
 	let pageError = $state("");
 
-	let driverId = $state("");
 	let vehicleId = $state("");
 
-	let drivers = $state([]);
 	let vehicles = $state([]);
 	let formDirty = $state(false);
 	let matchedCustomer = $state(null);
@@ -43,21 +41,16 @@
 		pageError = "";
 
 		try {
-			const [numberResult, barrelsResult, driversResult, vehiclesResult] =
+			const [numberResult, barrelsResult, vehiclesResult] =
 				await Promise.all([
 					api.getNextInvoiceNo(),
 					api.getAvailableBarrels(),
-					api.getDrivers({
-						available_only: 1,
-					}),
 					api.getVehicles(),
 				]);
 
 			invoiceId = numberResult.invoice_no;
 
 			availableBarrels = barrelsResult ?? [];
-
-			drivers = driversResult?.data ?? driversResult ?? [];
 
 			const vehicleList = vehiclesResult?.data ?? vehiclesResult ?? [];
 
@@ -136,7 +129,6 @@
 	async function createInvoiceForCustomer(customer) {
 		await api.createInvoice({
 			customer_id: customer.id,
-			driver_id: Number(driverId),
 			vehicle_id: Number(vehicleId),
 			address: address.trim(),
 			notes: null,
@@ -174,11 +166,6 @@
 
 		if (!address.trim()) {
 			pageError = "Please enter an address.";
-			return;
-		}
-
-		if (!driverId) {
-			pageError = "Please select a driver.";
 			return;
 		}
 
@@ -311,23 +298,6 @@
 					<h2>Rental details</h2>
 					<p>Select the barrel and rental period for this invoice.</p>
 				</div>
-
-				<label>
-					<span>
-						Driver
-						<b>Required</b>
-					</span>
-
-					<select bind:value={driverId} required>
-						<option value=""> Select a driver </option>
-
-						{#each drivers as driver (driver.id)}
-							<option value={driver.id}>
-								{driver.name}
-							</option>
-						{/each}
-					</select>
-				</label>
 
 				<label>
 					<span>

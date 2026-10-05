@@ -14,7 +14,6 @@ class Invoice extends Model
     protected $fillable = [
         'invoice_no',
         'customer_id',
-        'driver_id',
         'vehicle_id',
         'user_id',
         'issued_date',
@@ -47,11 +46,6 @@ class Invoice extends Model
     public function items(): HasMany
     {
         return $this->hasMany(InvoiceItem::class);
-    }
-
-    public function driver(): BelongsTo
-    {
-        return $this->belongsTo(Driver::class);
     }
 
     public function vehicle(): BelongsTo
