@@ -805,10 +805,13 @@
 		.dropdown-menu {
 			position: fixed;
 			top: auto;
-			right: 12px;
-			bottom: 12px;
-			left: 12px;
-			width: auto;
+			right: 16px;
+			bottom: 16px;
+			left: auto;
+			z-index: 2000;
+			width: min(230px, calc(100vw - 32px));
+			max-height: calc(100vh - 32px);
+			overflow-y: auto;
 			border-radius: 12px;
 			box-shadow: 0 20px 60px rgb(15 23 42 / 28%);
 		}
@@ -847,10 +850,6 @@
 		.action-column,
 		.action-cell {
 			width: 60px;
-		}
-
-		.dropdown-menu {
-			width: 150px;
 		}
 
 		th,
