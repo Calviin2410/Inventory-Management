@@ -333,7 +333,7 @@
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
-	@media (max-width: 820px) {
+	@media (max-width: 900px) {
 		.sidebar {
 			transform: translateX(-105%);
 			transition: transform 0.22s ease;

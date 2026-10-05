@@ -894,7 +894,11 @@
 	   RESPONSIVE
 	========================= */
 
-	@media (max-width: 760px) {
+	@media (max-width: 900px) {
+		.toolbar {
+			flex-wrap: wrap;
+		}
+
 		.dropdown-menu {
 			position: fixed;
 			top: var(--menu-top);
@@ -935,6 +939,11 @@
 			max-width: none;
 		}
 
+		.result-count {
+			width: auto;
+			margin-left: 0;
+		}
+
 		.status-column,
 		.status-cell {
 			width: auto;
@@ -948,6 +957,22 @@
 		th,
 		td {
 			padding: 12px 10px;
+		}
+	}
+
+	@media (max-width: 900px) and (max-height: 500px) {
+		.toolbar {
+			gap: 8px;
+			margin-bottom: 12px;
+			padding: 8px;
+		}
+
+		.search {
+			width: min(100%, 250px);
+		}
+
+		.table-card {
+			max-height: calc(100vh - 190px);
 		}
 	}
 </style>
