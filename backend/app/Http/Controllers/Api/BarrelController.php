@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Barrel;
 use App\Models\ActivityLog;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
@@ -32,9 +33,8 @@ class BarrelController extends Controller
             );
         }
 
-        $barrels = $query
-            ->orderBy('code')
-            ->paginate(20);
+        $barrels = $this->orderByBarrelCode($query)
+            ->paginate(30);
 
         $barrels->getCollection()->transform(
             function ($barrel) {
@@ -249,9 +249,22 @@ class BarrelController extends Controller
     public function available()
     {
         return response()->json(
-            Barrel::where('status', 'available')
-                ->orderBy('code')
+            $this->orderByBarrelCode(
+                Barrel::where('status', 'available')
+            )
                 ->get()
         );
+    }
+
+    /**
+     * Keep zero-padded barrel codes together, then sort the remaining codes
+     * naturally (1, 2, ... 10, 11) instead of alphabetically (1, 10, 11, 2).
+     */
+    private function orderByBarrelCode(Builder $query): Builder
+    {
+        return $query
+            ->orderByRaw("CASE WHEN code LIKE '0%' THEN 0 ELSE 1 END")
+            ->orderByRaw('LENGTH(code)')
+            ->orderBy('code');
     }
 }
