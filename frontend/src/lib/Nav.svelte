@@ -335,8 +335,25 @@
 	}
 	@media (max-width: 900px) {
 		.sidebar {
+			height: 100vh;
+			height: 100dvh;
+			max-height: 100dvh;
+			overflow-x: hidden;
+			overflow-y: auto;
+			overscroll-behavior: contain;
+			-webkit-overflow-scrolling: touch;
+			touch-action: pan-y;
+			padding-top: max(14px, env(safe-area-inset-top));
+			padding-bottom: max(16px, env(safe-area-inset-bottom));
 			transform: translateX(-105%);
 			transition: transform 0.22s ease;
+		}
+		.sidebar .nav-links {
+			flex: none;
+		}
+		.sidebar-footer {
+			flex: none;
+			margin-top: 16px;
 		}
 		.sidebar.open {
 			transform: translateX(0);
