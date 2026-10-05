@@ -166,6 +166,22 @@
 				</div>
 
 				<div class="detail-item">
+					<span class="label"> Salesman </span>
+
+					<p class="strong">
+						{invoice.created_by?.name ?? "—"}
+					</p>
+				</div>
+
+				<div class="detail-item">
+					<span class="label"> Vehicle Plate </span>
+
+					<p class="strong">
+						{invoice.vehicle?.plate_number ?? "—"}
+					</p>
+				</div>
+
+				<div class="detail-item">
 					<span class="label"> Customer </span>
 
 					<p>

@@ -269,7 +269,7 @@
 
 	<section class="panel invoice-panel">
 		{#if loading}
-			<SkeletonTable rows={6} columns={6} />
+			<SkeletonTable rows={6} columns={7} />
 		{:else if errorMessage}
 			<p class="error">
 				{errorMessage}
@@ -297,6 +297,8 @@
 
 							<th> Invoice Date </th>
 
+							<th> Created By </th>
+
 							<th class="status-column"> Status </th>
 
 							<th class="action-column"></th>
@@ -323,6 +325,10 @@
 
 								<td>
 									{formatDate(invoice.issued_date)}
+								</td>
+
+								<td>
+									{invoice.created_by?.name ?? "—"}
 								</td>
 
 								<!-- =========================
@@ -813,7 +819,7 @@
 		}
 
 		table {
-			min-width: 620px;
+			min-width: 760px;
 		}
 		th:first-child,
 		td:first-child {

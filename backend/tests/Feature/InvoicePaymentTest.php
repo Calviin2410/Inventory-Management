@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\Barrel;
 use App\Models\Invoice;
 use App\Models\User;
+use App\Models\Vehicle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -93,6 +94,36 @@ class InvoicePaymentTest extends TestCase
         $this->getJson("/api/invoices/{$invoice->id}")
             ->assertOk()
             ->assertJsonFragment(['invoice_no' => 'KT09999']);
+    }
+
+    public function test_invoice_responses_include_creator_and_vehicle(): void
+    {
+        $creator = User::factory()->create([
+            'name' => 'Salesman A',
+            'role' => 'normal_staff',
+        ]);
+        $vehicle = Vehicle::create([
+            'plate_number' => 'VAB 1234',
+            'plate_number_normalized' => 'VAB1234',
+            'status' => 'available',
+        ]);
+        $invoice = $this->invoice();
+        $invoice->update([
+            'user_id' => $creator->id,
+            'vehicle_id' => $vehicle->id,
+        ]);
+
+        Sanctum::actingAs($creator);
+
+        $this->getJson('/api/invoices')
+            ->assertOk()
+            ->assertJsonPath('data.0.created_by.name', 'Salesman A')
+            ->assertJsonPath('data.0.vehicle.plate_number', 'VAB 1234');
+
+        $this->getJson("/api/invoices/{$invoice->id}")
+            ->assertOk()
+            ->assertJsonPath('created_by.name', 'Salesman A')
+            ->assertJsonPath('vehicle.plate_number', 'VAB 1234');
     }
 
     public function test_admin_can_update_invoice_item_rental_dates(): void

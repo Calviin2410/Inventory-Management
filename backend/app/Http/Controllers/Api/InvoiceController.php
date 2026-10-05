@@ -17,6 +17,8 @@ class InvoiceController extends Controller
     {
         $query = Invoice::with([
             'customer',
+            'createdBy:id,name',
+            'vehicle:id,plate_number',
             'items.barrel:id,code',
         ])  
             ->latest('issued_date')
@@ -58,6 +60,7 @@ class InvoiceController extends Controller
         return response()->json(
             $invoice->load([
                 'customer',
+                'createdBy:id,name',
                 'vehicle',
                 'items.barrel'
             ])
@@ -230,6 +233,8 @@ class InvoiceController extends Controller
         return response()->json(
             $invoice->load([
                 'customer',
+                'createdBy:id,name',
+                'vehicle:id,plate_number',
                 'items.barrel'
             ])
         );
@@ -430,6 +435,7 @@ class InvoiceController extends Controller
         return response()->json(
             $invoice->load([
                 'customer',
+                'createdBy:id,name',
                 'vehicle',
                 'items.barrel'
             ]),
