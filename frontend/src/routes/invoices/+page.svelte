@@ -31,6 +31,9 @@
 	let deletingInvoice = $state(false);
 	let deleteError = $state("");
 	let isAdmin = $derived($user?.role === "admin");
+	let menuInvoice = $derived(
+		invoices.find((invoice) => invoice.id === openMenuId) ?? null,
+	);
 
 	let currentPage = $state(1);
 	let lastPage = $state(1);
@@ -74,7 +77,7 @@
 
 		const buttonRect = event.currentTarget.getBoundingClientRect();
 		const menuWidth = 190;
-		const menuHeight = 176;
+		const menuHeight = isAdmin ? 232 : 176;
 		const gap = 8;
 		const viewportPadding = 8;
 
@@ -426,69 +429,6 @@
 											⋯
 										</button>
 
-										{#if openMenuId === invoice.id}
-											<div
-												class="dropdown-menu"
-												style:--menu-top={`${actionMenuPosition.top}px`}
-												style:--menu-left={`${actionMenuPosition.left}px`}
-											>
-												<a
-													class="menu-link"
-													href={`/invoices/${invoice.id}`}
-												>
-													View Invoice
-												</a>
-
-												<div class="menu-divider"></div>
-
-												<button
-													type="button"
-													disabled={invoice.status ===
-														"paid"}
-												onclick={() => openPaymentDialog(invoice)}
-												>
-													Set Paid
-												</button>
-
-												<button
-													type="button"
-													disabled={invoice.status ===
-														"unpaid"}
-													onclick={() =>
-														updateInvoiceStatus(
-															invoice,
-															"unpaid",
-														)}
-												>
-													Set Unpaid
-												</button>
-
-												<div class="menu-divider"></div>
-
-												<button
-													type="button"
-													disabled={exportingId ===
-														invoice.id}
-													onclick={() =>
-														exportPdf(invoice)}
-												>
-													{exportingId === invoice.id
-														? "Preparing..."
-														: "Export PDF"}
-												</button>
-
-												{#if isAdmin}
-													<div class="menu-divider"></div>
-													<button
-														type="button"
-														class="delete-action"
-														onclick={() => requestInvoiceDeletion(invoice)}
-													>
-														Delete Invoice
-													</button>
-												{/if}
-											</div>
-										{/if}
 									</div>
 								</td>
 							</tr>
@@ -496,6 +436,27 @@
 					</tbody>
 				</table>
 			</div>
+
+			{#if menuInvoice}
+				<div
+					class="dropdown-menu floating-action-menu"
+					style:--menu-top={`${actionMenuPosition.top}px`}
+					style:--menu-left={`${actionMenuPosition.left}px`}
+				>
+					<a class="menu-link" href={`/invoices/${menuInvoice.id}`}>View Invoice</a>
+					<div class="menu-divider"></div>
+					<button type="button" disabled={menuInvoice.status === "paid"} onclick={() => openPaymentDialog(menuInvoice)}>Set Paid</button>
+					<button type="button" disabled={menuInvoice.status === "unpaid"} onclick={() => updateInvoiceStatus(menuInvoice, "unpaid")}>Set Unpaid</button>
+					<div class="menu-divider"></div>
+					<button type="button" disabled={exportingId === menuInvoice.id} onclick={() => exportPdf(menuInvoice)}>
+						{exportingId === menuInvoice.id ? "Preparing..." : "Export PDF"}
+					</button>
+					{#if isAdmin}
+						<div class="menu-divider"></div>
+						<button type="button" class="delete-action" onclick={() => requestInvoiceDeletion(menuInvoice)}>Delete Invoice</button>
+					{/if}
+				</div>
+			{/if}
 
 			<!-- =========================
 			     PAGINATION
@@ -778,6 +739,16 @@
 		background: white;
 
 		box-shadow: 0 10px 30px rgba(15, 23, 42, 0.14);
+	}
+
+	.floating-action-menu {
+		position: fixed;
+		top: var(--menu-top);
+		right: auto;
+		left: var(--menu-left);
+		z-index: 2000;
+		max-height: calc(100vh - 16px);
+		overflow-y: auto;
 	}
 
 	.dropdown-menu button,
