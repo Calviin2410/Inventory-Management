@@ -18,6 +18,7 @@
 	let statusFilter = $state("");
 
 	let openMenuId = $state(null);
+	let actionMenuPosition = $state({ top: 0, left: 0 });
 	let exportingId = $state(null);
 	let paymentInvoice = $state(null);
 	let paymentMethod = $state("cash");
@@ -28,6 +29,31 @@
 	let currentPage = $state(1);
 	let lastPage = $state(1);
 	let totalInvoices = $state(0);
+
+	function toggleActionMenu(invoiceId, event) {
+		if (openMenuId === invoiceId) {
+			openMenuId = null;
+			return;
+		}
+
+		const buttonRect = event.currentTarget.getBoundingClientRect();
+		const menuWidth = 190;
+		const menuHeight = 176;
+		const gap = 8;
+		const viewportPadding = 8;
+
+		actionMenuPosition = {
+			top: Math.min(
+				Math.max(buttonRect.top, viewportPadding),
+				window.innerHeight - menuHeight - viewportPadding,
+			),
+			left: Math.max(
+				viewportPadding,
+				buttonRect.left - menuWidth - gap,
+			),
+		};
+		openMenuId = invoiceId;
+	}
 
 	// =========================
 	// Load Invoices
@@ -358,18 +384,18 @@
 											type="button"
 											class="more-button"
 											aria-label="Invoice actions"
-											onclick={() => {
-												openMenuId =
-													openMenuId === invoice.id
-														? null
-														: invoice.id;
-											}}
+										onclick={(event) =>
+											toggleActionMenu(invoice.id, event)}
 										>
 											⋯
 										</button>
 
 										{#if openMenuId === invoice.id}
-											<div class="dropdown-menu">
+											<div
+												class="dropdown-menu"
+												style:--menu-top={`${actionMenuPosition.top}px`}
+												style:--menu-left={`${actionMenuPosition.left}px`}
+											>
 												<a
 													class="menu-link"
 													href={`/invoices/${invoice.id}`}
@@ -804,13 +830,13 @@
 	@media (max-width: 760px) {
 		.dropdown-menu {
 			position: fixed;
-			top: auto;
-			right: 16px;
-			bottom: 16px;
-			left: auto;
+			top: var(--menu-top);
+			right: auto;
+			bottom: auto;
+			left: var(--menu-left);
 			z-index: 2000;
-			width: min(230px, calc(100vw - 32px));
-			max-height: calc(100vh - 32px);
+			width: min(190px, calc(100vw - 16px));
+			max-height: calc(100vh - 16px);
 			overflow-y: auto;
 			border-radius: 12px;
 			box-shadow: 0 20px 60px rgb(15 23 42 / 28%);
