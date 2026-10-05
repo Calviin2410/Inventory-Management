@@ -257,7 +257,7 @@
         color: #dc2626;
     }
 
-    @media (max-width: 700px) {
+    @media (max-width: 900px) {
         .history-toolbar {
             align-items: stretch;
             flex-direction: column;

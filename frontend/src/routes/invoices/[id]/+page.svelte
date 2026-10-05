@@ -517,7 +517,7 @@
 
 	/* MOBILE */
 
-	@media (max-width: 700px) {
+	@media (max-width: 900px) {
 		.detail-grid {
 			grid-template-columns: 1fr;
 		}

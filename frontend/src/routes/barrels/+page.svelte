@@ -1134,7 +1134,7 @@
 	   RESPONSIVE
 	========================= */
 
-	@media (max-width: 760px) {
+	@media (max-width: 900px) {
 		.dropdown-menu {
 			position: fixed;
 			top: auto;

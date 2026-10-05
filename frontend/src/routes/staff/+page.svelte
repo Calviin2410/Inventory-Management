@@ -225,7 +225,7 @@
 	.role-badge { display: inline-flex; padding: 5px 10px; border-radius: 999px; background: #eef2f7; color: #536078; font-size: 11px; font-weight: 700; }
 	.action-column, .action-cell { width: 170px; text-align: right !important; }
 	.reset-button { min-height: 38px; color: #244cad; }
-	@media (max-width: 760px) {
+	@media (max-width: 900px) {
 		.data-table { min-width: 720px; }
 	}
 </style>

@@ -462,9 +462,12 @@
 		font-weight: 650;
 	}
 
-	@media (max-width: 760px) {
+	@media (max-width: 900px) {
+		.panel,
 		.table-card {
 			overflow-x: auto;
+			overscroll-behavior-inline: contain;
+			-webkit-overflow-scrolling: touch;
 		}
 
 		.data-table {

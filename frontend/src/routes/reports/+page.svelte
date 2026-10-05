@@ -752,7 +752,7 @@
         }
     }
 
-    @media (max-width: 700px) {
+    @media (max-width: 900px) {
         .table-card {
             overflow-x: auto;
             overscroll-behavior-inline: contain;

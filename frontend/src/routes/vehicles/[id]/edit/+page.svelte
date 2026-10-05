@@ -193,7 +193,7 @@
         color: #64748b;
     }
 
-    @media (max-width: 760px) {
+    @media (max-width: 900px) {
         .form-card {
             padding: 20px;
         }

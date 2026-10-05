@@ -17,5 +17,5 @@
 	p { margin-top: 2px; color: #4d7564; font-size: 10px; }
 	button { border: 0; background: transparent; color: #719483; cursor: pointer; font-size: 18px; }
 	@keyframes enter { from { opacity: 0; transform: translateY(-8px); } }
-	@media (max-width: 820px) { .toast { top: 78px; right: 16px; left: 16px; width: auto; } }
+	@media (max-width: 900px) { .toast { top: 78px; right: 16px; left: 16px; width: auto; } }
 </style>

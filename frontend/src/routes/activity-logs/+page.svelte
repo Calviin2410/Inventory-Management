@@ -478,7 +478,7 @@
 			grid-column: span 3;
 		}
 	}
-	@media (max-width: 700px) {
+	@media (max-width: 900px) {
 		.filter-card {
 			grid-template-columns: 1fr;
 		}

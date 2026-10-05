@@ -261,6 +261,6 @@
 	textarea:focus { border-color: #315ee7; box-shadow: 0 0 0 3px rgb(49 94 231 / 12%); }
 	.dialog-error { margin-bottom: 16px; padding: 10px 12px; border-radius: 8px; background: #fef2f2; color: #b42318; font-size: 12px; }
 	.dialog-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 22px; }
-	@media (max-width: 760px) { .payment-summary { grid-template-columns: 1fr 1fr; } .date-toolbar label { width: 100%; } .refresh-button { margin-left: 0; } .data-table { min-width: 980px; } .action-cell { display: table-cell; white-space: nowrap; } .table-action + .table-action { margin-left: 5px; } }
+	@media (max-width: 900px) { .payment-summary { grid-template-columns: 1fr 1fr; } .date-toolbar label { width: 100%; } .refresh-button { margin-left: 0; } .data-table { min-width: 980px; } .action-cell { display: table-cell; white-space: nowrap; } .table-action + .table-action { margin-left: 5px; } }
 	@media (max-width: 480px) { .payment-summary { grid-template-columns: 1fr; } }
 </style>

@@ -336,7 +336,7 @@
 	}
 	.secure-note { margin: 14px 0 0; color: #98a2b2; text-align: center; font-size: 9px; }
 
-	@media (max-width: 760px) {
+	@media (max-width: 900px) {
 		.auth-page {
 			grid-template-columns: 1fr;
 		}
