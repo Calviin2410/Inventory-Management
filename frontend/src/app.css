@@ -371,6 +371,17 @@
 			padding: 94px 20px 56px;
 		}
 
+		.toolbar {
+			flex-wrap: wrap;
+		}
+
+		.toolbar .search {
+			width: auto;
+			min-width: min(100%, 240px);
+			max-width: none;
+			flex: 1 1 280px;
+		}
+
 		.page-heading {
 			gap: 18px;
 		}

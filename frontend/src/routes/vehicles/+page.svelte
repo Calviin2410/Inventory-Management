@@ -14,10 +14,14 @@
     let search = $state("");
     let searchKeyword = $state("");
     let openMenuId = $state(null);
+    let actionMenuPosition = $state({ top: 0, left: 0 });
     let deletingVehicleId = $state(null);
     let selectedVehicle = $state(null);
     let deleteError = $state("");
     let successMessage = $state("");
+    let menuVehicle = $derived(
+        vehicles.find((vehicle) => vehicle.id === openMenuId) ?? null,
+    );
 
     async function loadVehicles() {
         loading = true;
@@ -55,13 +59,32 @@
         searchKeyword = search;
     }
 
-    function toggleMenu(vehicleId) {
+    function toggleMenu(vehicleId, event) {
         openMenuId = openMenuId === vehicleId ? null : vehicleId;
+        if (openMenuId === null) return;
+
+        const rect = event.currentTarget.getBoundingClientRect();
+        const width = 160;
+        const height = 112;
+        const gap = 8;
+        const padding = 8;
+        const fitsBelow = rect.bottom + gap + height <= window.innerHeight - padding;
+
+        actionMenuPosition = {
+            top: fitsBelow
+                ? rect.bottom + gap
+                : Math.max(padding, rect.top - height - gap),
+            left: Math.min(
+                Math.max(padding, rect.right - width),
+                window.innerWidth - width - padding,
+            ),
+        };
     }
 
     function requestVehicleDeletion(vehicle) {
         selectedVehicle = vehicle;
         deleteError = "";
+        openMenuId = null;
     }
 
     function closeDeleteDialog() {
@@ -220,40 +243,12 @@
                                         <button
                                             class="more-button"
                                             aria-label="Vehicle actions"
-                                            onclick={() =>
-                                                toggleMenu(vehicle.id)}
+                                            onclick={(event) =>
+                                                toggleMenu(vehicle.id, event)}
                                         >
                                             •••
                                         </button>
 
-                                        {#if openMenuId === vehicle.id}
-                                            <div class="dropdown-menu">
-                                                <button
-                                                    class="dropdown-item"
-                                                    onclick={() =>
-                                                        goto(
-                                                            `/vehicles/${vehicle.id}/edit`,
-                                                        )}
-                                                >
-                                                    Edit
-                                                </button>
-
-                                                <button
-                                                    class="dropdown-item delete-item"
-                                                    disabled={deletingVehicleId ===
-                                                        vehicle.id}
-                                                    onclick={() =>
-                                                        requestVehicleDeletion(
-                                                            vehicle,
-                                                        )}
-                                                >
-                                                    {deletingVehicleId ===
-                                                    vehicle.id
-                                                        ? "Deleting..."
-                                                        : "Delete"}
-                                                </button>
-                                            </div>
-                                        {/if}
                                     </div>
                                 </td>
                             </tr>
@@ -261,6 +256,19 @@
                     </tbody>
                 </table>
             </div>
+
+            {#if menuVehicle}
+                <div
+                    class="dropdown-menu floating-action-menu"
+                    style:--menu-top={`${actionMenuPosition.top}px`}
+                    style:--menu-left={`${actionMenuPosition.left}px`}
+                >
+                    <button class="dropdown-item" onclick={() => goto(`/vehicles/${menuVehicle.id}/edit`)}>Edit</button>
+                    <button class="dropdown-item delete-item" disabled={deletingVehicleId === menuVehicle.id} onclick={() => requestVehicleDeletion(menuVehicle)}>
+                        {deletingVehicleId === menuVehicle.id ? "Deleting..." : "Delete"}
+                    </button>
+                </div>
+            {/if}
         {/if}
     </section>
 </main>
@@ -386,6 +394,16 @@
             0 4px 6px -4px rgb(0 0 0 / 10%);
     }
 
+    .floating-action-menu {
+        position: fixed;
+        top: var(--menu-top);
+        right: auto;
+        bottom: auto;
+        left: var(--menu-left);
+        z-index: 2000;
+        width: 160px;
+    }
+
     .dropdown-item {
         display: flex;
         align-items: center;
@@ -437,16 +455,6 @@
     }
 
     @media (max-width: 900px) {
-		.dropdown-menu {
-			position: fixed;
-			top: auto;
-			right: 12px;
-			bottom: 12px;
-			left: 12px;
-			width: auto;
-			border-radius: 12px;
-			box-shadow: 0 20px 60px rgb(15 23 42 / 28%);
-		}
         .search {
             width: 100%;
             max-width: none;

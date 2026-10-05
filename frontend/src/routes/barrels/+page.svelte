@@ -19,6 +19,7 @@
 	let view = $state("table");
 
 	let openMenuId = $state(null);
+	let actionMenuPosition = $state({ top: 0, left: 0 });
 	let selectedBarrel = $state(null);
 	let deletingBarrel = $state(false);
 	let deleteError = $state("");
@@ -26,10 +27,38 @@
 	let updatingBarrelId = $state(null);
 
 	let isAdmin = $derived($user?.role === "admin");
+	let menuBarrel = $derived(
+		barrels.find((barrel) => barrel.id === openMenuId) ?? null,
+	);
 
 	let currentPage = $state(1);
 	let lastPage = $state(1);
 	let totalBarrels = $state(0);
+
+	function toggleActionMenu(barrelId, event) {
+		if (openMenuId === barrelId) {
+			openMenuId = null;
+			return;
+		}
+
+		const rect = event.currentTarget.getBoundingClientRect();
+		const width = 190;
+		const height = isAdmin ? 190 : 146;
+		const gap = 8;
+		const padding = 8;
+		const fitsBelow = rect.bottom + gap + height <= window.innerHeight - padding;
+
+		actionMenuPosition = {
+			top: fitsBelow
+				? rect.bottom + gap
+				: Math.max(padding, rect.top - height - gap),
+			left: Math.min(
+				Math.max(padding, rect.right - width),
+				window.innerWidth - width - padding,
+			),
+		};
+		openMenuId = barrelId;
+	}
 
 	// =========================
 	// Load Barrels
@@ -119,6 +148,7 @@
 		}
 		selectedBarrel = barrel;
 		deleteError = "";
+		openMenuId = null;
 	}
 
 	function closeDeleteDialog() {
@@ -365,80 +395,34 @@
 												type="button"
 												disabled={updatingBarrelId === barrel.id}
 												class="more-button"
-												onclick={() => {
-													openMenuId =
-														openMenuId === barrel.id
-															? null
-															: barrel.id;
-												}}
+											onclick={(event) =>
+												toggleActionMenu(barrel.id, event)}
 											>
 												⋯
 											</button>
 
-											{#if openMenuId === barrel.id}
-								<div class="dropdown-menu">
-									<button
-										type="button"
-										disabled={updatingBarrelId === barrel.id}
-														onclick={() =>
-															handleStatusUpdate(
-																barrel,
-																"available",
-															)}
-													>
-														Set Available
-													</button>
-
-									<button
-										type="button"
-										disabled={updatingBarrelId === barrel.id}
-														onclick={() =>
-															handleStatusUpdate(
-																barrel,
-																"rented",
-															)}
-													>
-														Set Rented
-													</button>
-
-									<button
-										type="button"
-										disabled={updatingBarrelId === barrel.id}
-														onclick={() =>
-															handleStatusUpdate(
-																barrel,
-																"returning",
-															)}
-													>
-														Set Returning
-													</button>
-
-													{#if isAdmin}
-														<div
-															class="menu-divider"
-														></div>
-
-														<button
-															type="button"
-															class="delete-action"
-															disabled={barrel.status ===
-																"rented"}
-															onclick={() =>
-																requestBarrelDeletion(
-																	barrel,
-																)}
-														>
-															Delete Barrel
-														</button>
-													{/if}
-												</div>
-											{/if}
 										</div>
 									</td>
 								</tr>
 							{/each}
 						</tbody>
 					</table>
+				</div>
+			{/if}
+
+			{#if menuBarrel}
+				<div
+					class="dropdown-menu floating-action-menu"
+					style:--menu-top={`${actionMenuPosition.top}px`}
+					style:--menu-left={`${actionMenuPosition.left}px`}
+				>
+					<button type="button" disabled={updatingBarrelId === menuBarrel.id} onclick={() => handleStatusUpdate(menuBarrel, "available")}>Set Available</button>
+					<button type="button" disabled={updatingBarrelId === menuBarrel.id} onclick={() => handleStatusUpdate(menuBarrel, "rented")}>Set Rented</button>
+					<button type="button" disabled={updatingBarrelId === menuBarrel.id} onclick={() => handleStatusUpdate(menuBarrel, "returning")}>Set Returning</button>
+					{#if isAdmin}
+						<div class="menu-divider"></div>
+						<button type="button" class="delete-action" disabled={menuBarrel.status === "rented"} onclick={() => requestBarrelDeletion(menuBarrel)}>Delete Barrel</button>
+					{/if}
 				</div>
 			{/if}
 
@@ -1057,6 +1041,18 @@
 		box-shadow: 0 10px 30px rgba(15, 23, 42, 0.14);
 	}
 
+	.floating-action-menu {
+		position: fixed;
+		top: var(--menu-top);
+		right: auto;
+		bottom: auto;
+		left: var(--menu-left);
+		z-index: 2000;
+		width: 190px;
+		max-height: calc(100vh - 16px);
+		overflow-y: auto;
+	}
+
 	.dropdown-menu button {
 		width: 100%;
 
@@ -1135,16 +1131,6 @@
 	========================= */
 
 	@media (max-width: 900px) {
-		.dropdown-menu {
-			position: fixed;
-			top: auto;
-			right: 12px;
-			bottom: 12px;
-			left: 12px;
-			width: auto;
-			border-radius: 12px;
-			box-shadow: 0 20px 60px rgb(15 23 42 / 28%);
-		}
 		.barrels-panel {
 			min-width: 0;
 			overflow: hidden;
