@@ -39,6 +39,23 @@
 	let lastPage = $state(1);
 	let totalInvoices = $state(0);
 
+	const statusOptions = [
+		{ value: "", label: "All statuses" },
+		{ value: "paid", label: "Paid" },
+		{ value: "unpaid", label: "Unpaid" },
+	];
+
+	let selectedStatusLabel = $derived(
+		statusOptions.find((option) => option.value === statusFilter)?.label ??
+			"All statuses",
+	);
+
+	function selectStatusFilter(value, event) {
+		statusFilter = value;
+		event.currentTarget.closest("details")?.removeAttribute("open");
+		loadInvoices(1);
+	}
+
 	function requestInvoiceDeletion(invoice) {
 		if (!isAdmin) return;
 		selectedInvoice = invoice;
@@ -315,16 +332,23 @@
 		>
 			Refresh
 		</button>
-		<select
-			class="control status-filter"
-			bind:value={statusFilter}
-			onchange={() => loadInvoices(1)}
-			aria-label="Filter invoices by payment status"
-		>
-			<option value="">All statuses</option>
-			<option value="paid">Paid</option>
-			<option value="unpaid">Unpaid</option>
-		</select>
+		<details class="status-filter">
+			<summary class="control" aria-label="Filter invoices by payment status">
+				<span>{selectedStatusLabel}</span>
+				<span class="select-chevron" aria-hidden="true">⌄</span>
+			</summary>
+			<div class="status-options">
+				{#each statusOptions as option}
+					<button
+						type="button"
+						class:active={statusFilter === option.value}
+						onclick={(event) => selectStatusFilter(option.value, event)}
+					>
+						{option.label}
+					</button>
+				{/each}
+			</div>
+		</details>
 		<span class="result-count">{totalInvoices} {totalInvoices === 1 ? "result" : "results"}</span>
 	</div>
 
@@ -550,8 +574,65 @@
 	}
 
 	.status-filter {
-		min-width: 145px;
+		position: relative;
+		width: 160px;
+		flex: none;
+	}
+
+	.status-filter summary {
+		display: flex;
+		width: 100%;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
 		cursor: pointer;
+		list-style: none;
+		user-select: none;
+	}
+
+	.status-filter summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.select-chevron {
+		font-size: 17px;
+		line-height: 1;
+		transition: transform 0.15s ease;
+	}
+
+	.status-filter[open] .select-chevron {
+		transform: rotate(180deg);
+	}
+
+	.status-options {
+		position: absolute;
+		top: calc(100% + 6px);
+		right: 0;
+		left: 0;
+		z-index: 1500;
+		overflow: hidden;
+		border: 1px solid #d7dce5;
+		border-radius: 9px;
+		background: white;
+		box-shadow: 0 12px 28px rgb(15 23 42 / 16%);
+	}
+
+	.status-options button {
+		display: block;
+		width: 100%;
+		padding: 10px 13px;
+		border: 0;
+		background: white;
+		color: #202939;
+		text-align: left;
+		cursor: pointer;
+	}
+
+	.status-options button:hover,
+	.status-options button:focus-visible,
+	.status-options button.active {
+		background: #eef5ff;
+		color: #1d4ed8;
 	}
 
 	/* =========================
@@ -908,6 +989,10 @@
 		.search {
 			width: 100%;
 			max-width: none;
+		}
+
+		.status-filter {
+			width: 100%;
 		}
 
 		.result-count {
