@@ -21,6 +21,21 @@ export function setToken(token, remember = false) {
 	}
 }
 
+let redirectingForExpiredSession = false;
+
+function handleUnauthorized(path) {
+	if (typeof window === 'undefined' || path === '/login') return;
+
+	setToken(null);
+
+	if (redirectingForExpiredSession || window.location.pathname === '/login') {
+		return;
+	}
+
+	redirectingForExpiredSession = true;
+	window.location.replace('/login?reason=session-expired');
+}
+
 async function request(path, { method = 'GET', body, headers = {} } = {}) {
 	const token = getToken();
 
@@ -38,6 +53,10 @@ async function request(path, { method = 'GET', body, headers = {} } = {}) {
 	const data = await res.json().catch(() => null);
 
 	if (!res.ok) {
+		if (res.status === 401) {
+			handleUnauthorized(path);
+		}
+
 		const error = new Error(
 			data?.message || `Request Failed (${res.status})`
 		);

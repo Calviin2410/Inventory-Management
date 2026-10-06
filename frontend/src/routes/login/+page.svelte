@@ -14,6 +14,10 @@
 	let loading = $state(false);
 
 	onMount(async () => {
+		if (new URLSearchParams(window.location.search).get("reason") === "session-expired") {
+			errorMessage = "Your session expired. Please sign in again.";
+		}
+
 		if (!getToken()) return;
 
 		loading = true;
