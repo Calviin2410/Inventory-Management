@@ -243,6 +243,10 @@ export function buildInvoiceDocument(invoice) {
 						text-transform: uppercase;
 					}
 
+					.payment-title {
+						margin-top: 16px;
+					}
+
 					.meta-line {
 						margin: 3px 0;
 
@@ -503,7 +507,17 @@ export function buildInvoiceDocument(invoice) {
 						</div>
 
 						<div class="meta-block">
-							<div class="meta-title">
+							<div class="meta-line">
+								<strong>Salesman:</strong>
+								${escapeHtml(invoice?.created_by?.name || "—")}
+							</div>
+
+							<div class="meta-line">
+								<strong>Car Plate:</strong>
+								${escapeHtml(invoice?.vehicle?.plate_number || "—")}
+							</div>
+
+							<div class="meta-title payment-title">
 								Payment
 							</div>
 
