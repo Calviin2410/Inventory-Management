@@ -14,7 +14,6 @@
 	const pattern = "[0-9]{2}/[0-9]{2}/[0-9]{4}";
 	let display = $state(formatDate(value));
 	let lastInternalValue = value;
-	let picker = $state();
 	let textInput = $state();
 
 	$effect(() => {
@@ -72,11 +71,6 @@
 		onchange?.(event);
 	}
 
-	function openPicker() {
-		if (disabled) return;
-		if (typeof picker?.showPicker === "function") picker.showPicker();
-		else picker?.click();
-	}
 </script>
 
 <div class:compact class="date-input">
@@ -94,19 +88,18 @@
 		{required}
 		{disabled}
 	/>
-	<button type="button" class="calendar-button" aria-label={ariaLabel} onclick={openPicker} {disabled}>
+	<span class="calendar-button" aria-hidden="true">
 		<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2v3M17 2v3M3.5 9h17M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2Z" /></svg>
-	</button>
+	</span>
 	<input
 		class="native-picker"
 		type="date"
 		{min}
 		{max}
 		value={value}
-		bind:this={picker}
 		onchange={handleSelection}
-		tabindex="-1"
-		aria-hidden="true"
+		aria-label={ariaLabel}
+		{disabled}
 	/>
 </div>
 
@@ -141,10 +134,22 @@
 		border: 0;
 		background: transparent;
 		color: #172033;
-		cursor: pointer;
+		pointer-events: none;
 	}
 	.calendar-button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-	.native-picker { position: absolute; width: 1px; height: 1px; padding: 0; opacity: 0; pointer-events: none; }
+	.native-picker {
+		position: absolute;
+		top: 50%;
+		right: 5px;
+		z-index: 2;
+		width: 36px;
+		height: 34px;
+		padding: 0;
+		transform: translateY(-50%);
+		border: 0;
+		opacity: 0;
+		cursor: pointer;
+	}
 	.compact > input[type="text"] { min-width: 145px; min-height: 38px; padding-top: 8px; padding-bottom: 8px; }
-	input:disabled, button:disabled { cursor: not-allowed; opacity: 0.65; }
+	input:disabled { cursor: not-allowed; opacity: 0.65; }
 </style>
