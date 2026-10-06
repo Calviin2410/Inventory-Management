@@ -508,7 +508,7 @@ export function buildInvoiceDocument(invoice) {
 
 						<div class="meta-block">
 							<div class="meta-line">
-								<strong>Salesman:</strong>
+								<strong>Salesperson:</strong>
 								${escapeHtml(invoice?.created_by?.name || "—")}
 							</div>
 

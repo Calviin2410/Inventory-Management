@@ -166,7 +166,7 @@
 				</div>
 
 				<div class="detail-item">
-					<span class="label"> Salesman </span>
+					<span class="label"> Salesperson </span>
 
 					<p class="strong">
 						{invoice.created_by?.name ?? "—"}
@@ -209,7 +209,9 @@
 					<div class="detail-item">
 						<span class="label"> Paid By </span>
 						<p class="strong">
-							{invoice.payment_method === "bank_in" ? "Bank In" : "Cash"}
+							{invoice.payment_method === "bank_in"
+								? "Bank In"
+								: "Cash"}
 						</p>
 					</div>
 
