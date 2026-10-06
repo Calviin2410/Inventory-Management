@@ -322,9 +322,21 @@
 									</strong>
 								</div>
 
-								<span class="badge {barrel.status}">
-									{barrel.status}
-								</span>
+								<div class="visual-actions">
+									<span class="badge {barrel.status}">
+										{barrel.status}
+									</span>
+
+									<button
+										type="button"
+										class="more-button"
+										aria-label={`Actions for barrel ${barrel.code}`}
+										disabled={updatingBarrelId === barrel.id}
+										onclick={(event) => toggleActionMenu(barrel.id, event)}
+									>
+										⋯
+									</button>
+								</div>
 							</div>
 
 							<dl>
@@ -915,8 +927,11 @@
 		font-size: 14px;
 	}
 
-	.barrel-info > .badge {
-		display: inline-flex;
+	.visual-actions {
+		display: flex;
+		align-items: center;
+		gap: 7px;
+		flex: none;
 	}
 
 	/* =========================
