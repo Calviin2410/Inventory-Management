@@ -4,6 +4,7 @@
 
     import Nav from "$lib/Nav.svelte";
     import SkeletonTable from "$lib/SkeletonTable.svelte";
+    import FilterSelect from "$lib/FilterSelect.svelte";
     import { api } from "$lib/api.js";
     import { formatDate } from "$lib/format.js";
     import { user } from "$lib/stores/auth.js";
@@ -19,6 +20,12 @@
     let totalInvoices = $state(0);
 
     let isAdmin = $derived($user?.role === "admin");
+
+    const statusOptions = [
+        { value: "", label: "All statuses" },
+        { value: "paid", label: "Paid" },
+        { value: "unpaid", label: "Unpaid" },
+    ];
 
     async function loadCustomer(pageNumber = 1) {
         loading = true;
@@ -82,18 +89,14 @@
 
     <section class="history-toolbar" aria-label="Invoice history filters">
         <div class="filter-field">
-            <label for="statusFilter">Payment Status</label>
-            <select
-                id="statusFilter"
-                class="control"
+            <span class="filter-label">Payment Status</span>
+            <FilterSelect
                 bind:value={statusFilter}
+                options={statusOptions}
                 onchange={() => loadCustomer(1)}
+                ariaLabel="Filter customer invoices by payment status"
                 disabled={loading}
-            >
-                <option value="">All statuses</option>
-                <option value="paid">Paid</option>
-                <option value="unpaid">Unpaid</option>
-            </select>
+            />
         </div>
 
         <span class="result-count">
@@ -224,7 +227,7 @@
         width: min(240px, 100%);
     }
 
-    .filter-field label {
+    .filter-label {
         color: #1f2937;
         font-size: 13px;
         font-weight: 600;

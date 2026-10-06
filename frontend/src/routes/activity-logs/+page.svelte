@@ -7,6 +7,7 @@
 	import Nav from "$lib/Nav.svelte";
 	import SkeletonTable from "$lib/SkeletonTable.svelte";
 	import DateInput from "$lib/DateInput.svelte";
+	import FilterSelect from "$lib/FilterSelect.svelte";
 	import { formatDate } from "$lib/format.js";
 
 	let logs = $state([]);
@@ -30,6 +31,24 @@
 		settled: "Settled",
 		reopened: "Reopened",
 	};
+
+	const actionOptions = [
+		{ value: "", label: "All actions" },
+		{ value: "created", label: "Created" },
+		{ value: "updated", label: "Updated" },
+		{ value: "returned", label: "Returned" },
+		{ value: "deleted", label: "Deleted" },
+		{ value: "password_reset", label: "Password reset" },
+	];
+
+	const recordTypeOptions = [
+		{ value: "", label: "All record types" },
+		{ value: "Invoice", label: "Invoices" },
+		{ value: "Customer", label: "Customers" },
+		{ value: "Barrel", label: "Barrels" },
+		{ value: "Vehicle", label: "Vehicles" },
+		{ value: "Staff", label: "Staff" },
+	];
 
 	function formatDateTime(value) {
 		if (!value) return "—";
@@ -174,33 +193,19 @@
 			{/if}
 		</div>
 
-		<select
-			class="control"
+		<FilterSelect
 			bind:value={action}
+			options={actionOptions}
 			onchange={() => loadLogs(1)}
-			aria-label="Filter by action"
-		>
-			<option value="">All actions</option>
-			<option value="created">Created</option>
-			<option value="updated">Updated</option>
-			<option value="returned">Returned</option>
-			<option value="deleted">Deleted</option>
-			<option value="password_reset">Password reset</option>
-		</select>
+			ariaLabel="Filter by action"
+		/>
 
-		<select
-			class="control"
+		<FilterSelect
 			bind:value={subjectType}
+			options={recordTypeOptions}
 			onchange={() => loadLogs(1)}
-			aria-label="Filter by record type"
-		>
-			<option value="">All record types</option>
-			<option value="Invoice">Invoices</option>
-			<option value="Customer">Customers</option>
-			<option value="Barrel">Barrels</option>
-			<option value="Vehicle">Vehicles</option>
-			<option value="Staff">Staff</option>
-		</select>
+			ariaLabel="Filter by record type"
+		/>
 
 		<label
 			><span>From</span><DateInput
