@@ -81,9 +81,10 @@
 		try {
 			await api.deleteInvoice(selectedInvoice.id);
 			selectedInvoice = null;
-			const targetPage = invoices.length === 1 && currentPage > 1
-				? currentPage - 1
-				: currentPage;
+			const targetPage =
+				invoices.length === 1 && currentPage > 1
+					? currentPage - 1
+					: currentPage;
 			await loadInvoices(targetPage);
 		} catch (error) {
 			deleteError = error?.message || "Unable to delete this invoice.";
@@ -109,10 +110,7 @@
 				Math.max(buttonRect.top, viewportPadding),
 				window.innerHeight - menuHeight - viewportPadding,
 			),
-			left: Math.max(
-				viewportPadding,
-				buttonRect.left - menuWidth - gap,
-			),
+			left: Math.max(viewportPadding, buttonRect.left - menuWidth - gap),
 		};
 		openMenuId = invoiceId;
 	}
@@ -253,10 +251,15 @@
 				status: "unpaid",
 				unpaid_remark: unpaidRemark.trim(),
 			});
-			invoices = invoices.map((item) => item.id === updated.id ? updated : item);
+			invoices = invoices.map((item) =>
+				item.id === updated.id ? updated : item,
+			);
 			unpaidInvoice = null;
 		} catch (error) {
-			unpaidError = error?.errors?.unpaid_remark?.[0] || error?.message || "Unable to set invoice as unpaid";
+			unpaidError =
+				error?.errors?.unpaid_remark?.[0] ||
+				error?.message ||
+				"Unable to set invoice as unpaid";
 		} finally {
 			unpaidSaving = false;
 		}
@@ -337,20 +340,29 @@
 	========================= -->
 
 	<div class="toolbar">
-		<div class="search-field"><input
-			class="control search"
-			type="text"
-			placeholder="Search invoice or customer..."
-			bind:value={search}
-			onkeydown={(event) => {
-				if (event.key === "Enter") {
-					loadInvoices(1);
-				}
-			}}
-		/>
-		{#if search}
-			<button type="button" class="search-clear" aria-label="Clear search" onclick={() => { search = ""; loadInvoices(1); }}>×</button>
-		{/if}
+		<div class="search-field">
+			<input
+				class="control search"
+				type="text"
+				placeholder="Search invoice or customer..."
+				bind:value={search}
+				onkeydown={(event) => {
+					if (event.key === "Enter") {
+						loadInvoices(1);
+					}
+				}}
+			/>
+			{#if search}
+				<button
+					type="button"
+					class="search-clear"
+					aria-label="Clear search"
+					onclick={() => {
+						search = "";
+						loadInvoices(1);
+					}}>×</button
+				>
+			{/if}
 		</div>
 
 		<button type="button" class="btn" onclick={() => loadInvoices(1)}>
@@ -369,7 +381,10 @@
 			Refresh
 		</button>
 		<details class="status-filter">
-			<summary class="control" aria-label="Filter invoices by payment status">
+			<summary
+				class="control"
+				aria-label="Filter invoices by payment status"
+			>
 				<span>{selectedStatusLabel}</span>
 				<span class="select-chevron" aria-hidden="true"></span>
 			</summary>
@@ -378,14 +393,17 @@
 					<button
 						type="button"
 						class:active={statusFilter === option.value}
-						onclick={(event) => selectStatusFilter(option.value, event)}
+						onclick={(event) =>
+							selectStatusFilter(option.value, event)}
 					>
 						{option.label}
 					</button>
 				{/each}
 			</div>
 		</details>
-		<span class="result-count">{totalInvoices} {totalInvoices === 1 ? "result" : "results"}</span>
+		<span class="result-count"
+			>{totalInvoices} {totalInvoices === 1 ? "result" : "results"}</span
+		>
 	</div>
 
 	<!-- =========================
@@ -483,12 +501,14 @@
 											type="button"
 											class="more-button"
 											aria-label="Invoice actions"
-										onclick={(event) =>
-											toggleActionMenu(invoice.id, event)}
+											onclick={(event) =>
+												toggleActionMenu(
+													invoice.id,
+													event,
+												)}
 										>
 											⋯
 										</button>
-
 									</div>
 								</td>
 							</tr>
@@ -538,20 +558,47 @@
 			style:--menu-top={`${actionMenuPosition.top}px`}
 			style:--menu-left={`${actionMenuPosition.left}px`}
 		>
-			<a class="menu-link" href={`/invoices/${menuInvoice.id}`}>View Invoice</a>
+			<a class="menu-link" href={`/invoices/${menuInvoice.id}`}
+				>View Invoice</a
+			>
 			<div class="menu-divider"></div>
-			<button type="button" disabled={menuInvoice.status === "paid"} onclick={() => openPaymentDialog(menuInvoice)}>Set Paid</button>
-			<button type="button" disabled={menuInvoice.status === "unpaid"} onclick={() => openUnpaidDialog(menuInvoice)}>Set Unpaid</button>
+			<button
+				type="button"
+				disabled={menuInvoice.status === "paid"}
+				onclick={() => openPaymentDialog(menuInvoice)}>Set Paid</button
+			>
+			<button
+				type="button"
+				disabled={menuInvoice.status === "unpaid"}
+				onclick={() => openUnpaidDialog(menuInvoice)}>Set Unpaid</button
+			>
 			<div class="menu-divider"></div>
-			<button type="button" disabled={exportingId === menuInvoice.id} onclick={() => exportPdf(menuInvoice)}>
+			<button
+				type="button"
+				disabled={exportingId === menuInvoice.id}
+				onclick={() => exportPdf(menuInvoice)}
+			>
 				{exportingId === menuInvoice.id ? "Preparing..." : "Export PDF"}
 			</button>
-			<button type="button" onclick={() => { saleInvoice = menuInvoice; openMenuId = null; }}>
-				{menuInvoice.waste_sale_amount === null ? "Record Sale" : "Update Sale"}
+			<button
+				type="button"
+				onclick={() => {
+					saleInvoice = menuInvoice;
+					openMenuId = null;
+				}}
+			>
+				{menuInvoice.waste_sale_amount === null
+					? "Sell Waste"
+					: "Update Sale"}
 			</button>
 			{#if isAdmin}
 				<div class="menu-divider"></div>
-				<button type="button" class="delete-action" onclick={() => requestInvoiceDeletion(menuInvoice)}>Delete Invoice</button>
+				<button
+					type="button"
+					class="delete-action"
+					onclick={() => requestInvoiceDeletion(menuInvoice)}
+					>Delete Invoice</button
+				>
 			{/if}
 		</div>
 	{/if}
@@ -561,34 +608,64 @@
 			invoice={saleInvoice}
 			oncancel={() => (saleInvoice = null)}
 			onsaved={(updated) => {
-				invoices = invoices.map((item) => item.id === updated.id ? updated : item);
+				invoices = invoices.map((item) =>
+					item.id === updated.id ? updated : item,
+				);
 				saleInvoice = null;
 			}}
 		/>
 	{/if}
 
 	{#if paymentInvoice}
-		<div class="dialog-layer" role="presentation" onclick={(event) => event.currentTarget === event.target && closePaymentDialog()}>
-			<form class="payment-dialog" onsubmit={(event) => { event.preventDefault(); markInvoicePaid(); }}>
+		<div
+			class="dialog-layer"
+			role="presentation"
+			onclick={(event) =>
+				event.currentTarget === event.target && closePaymentDialog()}
+		>
+			<form
+				class="payment-dialog"
+				onsubmit={(event) => {
+					event.preventDefault();
+					markInvoicePaid();
+				}}
+			>
 				<h2>Record Payment</h2>
 				<p>Mark {paymentInvoice.invoice_no} as paid.</p>
 
-				{#if paymentError}<div class="dialog-error" role="alert">{paymentError}</div>{/if}
+				{#if paymentError}<div class="dialog-error" role="alert">
+						{paymentError}
+					</div>{/if}
 
-				<label>Payment Method
+				<label
+					>Payment Method
 					<select bind:value={paymentMethod} required>
 						<option value="cash">Cash</option>
 						<option value="bank_in">Bank In</option>
 					</select>
 				</label>
 
-				<label>Payment Date
-					<DateInput bind:value={paymentDate} required ariaLabel="Select payment date" />
+				<label
+					>Payment Date
+					<DateInput
+						bind:value={paymentDate}
+						required
+						ariaLabel="Select payment date"
+					/>
 				</label>
 
 				<div class="dialog-actions">
-					<button type="button" class="btn" onclick={closePaymentDialog} disabled={paymentSaving}>Cancel</button>
-					<button type="submit" class="btn btn-primary" disabled={paymentSaving}>
+					<button
+						type="button"
+						class="btn"
+						onclick={closePaymentDialog}
+						disabled={paymentSaving}>Cancel</button
+					>
+					<button
+						type="submit"
+						class="btn btn-primary"
+						disabled={paymentSaving}
+					>
 						{paymentSaving ? "Saving..." : "Confirm Paid"}
 					</button>
 				</div>
@@ -597,17 +674,49 @@
 	{/if}
 
 	{#if unpaidInvoice}
-		<div class="dialog-layer" role="presentation" onclick={(event) => event.currentTarget === event.target && closeUnpaidDialog()}>
-			<form class="payment-dialog" onsubmit={(event) => { event.preventDefault(); markInvoiceUnpaid(); }}>
+		<div
+			class="dialog-layer"
+			role="presentation"
+			onclick={(event) =>
+				event.currentTarget === event.target && closeUnpaidDialog()}
+		>
+			<form
+				class="payment-dialog"
+				onsubmit={(event) => {
+					event.preventDefault();
+					markInvoiceUnpaid();
+				}}
+			>
 				<h2>Set Invoice Unpaid</h2>
-				<p>Explain why {unpaidInvoice.invoice_no} is being changed to unpaid.</p>
-				{#if unpaidError}<div class="dialog-error" role="alert">{unpaidError}</div>{/if}
-				<label>Remark
-					<textarea rows="4" maxlength="1000" bind:value={unpaidRemark} required placeholder="Enter the reason..."></textarea>
+				<p>
+					Explain why {unpaidInvoice.invoice_no} is being changed to unpaid.
+				</p>
+				{#if unpaidError}<div class="dialog-error" role="alert">
+						{unpaidError}
+					</div>{/if}
+				<label
+					>Remark
+					<textarea
+						rows="4"
+						maxlength="1000"
+						bind:value={unpaidRemark}
+						required
+						placeholder="Enter the reason..."
+					></textarea>
 				</label>
 				<div class="dialog-actions">
-					<button type="button" class="btn" onclick={closeUnpaidDialog} disabled={unpaidSaving}>Cancel</button>
-					<button type="submit" class="btn btn-primary" disabled={unpaidSaving || !unpaidRemark.trim()}>{unpaidSaving ? "Saving..." : "Confirm Unpaid"}</button>
+					<button
+						type="button"
+						class="btn"
+						onclick={closeUnpaidDialog}
+						disabled={unpaidSaving}>Cancel</button
+					>
+					<button
+						type="submit"
+						class="btn btn-primary"
+						disabled={unpaidSaving || !unpaidRemark.trim()}
+						>{unpaidSaving ? "Saving..." : "Confirm Unpaid"}</button
+					>
 				</div>
 			</form>
 		</div>
@@ -1013,13 +1122,45 @@
 		box-shadow: 0 24px 70px rgb(15 23 42 / 24%);
 	}
 
-	.payment-dialog h2 { margin: 0 0 6px; }
-	.payment-dialog > p { margin: 0 0 20px; color: #64748b; }
-	.payment-dialog label { display: grid; gap: 7px; margin-top: 16px; font-size: 14px; font-weight: 600; }
-	.payment-dialog select, .payment-dialog textarea { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: white; font: inherit; }
-	.payment-dialog textarea { width: 100%; resize: vertical; }
-	.dialog-error { margin-bottom: 12px; padding: 10px 12px; border-radius: 8px; background: #fef2f2; color: #b42318; }
-	.dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+	.payment-dialog h2 {
+		margin: 0 0 6px;
+	}
+	.payment-dialog > p {
+		margin: 0 0 20px;
+		color: #64748b;
+	}
+	.payment-dialog label {
+		display: grid;
+		gap: 7px;
+		margin-top: 16px;
+		font-size: 14px;
+		font-weight: 600;
+	}
+	.payment-dialog select,
+	.payment-dialog textarea {
+		padding: 12px;
+		border: 1px solid #cbd5e1;
+		border-radius: 8px;
+		background: white;
+		font: inherit;
+	}
+	.payment-dialog textarea {
+		width: 100%;
+		resize: vertical;
+	}
+	.dialog-error {
+		margin-bottom: 12px;
+		padding: 10px 12px;
+		border-radius: 8px;
+		background: #fef2f2;
+		color: #b42318;
+	}
+	.dialog-actions {
+		display: flex;
+		justify-content: flex-end;
+		gap: 10px;
+		margin-top: 24px;
+	}
 
 	/* =========================
 	   RESPONSIVE

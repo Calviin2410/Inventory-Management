@@ -109,8 +109,14 @@
 
 		{#if invoice}
 			<div class="header-actions">
-				<button type="button" class="btn sale-button" onclick={() => (saleDialogOpen = true)}>
-					{invoice.waste_sale_amount === null ? "Record Sale" : "Update Sale"}
+				<button
+					type="button"
+					class="btn sale-button"
+					onclick={() => (saleDialogOpen = true)}
+				>
+					{invoice.waste_sale_amount === null
+						? "Sell Waste"
+						: "Update Sale"}
 				</button>
 				<button
 					type="button"
@@ -306,7 +312,10 @@
 		<WasteSaleDialog
 			{invoice}
 			oncancel={() => (saleDialogOpen = false)}
-			onsaved={(updated) => { invoice = updated; saleDialogOpen = false; }}
+			onsaved={(updated) => {
+				invoice = updated;
+				saleDialogOpen = false;
+			}}
 		/>
 	{/if}
 </main>
