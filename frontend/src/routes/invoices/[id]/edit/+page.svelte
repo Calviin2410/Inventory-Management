@@ -24,6 +24,7 @@
 	let issuedDate = $state("");
 	let address = $state("");
 	let notes = $state("");
+	let totalAmount = $state("");
 	let status = $state("unpaid");
 	let paymentMethod = $state("cash");
 	let paymentDate = $state("");
@@ -55,6 +56,7 @@
 			address = invoice.address ?? "";
 
 			notes = invoice.notes ?? "";
+			totalAmount = invoice.total_amount ?? "";
 
 			status = invoice.status ?? "unpaid";
 			paymentMethod = invoice.payment_method ?? "cash";
@@ -102,6 +104,8 @@
 				address: address.trim() || null,
 
 				notes: notes.trim() || null,
+
+				total_amount: Number(totalAmount),
 
 				status,
 				payment_method: status === "paid" ? paymentMethod : null,
@@ -226,6 +230,19 @@
 
 						<option value="paid"> Paid </option>
 					</select>
+				</div>
+
+				<div class="field">
+					<label for="total-amount"> Total Amount (RM) </label>
+					<input
+						id="total-amount"
+						type="number"
+						min="0"
+						max="9999999999.99"
+						step="0.01"
+						bind:value={totalAmount}
+						required
+					/>
 				</div>
 
 				{#if status === "paid"}
@@ -403,6 +420,7 @@
 		font-weight: 600;
 	}
 
+	input,
 	select,
 	textarea {
 		width: 100%;
@@ -424,6 +442,7 @@
 		outline: none;
 	}
 
+	input:focus,
 	select:focus,
 	textarea:focus {
 		border-color: #315ee7;

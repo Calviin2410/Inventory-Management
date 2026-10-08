@@ -14,6 +14,13 @@
 	let errorMessage = $state("");
 	let exporting = $state(false);
 	let saleDialogOpen = $state(false);
+
+	function formatAmount(value) {
+		return new Intl.NumberFormat("en-MY", {
+			style: "currency",
+			currency: "MYR",
+		}).format(Number(value ?? 0));
+	}
 	const terms = [
 		"Each order is valid for one delivery address only. Additional delivery addresses will be subject to extra charges.",
 		"Bin rental/service period is limited to 14 days per order. Additional charges will apply for any period exceeding 14 days.",
@@ -234,7 +241,7 @@
 
 								<th> Rental End </th>
 
-								<th> Status </th>
+								<th> Total Amount </th>
 							</tr>
 						</thead>
 
@@ -257,14 +264,8 @@
 										{formatDate(item.rental_end)}
 									</td>
 
-									<td>
-										<span
-											class="status-badge"
-											class:paid={invoice.status === "paid"}
-											class:unpaid={invoice.status === "unpaid"}
-										>
-											{invoice.status === "paid" ? "Paid" : "Unpaid"}
-										</span>
+									<td class="amount-cell">
+										{formatAmount(invoice.total_amount)}
 									</td>
 								</tr>
 							{:else}
@@ -279,20 +280,32 @@
 				</div>
 			</div>
 
-			{#if invoice.status === "paid"}
-				<div class="section payment-details">
-					<div class="detail-item">
-						<span class="label"> Paid By </span>
-						<p class="strong">
-							{invoice.payment_method === "bank_in" ? "Bank In" : "Cash"}
-						</p>
-					</div>
-					<div class="detail-item">
-						<span class="label"> Payment Date </span>
-						<p>{formatDate(invoice.payment_date)}</p>
-					</div>
+			<div class="section payment-details">
+				<div class="detail-item">
+					<span class="label"> Paid By </span>
+					<p class="strong">
+						{invoice.status === "paid"
+							? invoice.payment_method === "bank_in" ? "Bank In" : "Cash"
+							: "—"}
+					</p>
 				</div>
-			{/if}
+				<div class="detail-item">
+					<span class="label"> Payment Date </span>
+					<p>{invoice.status === "paid" ? formatDate(invoice.payment_date) : "—"}</p>
+				</div>
+				<div class="detail-item">
+					<span class="label"> Status </span>
+					<p>
+						<span
+							class="status-badge"
+							class:paid={invoice.status === "paid"}
+							class:unpaid={invoice.status === "unpaid"}
+						>
+							{invoice.status === "paid" ? "Paid" : "Unpaid"}
+						</span>
+					</p>
+				</div>
+			</div>
 
 			<div class="section terms-section">
 				<h2>Terms &amp; Conditions</h2>
@@ -438,8 +451,13 @@
 
 	.payment-details {
 		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
+		grid-template-columns: repeat(3, minmax(0, 1fr));
 		gap: 24px 40px;
+	}
+
+	.amount-cell {
+		font-weight: 700;
+		white-space: nowrap;
 	}
 
 	.terms-section ol {

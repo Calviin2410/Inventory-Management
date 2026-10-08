@@ -177,6 +177,21 @@ class InvoicePaymentTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_update_invoice_total_amount(): void
+    {
+        Sanctum::actingAs(User::factory()->create(['role' => 'admin']));
+        $invoice = $this->invoice();
+
+        $this->patchJson("/api/invoices/{$invoice->id}", [
+            'total_amount' => 325.50,
+        ])->assertOk()->assertJsonPath('total_amount', '325.50');
+
+        $this->assertDatabaseHas('invoices', [
+            'id' => $invoice->id,
+            'total_amount' => 325.50,
+        ]);
+    }
+
     public function test_staff_cannot_update_invoice_item_rental_dates(): void
     {
         Sanctum::actingAs(User::factory()->create(['role' => 'normal_staff']));

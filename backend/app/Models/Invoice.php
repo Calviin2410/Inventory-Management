@@ -39,6 +39,7 @@ class Invoice extends Model
             'issued_date' => 'date:Y-m-d',
             'payment_date' => 'date:Y-m-d',
             'settled_at' => 'datetime',
+			'total_amount' => 'decimal:2',
 			'waste_sale_amount' => 'decimal:2',
 			'waste_sale_recorded_at' => 'datetime',
         ];

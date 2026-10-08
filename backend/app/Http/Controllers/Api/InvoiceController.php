@@ -74,6 +74,7 @@ class InvoiceController extends Controller
             'issued_date',
             'address',
             'notes',
+            'total_amount',
             'items',
         ];
 
@@ -124,6 +125,14 @@ class InvoiceController extends Controller
             'notes' => [
                 'nullable',
                 'string'
+            ],
+
+            'total_amount' => [
+                'sometimes',
+                'required',
+                'numeric',
+                'min:0',
+                'max:9999999999.99',
             ],
 
             'status' => [
@@ -181,6 +190,7 @@ class InvoiceController extends Controller
             'issued_date',
             'address',
             'notes',
+            'total_amount',
             'status',
             'payment_method',
             'payment_date',
@@ -349,6 +359,13 @@ class InvoiceController extends Controller
                 'string'
             ],
 
+            'total_amount' => [
+                'nullable',
+                'numeric',
+                'min:0',
+                'max:9999999999.99',
+            ],
+
             'items' => [
                 'required',
                 'array',
@@ -414,9 +431,6 @@ class InvoiceController extends Controller
         $invoice = DB::transaction(
             function () use ($data, $request) {
 
-
-                $total = 0;
-
                 /*
                  * Generate invoice number:
                  *
@@ -451,7 +465,7 @@ class InvoiceController extends Controller
                         'unpaid',
 
                     'total_amount' =>
-                        $total,
+                        $data['total_amount'] ?? 0,
 
                     'notes' =>
                         $data['notes'] ?? null,

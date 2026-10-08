@@ -21,6 +21,13 @@ function displayDate(value) {
 		}).format(date);
 }
 
+function displayAmount(value) {
+	return new Intl.NumberFormat("en-MY", {
+		style: "currency",
+		currency: "MYR",
+	}).format(Number(value ?? 0));
+}
+
 export function buildInvoiceDocument(invoice) {
 	const items = Array.isArray(invoice?.items)
 		? invoice.items
@@ -82,10 +89,8 @@ export function buildInvoiceDocument(invoice) {
 				)}
 					</td>
 
-					<td>
-						<span class="status-badge ${status === "paid" ? "status-paid" : "status-unpaid"}">
-							${statusText}
-						</span>
+					<td class="amount-cell">
+						${escapeHtml(displayAmount(invoice?.total_amount))}
 					</td>
 				</tr>
 			`;
@@ -370,7 +375,7 @@ export function buildInvoiceDocument(invoice) {
 
 					.payment-details {
 						display: grid;
-						grid-template-columns: repeat(2, minmax(0, 1fr));
+						grid-template-columns: repeat(3, minmax(0, 1fr));
 						gap: 24px;
 						margin-top: 22px;
 						padding: 16px 18px;
@@ -391,6 +396,11 @@ export function buildInvoiceDocument(invoice) {
 
 					.payment-value {
 						font-weight: 700;
+					}
+
+					.amount-cell {
+						font-weight: 700;
+						white-space: nowrap;
 					}
 
 					.notes-title {
@@ -554,7 +564,7 @@ export function buildInvoiceDocument(invoice) {
 									<th>Description</th>
 									<th>Rental Start</th>
 									<th>Rental End</th>
-									<th>Status</th>
+									<th>Total Amount</th>
 								</tr>
 							</thead>
 
@@ -579,18 +589,22 @@ export function buildInvoiceDocument(invoice) {
 						</table>
 					</div>
 
-					${status === "paid" ? `
-						<section class="payment-details">
-							<div>
-								<div class="payment-label">Paid By</div>
-								<div class="payment-value">${invoice?.payment_method === "bank_in" ? "Bank In" : "Cash"}</div>
+					<section class="payment-details">
+						<div>
+							<div class="payment-label">Paid By</div>
+							<div class="payment-value">${status === "paid" ? invoice?.payment_method === "bank_in" ? "Bank In" : "Cash" : "—"}</div>
+						</div>
+						<div>
+							<div class="payment-label">Payment Date</div>
+							<div class="payment-value">${status === "paid" ? displayDate(invoice?.payment_date) : "—"}</div>
+						</div>
+						<div>
+							<div class="payment-label">Status</div>
+							<div class="payment-value">
+								<span class="status-badge ${status === "paid" ? "status-paid" : "status-unpaid"}">${statusText}</span>
 							</div>
-							<div>
-								<div class="payment-label">Payment Date</div>
-								<div class="payment-value">${displayDate(invoice?.payment_date)}</div>
-							</div>
-						</section>
-					` : ""}
+						</div>
+					</section>
 
 					${invoice?.notes
 			? `

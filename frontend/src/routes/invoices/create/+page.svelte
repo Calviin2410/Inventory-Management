@@ -18,6 +18,7 @@
 	let address = $state("");
 	let barrelId = $state("");
 	let description = $state("");
+	let totalAmount = $state("");
 	let availableBarrels = $state([]);
 	let isLoading = $state(true);
 	let isSubmitting = $state(false);
@@ -131,6 +132,7 @@
 			customer_id: customer.id,
 			vehicle_id: Number(vehicleId),
 			address: address.trim(),
+			total_amount: Number(totalAmount),
 			notes: null,
 			items: [
 				{
@@ -171,6 +173,11 @@
 
 		if (!vehicleId) {
 			pageError = "Please select a vehicle.";
+			return;
+		}
+
+		if (totalAmount === "" || Number(totalAmount) < 0) {
+			pageError = "Please enter a valid invoice amount.";
 			return;
 		}
 		isSubmitting = true;
@@ -345,6 +352,18 @@
 					<span>Rental end <b>Required</b></span>
 
 					<DateInput bind:value={rentalEnd} min={rentalStart} required ariaLabel="Select rental end date" />
+				</label>
+				<label>
+					<span>Total amount (RM) <b>Required</b></span>
+					<input
+						type="number"
+						min="0"
+						max="9999999999.99"
+						step="0.01"
+						placeholder="0.00"
+						bind:value={totalAmount}
+						required
+					/>
 				</label>
 				<label class="full-width">
 					<span>Description <small>Optional</small></span>

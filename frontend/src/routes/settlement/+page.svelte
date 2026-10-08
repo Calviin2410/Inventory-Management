@@ -147,7 +147,7 @@
 
 	<section class="panel settlement-panel">
 		{#if loading}
-			<SkeletonTable rows={5} columns={6} />
+			<SkeletonTable rows={5} columns={7} />
 		{:else if errorMessage}
 			<div class="state error">{errorMessage}</div>
 		{:else if invoices.length === 0}
@@ -165,13 +165,14 @@
 							<th>Payment Status</th>
 							<th>Settlement Status</th>
 							<th>Remark</th>
+							<th>Settlement Date</th>
 							<th class="action-column">Action</th>
 						</tr>
 					</thead>
 					<tbody>
 						{#each invoices as invoice (invoice.id)}
 							<tr>
-								<td class="strong">{invoice.invoice_no}</td>
+								<td><a class="invoice-link" href={`/invoices/${invoice.id}`}>{invoice.invoice_no}</a></td>
 								<td>{formatDateTime(invoice.created_at)}</td>
 								<td>
 									<span class:paid={invoice.status === "paid"} class="payment-badge">
@@ -185,6 +186,7 @@
 									</span>
 								</td>
 								<td class="remark-cell">{invoice.settlement_remark || "—"}</td>
+								<td class="settlement-date">{formatDateTime(invoice.settled_at)}</td>
 								<td class="action-cell">
 									<button class="table-action settle-action" type="button" disabled={invoice.settlement_status === "settled"} onclick={() => openDialog(invoice, "settle")}>Settle</button>
 									<button class="table-action reopen-action" type="button" disabled={invoice.settlement_status !== "settled"} onclick={() => openDialog(invoice, "reopen")}>Reopen</button>
@@ -246,6 +248,9 @@
 	.payment-badge { display: inline-flex; min-width: 66px; justify-content: center; padding: 5px 10px; border-radius: 999px; background: #fee2e2; color: #c81e3a; font-size: 12px; font-weight: 700; }
 	.payment-badge.paid { background: #ccfbf1; color: #0f766e; }
 	.remark-cell { max-width: 320px; color: #536078; line-height: 1.45; white-space: normal; }
+	.invoice-link { color: #172033; font-weight: 700; text-decoration: none; }
+	.invoice-link:hover { color: #2554c7; text-decoration: underline; }
+	.settlement-date { white-space: nowrap; }
 	.action-column { width: 190px; text-align: right !important; }
 	.action-cell { display: flex; justify-content: flex-end; gap: 7px; }
 	.table-action { min-height: 34px; padding: 0 11px; border: 1px solid #d7deea; border-radius: 7px; background: white; color: #344054; font-size: 12px; font-weight: 700; cursor: pointer; }
@@ -262,6 +267,6 @@
 	textarea:focus { border-color: #315ee7; box-shadow: 0 0 0 3px rgb(49 94 231 / 12%); }
 	.dialog-error { margin-bottom: 16px; padding: 10px 12px; border-radius: 8px; background: #fef2f2; color: #b42318; font-size: 12px; }
 	.dialog-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 22px; }
-	@media (max-width: 900px) { .payment-summary { grid-template-columns: 1fr 1fr; } .date-toolbar label { width: 100%; } .refresh-button { margin-left: 0; } .data-table { min-width: 980px; } .action-cell { display: table-cell; white-space: nowrap; } .table-action + .table-action { margin-left: 5px; } }
+	@media (max-width: 900px) { .payment-summary { grid-template-columns: 1fr 1fr; } .date-toolbar label { width: 100%; } .refresh-button { margin-left: 0; } .data-table { min-width: 1120px; } .action-cell { display: table-cell; white-space: nowrap; } .table-action + .table-action { margin-left: 5px; } }
 	@media (max-width: 480px) { .payment-summary { grid-template-columns: 1fr; } }
 </style>
