@@ -95,7 +95,10 @@ class WasteController extends Controller
             Barrel::query()
                 ->whereIn('id', $activeBarrelIds)
                 ->where('status', 'rented')
-                ->update(['status' => 'returning']);
+                ->update([
+					'status' => 'returning',
+					'current_customer_id' => $lockedInvoice->customer_id,
+				]);
 
             return $lockedInvoice->fresh();
         });

@@ -62,8 +62,8 @@ class WasteSaleTest extends TestCase
         ])->assertOk()->assertJsonFragment([
             'waste_sale_amount' => '125.50',
             'waste_sale_remark' => 'Sold recyclable material.',
-            'waste_sale_recorded_by' => $staff->id,
-        ])->assertJsonPath('customer.name', 'Waste Customer')
+        ])->assertJsonPath('waste_sale_recorded_by.id', $staff->id)
+            ->assertJsonPath('customer.name', 'Waste Customer')
             ->assertJsonPath('created_by.name', $staff->name);
 
         $this->patchJson("/api/waste-sales/{$invoice->id}", [
@@ -81,6 +81,7 @@ class WasteSaleTest extends TestCase
         $this->assertDatabaseHas('barrels', [
             'id' => $barrel->id,
             'status' => 'returning',
+			'current_customer_id' => $invoice->customer_id,
         ]);
         $this->assertDatabaseHas('activity_logs', [
             'subject_id' => $invoice->id,

@@ -110,4 +110,30 @@ class BarrelIndexTest extends TestCase
             ->assertJsonPath('data.0.invoice_no', 'TKS-FLOW-002')
             ->assertJsonPath('data.0.current_customer.name', 'Current Customer');
     }
+
+	public function test_in_transit_barrel_falls_back_to_latest_invoice_customer(): void
+	{
+		Sanctum::actingAs(User::factory()->create(['role' => 'normal_staff']));
+		$customer = Customer::create(['name' => 'Transit Customer']);
+		$barrel = Barrel::create([
+			'code' => 'FLOW-003',
+			'status' => 'returning',
+			'current_customer_id' => null,
+		]);
+		$invoice = Invoice::create([
+			'invoice_no' => 'TKS-FLOW-003',
+			'customer_id' => $customer->id,
+			'issued_date' => now()->toDateString(),
+			'status' => 'paid',
+		]);
+		$invoice->items()->create([
+			'barrel_id' => $barrel->id,
+			'rental_start' => now()->toDateString(),
+		]);
+
+		$this->getJson('/api/barrels?search=FLOW-003')
+			->assertOk()
+			->assertJsonPath('data.0.invoice_no', 'TKS-FLOW-003')
+			->assertJsonPath('data.0.current_customer.name', 'Transit Customer');
+	}
 }

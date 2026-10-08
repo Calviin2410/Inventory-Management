@@ -15,7 +15,7 @@ class BarrelController extends Controller
     {
         $query = Barrel::with([
             'currentCustomer',
-            'invoiceItems.invoice',
+            'invoiceItems.invoice.customer',
         ]);
 
         if ($status = $request->query('status')) {
@@ -53,6 +53,13 @@ class BarrelController extends Controller
 					$latestInvoiceItem
 						?->invoice
 						?->id;
+
+				if (! $barrel->currentCustomer && $latestInvoiceItem?->invoice?->customer) {
+					$barrel->setRelation(
+						'currentCustomer',
+						$latestInvoiceItem->invoice->customer
+					);
+				}
 
                 unset(
                     $barrel->invoiceItems
