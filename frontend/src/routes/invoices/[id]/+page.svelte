@@ -7,11 +7,13 @@
 	import SkeletonTable from "$lib/SkeletonTable.svelte";
 	import { formatDate } from "$lib/format.js";
 	import { openInvoicePrintWindow } from "$lib/invoicePrint.js";
+	import WasteSaleDialog from "$lib/WasteSaleDialog.svelte";
 
 	let invoice = $state(null);
 	let loading = $state(true);
 	let errorMessage = $state("");
 	let exporting = $state(false);
+	let saleDialogOpen = $state(false);
 	const terms = [
 		"Each order is valid for one delivery address only. Additional delivery addresses will be subject to extra charges.",
 		"Bin rental/service period is limited to 14 days per order. Additional charges will apply for any period exceeding 14 days.",
@@ -107,6 +109,9 @@
 
 		{#if invoice}
 			<div class="header-actions">
+				<button type="button" class="btn sale-button" onclick={() => (saleDialogOpen = true)}>
+					{invoice.waste_sale_amount === null ? "Record Sale" : "Update Sale"}
+				</button>
 				<button
 					type="button"
 					class="btn"
@@ -295,6 +300,14 @@
 				</ol>
 			</div>
 		</section>
+	{/if}
+
+	{#if invoice && saleDialogOpen}
+		<WasteSaleDialog
+			{invoice}
+			oncancel={() => (saleDialogOpen = false)}
+			onsaved={(updated) => { invoice = updated; saleDialogOpen = false; }}
+		/>
 	{/if}
 </main>
 

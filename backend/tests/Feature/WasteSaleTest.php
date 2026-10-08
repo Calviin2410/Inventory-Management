@@ -16,7 +16,7 @@ class WasteSaleTest extends TestCase
     private function invoice(): Invoice
     {
         return Invoice::create([
-            'invoice_no' => 'TKS09999',
+            'invoice_no' => 'TKS'.str_pad((string) (Invoice::count() + 9000), 5, '0', STR_PAD_LEFT),
             'customer_id' => Customer::create(['name' => 'Waste Customer'])->id,
             'issued_date' => now()->toDateString(),
             'status' => 'paid',
@@ -26,6 +26,10 @@ class WasteSaleTest extends TestCase
     public function test_all_authenticated_users_can_view_waste_sales(): void
     {
         $invoice = $this->invoice();
+        $invoice->update([
+            'waste_sale_amount' => 50,
+            'waste_sale_recorded_at' => '2026-10-08',
+        ]);
 
         foreach (['admin', 'normal_staff'] as $role) {
             Sanctum::actingAs(User::factory()->create(['role' => $role]));
@@ -33,7 +37,7 @@ class WasteSaleTest extends TestCase
                 ->assertOk()
                 ->assertJsonFragment([
                     'id' => $invoice->id,
-                    'invoice_no' => 'TKS09999',
+                    'invoice_no' => $invoice->invoice_no,
                 ]);
         }
     }
@@ -47,6 +51,7 @@ class WasteSaleTest extends TestCase
         $this->patchJson("/api/waste-sales/{$invoice->id}", [
             'amount' => 125.50,
             'remark' => 'Sold recyclable material.',
+            'received_date' => '2026-10-07',
         ])->assertOk()->assertJsonFragment([
             'waste_sale_amount' => '125.50',
             'waste_sale_remark' => 'Sold recyclable material.',
@@ -56,6 +61,7 @@ class WasteSaleTest extends TestCase
         $this->patchJson("/api/waste-sales/{$invoice->id}", [
             'amount' => 150,
             'remark' => null,
+            'received_date' => '2026-10-08',
         ])->assertOk()->assertJsonFragment([
             'waste_sale_amount' => '150.00',
             'waste_sale_remark' => null,
@@ -82,6 +88,23 @@ class WasteSaleTest extends TestCase
 
         $this->patchJson("/api/waste-sales/{$invoice->id}", [
             'amount' => -1,
+            'received_date' => '2026-10-08',
         ])->assertUnprocessable()->assertJsonValidationErrors('amount');
+    }
+
+    public function test_waste_page_only_contains_recorded_sales_and_filters_received_date(): void
+    {
+        Sanctum::actingAs(User::factory()->create(['role' => 'normal_staff']));
+        $included = $this->invoice();
+        $included->update([
+            'waste_sale_amount' => 88,
+            'waste_sale_recorded_at' => '2026-10-08',
+        ]);
+        $excluded = $this->invoice();
+
+        $this->getJson('/api/waste-sales?from_date=2026-10-08&to_date=2026-10-08')
+            ->assertOk()
+            ->assertJsonFragment(['id' => $included->id])
+            ->assertJsonMissing(['id' => $excluded->id]);
     }
 }

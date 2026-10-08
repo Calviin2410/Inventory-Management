@@ -14,6 +14,8 @@ class WasteController extends Controller
     {
         $data = $request->validate([
             'search' => ['nullable', 'string', 'max:100'],
+            'from_date' => ['nullable', 'date'],
+            'to_date' => ['nullable', 'date', 'after_or_equal:from_date'],
         ]);
 
         $query = Invoice::query()
@@ -21,6 +23,7 @@ class WasteController extends Controller
                 'items.barrel:id,code',
                 'wasteSaleRecordedBy:id,name',
             ])
+            ->whereNotNull('waste_sale_amount')
             ->latest('issued_date')
             ->latest('id');
 
@@ -34,6 +37,14 @@ class WasteController extends Controller
             });
         }
 
+        if (! empty($data['from_date'])) {
+            $query->whereDate('waste_sale_recorded_at', '>=', $data['from_date']);
+        }
+
+        if (! empty($data['to_date'])) {
+            $query->whereDate('waste_sale_recorded_at', '<=', $data['to_date']);
+        }
+
         return response()->json($query->paginate(20));
     }
 
@@ -42,6 +53,7 @@ class WasteController extends Controller
         $data = $request->validate([
             'amount' => ['required', 'numeric', 'min:0', 'max:9999999999.99'],
             'remark' => ['nullable', 'string', 'max:1000'],
+            'received_date' => ['required', 'date'],
         ]);
 
         $before = $invoice->only([
@@ -58,7 +70,7 @@ class WasteController extends Controller
                 'waste_sale_remark' => filled($data['remark'] ?? null)
                     ? trim($data['remark'])
                     : null,
-                'waste_sale_recorded_at' => now(),
+                'waste_sale_recorded_at' => $data['received_date'],
                 'waste_sale_recorded_by' => $request->user()->id,
             ]);
 

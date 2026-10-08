@@ -8,6 +8,7 @@
 	import ConfirmDialog from "$lib/ConfirmDialog.svelte";
 	import { formatDate } from "$lib/format.js";
 	import { user } from "$lib/stores/auth.js";
+	import WasteSaleDialog from "$lib/WasteSaleDialog.svelte";
 
 	// =========================
 	// State
@@ -30,6 +31,7 @@
 	let selectedInvoice = $state(null);
 	let deletingInvoice = $state(false);
 	let deleteError = $state("");
+	let saleInvoice = $state(null);
 	let isAdmin = $derived($user?.role === "admin");
 	let menuInvoice = $derived(
 		invoices.find((invoice) => invoice.id === openMenuId) ?? null,
@@ -94,7 +96,7 @@
 
 		const buttonRect = event.currentTarget.getBoundingClientRect();
 		const menuWidth = 190;
-		const menuHeight = isAdmin ? 232 : 176;
+		const menuHeight = isAdmin ? 276 : 220;
 		const gap = 8;
 		const viewportPadding = 8;
 
@@ -510,11 +512,25 @@
 			<button type="button" disabled={exportingId === menuInvoice.id} onclick={() => exportPdf(menuInvoice)}>
 				{exportingId === menuInvoice.id ? "Preparing..." : "Export PDF"}
 			</button>
+			<button type="button" onclick={() => { saleInvoice = menuInvoice; openMenuId = null; }}>
+				{menuInvoice.waste_sale_amount === null ? "Record Sale" : "Update Sale"}
+			</button>
 			{#if isAdmin}
 				<div class="menu-divider"></div>
 				<button type="button" class="delete-action" onclick={() => requestInvoiceDeletion(menuInvoice)}>Delete Invoice</button>
 			{/if}
 		</div>
+	{/if}
+
+	{#if saleInvoice}
+		<WasteSaleDialog
+			invoice={saleInvoice}
+			oncancel={() => (saleInvoice = null)}
+			onsaved={(updated) => {
+				invoices = invoices.map((item) => item.id === updated.id ? updated : item);
+				saleInvoice = null;
+			}}
+		/>
 	{/if}
 
 	{#if paymentInvoice}
