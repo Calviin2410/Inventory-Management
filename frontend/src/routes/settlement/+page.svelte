@@ -240,7 +240,7 @@
 								<td class="remark-cell">{invoice.settlement_remark || "—"}</td>
 								<td class="settlement-date">{formatDateTime(invoice.settled_at)}</td>
 								<td class="action-cell">
-									<button class="action-button" type="button" aria-label={`Actions for ${invoice.invoice_no}`} aria-expanded={openActionId === invoice.id} onclick={(event) => toggleActionMenu(invoice.id, event)}>Action <span aria-hidden="true">⌄</span></button>
+									<button class="more-button" type="button" aria-label={`Actions for ${invoice.invoice_no}`} aria-expanded={openActionId === invoice.id} onclick={(event) => toggleActionMenu(invoice.id, event)}>⋯</button>
 								</td>
 							</tr>
 						{/each}
@@ -310,9 +310,10 @@
 	.invoice-link { color: #172033; font-weight: 700; text-decoration: none; }
 	.invoice-link:hover { color: #2554c7; text-decoration: underline; }
 	.settlement-date { white-space: nowrap; }
-	.action-column { width: 120px; text-align: right !important; }
+	.action-column { width: 70px; text-align: right !important; }
 	.action-cell { text-align: right; }
-	.action-button { display: inline-flex; min-height: 36px; align-items: center; justify-content: center; gap: 12px; padding: 0 13px; border: 1px solid #ccd4e0; border-radius: 7px; background: white; color: #172033; font-size: 12px; font-weight: 700; cursor: pointer; }
+	.more-button { display: inline-flex; width: 38px; height: 36px; align-items: center; justify-content: center; padding: 0; border: 1px solid #d7dce5; border-radius: 8px; background: white; color: #536078; font-size: 20px; font-weight: 700; cursor: pointer; transition: background .15s ease, border-color .15s ease; }
+	.more-button:hover { border-color: #bfc7d4; background: #f5f7fb; }
 	.action-dropdown { position: fixed; top: var(--menu-top); left: var(--menu-left); z-index: 120; display: grid; width: 180px; overflow: hidden; padding: 6px; border: 1px solid #d7deea; border-radius: 9px; background: white; box-shadow: 0 12px 30px rgb(15 23 42 / 16%); }
 	.action-dropdown button { min-height: 38px; padding: 0 11px; border: 0; border-radius: 6px; background: white; color: #344054; font-size: 12px; font-weight: 700; text-align: left; cursor: pointer; }
 	.action-dropdown button:hover:not(:disabled) { background: #f3f6fb; color: #2554c7; }
