@@ -86,7 +86,9 @@
 		try {
 			const fullInvoice = await api.getInvoice(invoice.id);
 
-			openInvoicePrintWindow(printWindow, fullInvoice);
+			openInvoicePrintWindow(printWindow, fullInvoice, {
+				settledStamp: fullInvoice.settlement_status === "settled",
+			});
 		} catch (error) {
 			printWindow.close();
 
@@ -307,6 +309,13 @@
 				</div>
 			</div>
 
+			{#if invoice.settlement_status === "settled"}
+				<div class="settlement-proof" aria-label="Settlement confirmation">
+					<div class="settlement-remark">{invoice.settlement_remark || "—"}</div>
+					<div class="settled-stamp">Settled</div>
+				</div>
+			{/if}
+
 			<div class="section terms-section">
 				<h2>Terms &amp; Conditions</h2>
 				<ol>
@@ -453,6 +462,43 @@
 		display: grid;
 		grid-template-columns: repeat(3, minmax(0, 1fr));
 		gap: 24px 40px;
+	}
+
+	.settlement-proof {
+		display: grid;
+		width: 130px;
+		justify-items: center;
+		gap: 9px;
+		margin: 28px 0 0 auto;
+	}
+
+	.settlement-remark {
+		width: 100%;
+		color: #78a0d2;
+		font-size: 14px;
+		line-height: 1.6;
+		text-align: center;
+		overflow-wrap: anywhere;
+	}
+
+	.settled-stamp {
+		display: grid;
+		width: 92px;
+		height: 92px;
+		place-items: center;
+		padding: 10px;
+		overflow: hidden;
+		border: 4px double #c72c36;
+		border-radius: 50%;
+		color: #c72c36;
+		font-size: 14px;
+		font-weight: 800;
+		line-height: 1;
+		letter-spacing: .03em;
+		text-align: center;
+		text-transform: uppercase;
+		transform: rotate(-12deg);
+		opacity: .82;
 	}
 
 	.amount-cell {

@@ -252,6 +252,8 @@
 
 	{#if actionInvoice}
 		<div class="action-dropdown" style:--menu-top={`${actionMenuPosition.top}px`} style:--menu-left={`${actionMenuPosition.left}px`}>
+			<a href={`/invoices/${actionInvoice.id}`}>View Invoice</a>
+			<div class="menu-divider"></div>
 			<button type="button" disabled={actionInvoice.settlement_status !== "settled" || exportingId !== null} onclick={() => exportSettledInvoice(actionInvoice)}>{exportingId === actionInvoice.id ? "Preparing…" : "Export Invoice"}</button>
 			<div class="menu-divider"></div>
 			<button type="button" disabled={actionInvoice.settlement_status === "settled"} onclick={() => openDialog(actionInvoice, "settle")}>Settle</button>
@@ -316,8 +318,8 @@
 	.more-button { display: inline-flex; width: 38px; height: 36px; align-items: center; justify-content: center; padding: 0; border: 1px solid #d7dce5; border-radius: 8px; background: white; color: #536078; font-size: 20px; font-weight: 700; cursor: pointer; transition: background .15s ease, border-color .15s ease; }
 	.more-button:hover { border-color: #bfc7d4; background: #f5f7fb; }
 	.action-dropdown { position: fixed; top: var(--menu-top); left: var(--menu-left); z-index: 2000; display: grid; width: 180px; max-height: calc(100vh - 16px); overflow: hidden auto; border: 1px solid #e5e7eb; border-radius: 8px; background: white; box-shadow: 0 10px 30px rgb(15 23 42 / 14%); }
-	.action-dropdown button { display: block; width: 100%; box-sizing: border-box; padding: 11px 14px; border: 0; background: white; color: #202939; font-size: 14px; font-weight: 500; text-align: left; cursor: pointer; }
-	.action-dropdown button:hover:not(:disabled) { background: #f3f4f6; color: #202939; }
+	.action-dropdown button, .action-dropdown a { display: block; width: 100%; box-sizing: border-box; padding: 11px 14px; border: 0; background: white; color: #202939; font-size: 14px; font-weight: 500; text-align: left; text-decoration: none; cursor: pointer; }
+	.action-dropdown button:hover:not(:disabled), .action-dropdown a:hover { background: #f3f4f6; color: #202939; }
 	.action-dropdown .reopen-option:not(:disabled) { color: #be123c; }
 	.action-dropdown .reopen-option:hover:not(:disabled) { background: #fff1f1; color: #be123c; }
 	.action-dropdown button:disabled { background: white; color: #9ca3af; cursor: not-allowed; }
