@@ -81,6 +81,12 @@ export function buildInvoiceDocument(invoice) {
 					item?.rental_end,
 				)}
 					</td>
+
+					<td>
+						<span class="status-badge ${status === "paid" ? "status-paid" : "status-unpaid"}">
+							${statusText}
+						</span>
+					</td>
 				</tr>
 			`;
 		})
@@ -259,6 +265,12 @@ export function buildInvoiceDocument(invoice) {
 						white-space: pre-line;
 					}
 
+					.address-block {
+						margin-bottom: 24px;
+						padding-bottom: 20px;
+						border-bottom: 1px solid #e4e9f1;
+					}
+
 					.status-badge {
 						display: inline-flex;
 
@@ -354,6 +366,31 @@ export function buildInvoiceDocument(invoice) {
 						border-radius: 8px;
 
 						background: #f7f9fc;
+					}
+
+					.payment-details {
+						display: grid;
+						grid-template-columns: repeat(2, minmax(0, 1fr));
+						gap: 24px;
+						margin-top: 22px;
+						padding: 16px 18px;
+						border: 1px solid #e4e9f1;
+						border-radius: 8px;
+						break-inside: avoid;
+						page-break-inside: avoid;
+					}
+
+					.payment-label {
+						margin-bottom: 4px;
+						color: #697386;
+						font-size: 11px;
+						font-weight: 700;
+						letter-spacing: 0.06em;
+						text-transform: uppercase;
+					}
+
+					.payment-value {
+						font-weight: 700;
 					}
 
 					.notes-title {
@@ -464,49 +501,32 @@ export function buildInvoiceDocument(invoice) {
 								<img class="company-wordmark" src="/images/tks-wordmark-contact-transparent.png" alt="TKS Waste Management, Co No. SA0221614-V, H/P 012-989 6221 (TKS) / 010-231 1687 (PENG), Office 03-31677966">
 							</div>
 						</div>
-						<div class="header-right">
-							<div class="invoice-no">${escapeHtml(
-		invoice?.invoice_no ||
-		"—",
-	)}</div>
-						</div>
 					</header>
 
 					<section class="meta">
 						<div class="meta-block">
-							<div class="meta-title">
-								Bill To
+							<div class="meta-line">
+								<strong>Invoice No:</strong>
+								${escapeHtml(invoice?.invoice_no || "—")}
 							</div>
 
 							<div class="meta-line">
-								<strong>
-									${escapeHtml(
-		invoice?.customer?.name ||
-		"-",
-	)}
-								</strong>
+								<strong>Customer:</strong>
+								${escapeHtml(invoice?.customer?.name || "—")}
 							</div>
 
-							${invoice?.customer?.phone
-			? `
-										<div class="meta-line">
-											${escapeHtml(
-				invoice.customer.phone,
-			)}
-										</div>
-									`
-			: ""
-		}
-
-							<div class="meta-line address">
-								${escapeHtml(
-			invoice?.address ||
-			"—",
-		)}
+							<div class="meta-line">
+								<strong>Phone:</strong>
+								${escapeHtml(invoice?.customer?.phone || "—")}
 							</div>
 						</div>
 
 						<div class="meta-block">
+							<div class="meta-line">
+								<strong>Issued Date:</strong>
+								${displayDate(invoice?.issued_date)}
+							</div>
+
 							<div class="meta-line">
 								<strong>Salesperson:</strong>
 								${escapeHtml(invoice?.created_by?.name || "—")}
@@ -517,42 +537,12 @@ export function buildInvoiceDocument(invoice) {
 								${escapeHtml(invoice?.vehicle?.plate_number || "—")}
 							</div>
 
-							<div class="meta-title payment-title">
-								Payment
-							</div>
-
-							<div class="meta-line">
-								Status:
-
-								<span
-									class="
-										status-badge
-										${status === "paid"
-			? "status-paid"
-			: "status-unpaid"
-		}
-									"
-								>
-									${statusText}
-								</span>
-							</div>
-
-							<div class="meta-line">
-								Invoice date:
-								${displayDate(
-			invoice?.issued_date,
-		)}
-							</div>
-
-							${status === "paid" ? `
-								<div class="meta-line">
-									Paid by: ${invoice?.payment_method === "bank_in" ? "Bank In" : "Cash"}
-								</div>
-								<div class="meta-line">
-									Payment date: ${displayDate(invoice?.payment_date)}
-								</div>
-							` : ""}
 						</div>
+					</section>
+
+					<section class="address-block">
+						<div class="meta-title">Address</div>
+						<div class="meta-line address">${escapeHtml(invoice?.address || "—")}</div>
 					</section>
 
 					<div class="table-card">
@@ -564,6 +554,7 @@ export function buildInvoiceDocument(invoice) {
 									<th>Description</th>
 									<th>Rental Start</th>
 									<th>Rental End</th>
+									<th>Status</th>
 								</tr>
 							</thead>
 
@@ -572,7 +563,7 @@ export function buildInvoiceDocument(invoice) {
 		`
 										<tr>
 											<td
-												colspan="5"
+												colspan="6"
 												style="
 													text-align: center;
 													color: #697386;
@@ -587,6 +578,19 @@ export function buildInvoiceDocument(invoice) {
 							</tbody>
 						</table>
 					</div>
+
+					${status === "paid" ? `
+						<section class="payment-details">
+							<div>
+								<div class="payment-label">Paid By</div>
+								<div class="payment-value">${invoice?.payment_method === "bank_in" ? "Bank In" : "Cash"}</div>
+							</div>
+							<div>
+								<div class="payment-label">Payment Date</div>
+								<div class="payment-value">${displayDate(invoice?.payment_date)}</div>
+							</div>
+						</section>
+					` : ""}
 
 					${invoice?.notes
 			? `

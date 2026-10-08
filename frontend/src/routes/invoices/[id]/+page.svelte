@@ -163,32 +163,10 @@
 				</div>
 
 				<div class="detail-item">
-					<span class="label"> Status </span>
+					<span class="label"> Issued Date </span>
 
 					<p>
-						<span
-							class="status-badge"
-							class:paid={invoice.status === "paid"}
-							class:unpaid={invoice.status === "unpaid"}
-						>
-							{invoice.status === "paid" ? "Paid" : "Unpaid"}
-						</span>
-					</p>
-				</div>
-
-				<div class="detail-item">
-					<span class="label"> Salesperson </span>
-
-					<p class="strong">
-						{invoice.created_by?.name ?? "—"}
-					</p>
-				</div>
-
-				<div class="detail-item">
-					<span class="label"> Vehicle Plate </span>
-
-					<p class="strong">
-						{invoice.vehicle?.plate_number ?? "—"}
+						{formatDate(invoice.issued_date)}
 					</p>
 				</div>
 
@@ -201,6 +179,14 @@
 				</div>
 
 				<div class="detail-item">
+					<span class="label"> Salesperson </span>
+
+					<p class="strong">
+						{invoice.created_by?.name ?? "—"}
+					</p>
+				</div>
+
+				<div class="detail-item">
 					<span class="label"> Phone </span>
 
 					<p>
@@ -209,28 +195,12 @@
 				</div>
 
 				<div class="detail-item">
-					<span class="label"> Issued Date </span>
+					<span class="label"> Vehicle Plate </span>
 
-					<p>
-						{formatDate(invoice.issued_date)}
+					<p class="strong">
+						{invoice.vehicle?.plate_number ?? "—"}
 					</p>
 				</div>
-
-				{#if invoice.status === "paid"}
-					<div class="detail-item">
-						<span class="label"> Paid By </span>
-						<p class="strong">
-							{invoice.payment_method === "bank_in"
-								? "Bank In"
-								: "Cash"}
-						</p>
-					</div>
-
-					<div class="detail-item">
-						<span class="label"> Payment Date </span>
-						<p>{formatDate(invoice.payment_date)}</p>
-					</div>
-				{/if}
 			</div>
 
 			<!-- =========================
@@ -263,6 +233,8 @@
 								<th> Rental Start </th>
 
 								<th> Rental End </th>
+
+								<th> Status </th>
 							</tr>
 						</thead>
 
@@ -284,10 +256,20 @@
 									<td>
 										{formatDate(item.rental_end)}
 									</td>
+
+									<td>
+										<span
+											class="status-badge"
+											class:paid={invoice.status === "paid"}
+											class:unpaid={invoice.status === "unpaid"}
+										>
+											{invoice.status === "paid" ? "Paid" : "Unpaid"}
+										</span>
+									</td>
 								</tr>
 							{:else}
 								<tr>
-									<td colspan="4" class="empty">
+									<td colspan="5" class="empty">
 										No invoice items.
 									</td>
 								</tr>
@@ -296,6 +278,21 @@
 					</table>
 				</div>
 			</div>
+
+			{#if invoice.status === "paid"}
+				<div class="section payment-details">
+					<div class="detail-item">
+						<span class="label"> Paid By </span>
+						<p class="strong">
+							{invoice.payment_method === "bank_in" ? "Bank In" : "Cash"}
+						</p>
+					</div>
+					<div class="detail-item">
+						<span class="label"> Payment Date </span>
+						<p>{formatDate(invoice.payment_date)}</p>
+					</div>
+				</div>
+			{/if}
 
 			<div class="section terms-section">
 				<h2>Terms &amp; Conditions</h2>
@@ -439,6 +436,12 @@
 		font-weight: 700;
 	}
 
+	.payment-details {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 24px 40px;
+	}
+
 	.terms-section ol {
 		margin: 0;
 		padding-left: 22px;
@@ -542,7 +545,8 @@
 	/* MOBILE */
 
 	@media (max-width: 900px) {
-		.detail-grid {
+		.detail-grid,
+		.payment-details {
 			grid-template-columns: 1fr;
 		}
 	}
