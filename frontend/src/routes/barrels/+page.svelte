@@ -140,7 +140,11 @@
 				status: newStatus,
 			});
 			barrels = barrels.map((item) =>
-				item.id === barrel.id ? updated : item,
+				item.id === barrel.id
+					? newStatus === "available"
+						? { ...item, ...updated, invoice_id: null, invoice_no: null }
+						: { ...item, ...updated }
+					: item,
 			);
 			openMenuId = null;
 		} catch (error) {

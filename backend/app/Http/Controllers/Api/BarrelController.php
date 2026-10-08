@@ -40,6 +40,7 @@ class BarrelController extends Controller
             function ($barrel) {
                 $latestInvoiceItem =
                     $barrel->invoiceItems
+                        ->whereNull('rental_end')
                         ->sortByDesc('id')
                         ->first();
 

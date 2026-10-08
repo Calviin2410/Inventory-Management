@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Barrel;
+use App\Models\Customer;
+use App\Models\Invoice;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -45,5 +47,38 @@ class BarrelIndexTest extends TestCase
             ],
             array_column($response->json('data'), 'code')
         );
+    }
+
+    public function test_available_barrel_does_not_show_a_historical_invoice(): void
+    {
+        Sanctum::actingAs(User::factory()->create(['role' => 'normal_staff']));
+        $customer = Customer::create(['name' => 'Flow Customer']);
+        $barrel = Barrel::create([
+            'code' => 'FLOW-001',
+            'status' => 'rented',
+            'current_customer_id' => $customer->id,
+        ]);
+        $invoice = Invoice::create([
+            'invoice_no' => 'TKS-FLOW-001',
+            'customer_id' => $customer->id,
+            'issued_date' => now()->toDateString(),
+            'status' => 'paid',
+        ]);
+        $item = $invoice->items()->create([
+            'barrel_id' => $barrel->id,
+            'rental_start' => now()->toDateString(),
+        ]);
+
+        $this->patchJson("/api/barrels/{$barrel->id}", [
+            'status' => 'available',
+        ])->assertOk();
+
+        $this->assertNotNull($item->fresh()->rental_end);
+        $this->getJson('/api/barrels?search=FLOW-001')
+            ->assertOk()
+            ->assertJsonPath('data.0.status', 'available')
+            ->assertJsonPath('data.0.current_customer_id', null)
+            ->assertJsonPath('data.0.invoice_id', null)
+            ->assertJsonPath('data.0.invoice_no', null);
     }
 }
