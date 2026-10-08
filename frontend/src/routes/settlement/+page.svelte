@@ -17,6 +17,9 @@
 	let actionError = $state("");
 	let submitting = $state(false);
 	let exportingId = $state(null);
+	let openActionId = $state(null);
+	let actionMenuPosition = $state({ top: 0, left: 0 });
+	let actionInvoice = $derived(invoices.find((invoice) => invoice.id === openActionId) ?? null);
 	let successMessage = $state("");
 	let fromDate = $state(malaysiaToday());
 	let toDate = $state(malaysiaToday());
@@ -59,10 +62,29 @@
 	}
 
 	function openDialog(invoice, action) {
+		openActionId = null;
 		selectedInvoice = invoice;
 		selectedAction = action;
 		remark = "";
 		actionError = "";
+	}
+
+	function toggleActionMenu(invoiceId, event) {
+		if (openActionId === invoiceId) {
+			openActionId = null;
+			return;
+		}
+
+		const rect = event.currentTarget.getBoundingClientRect();
+		const menuWidth = 180;
+		const menuHeight = 132;
+		const gap = 6;
+		const padding = 10;
+		actionMenuPosition = {
+			top: Math.min(rect.bottom + gap, window.innerHeight - menuHeight - padding),
+			left: Math.max(padding, rect.right - menuWidth),
+		};
+		openActionId = invoiceId;
 	}
 
 	function closeDialog() {
@@ -108,6 +130,7 @@
 
 	async function exportSettledInvoice(invoice) {
 		if (invoice.settlement_status !== "settled" || exportingId !== null) return;
+		openActionId = null;
 
 		const printWindow = window.open("", "_blank");
 		if (!printWindow) {
@@ -217,9 +240,7 @@
 								<td class="remark-cell">{invoice.settlement_remark || "—"}</td>
 								<td class="settlement-date">{formatDateTime(invoice.settled_at)}</td>
 								<td class="action-cell">
-									<button class="table-action export-action" type="button" disabled={invoice.settlement_status !== "settled" || exportingId !== null} onclick={() => exportSettledInvoice(invoice)}>{exportingId === invoice.id ? "Preparing…" : "Export Invoice"}</button>
-									<button class="table-action settle-action" type="button" disabled={invoice.settlement_status === "settled"} onclick={() => openDialog(invoice, "settle")}>Settle</button>
-									<button class="table-action reopen-action" type="button" disabled={invoice.settlement_status !== "settled"} onclick={() => openDialog(invoice, "reopen")}>Reopen</button>
+									<button class="action-button" type="button" aria-label={`Actions for ${invoice.invoice_no}`} aria-expanded={openActionId === invoice.id} onclick={(event) => toggleActionMenu(invoice.id, event)}>Action <span aria-hidden="true">⌄</span></button>
 								</td>
 							</tr>
 						{/each}
@@ -228,6 +249,14 @@
 			</div>
 		{/if}
 	</section>
+
+	{#if actionInvoice}
+		<div class="action-dropdown" style:--menu-top={`${actionMenuPosition.top}px`} style:--menu-left={`${actionMenuPosition.left}px`}>
+			<button type="button" disabled={actionInvoice.settlement_status !== "settled" || exportingId !== null} onclick={() => exportSettledInvoice(actionInvoice)}>{exportingId === actionInvoice.id ? "Preparing…" : "Export Invoice"}</button>
+			<button type="button" disabled={actionInvoice.settlement_status === "settled"} onclick={() => openDialog(actionInvoice, "settle")}>Settle</button>
+			<button class="reopen-option" type="button" disabled={actionInvoice.settlement_status !== "settled"} onclick={() => openDialog(actionInvoice, "reopen")}>Reopen</button>
+		</div>
+	{/if}
 </main>
 
 {#if selectedInvoice}
@@ -281,13 +310,14 @@
 	.invoice-link { color: #172033; font-weight: 700; text-decoration: none; }
 	.invoice-link:hover { color: #2554c7; text-decoration: underline; }
 	.settlement-date { white-space: nowrap; }
-	.action-column { width: 270px; text-align: right !important; }
-	.action-cell { display: flex; justify-content: flex-end; gap: 7px; }
-	.table-action { min-height: 34px; padding: 0 11px; border: 1px solid #d7deea; border-radius: 7px; background: white; color: #344054; font-size: 12px; font-weight: 700; cursor: pointer; }
-	.export-action:not(:disabled) { border-color: #b9c8f5; color: #2554c7; }
-	.settle-action:not(:disabled) { border-color: #9dddc9; color: #087a55; }
-	.reopen-action:not(:disabled) { border-color: #f5b9c5; color: #be123c; }
-	.table-action:disabled { opacity: .35; cursor: not-allowed; }
+	.action-column { width: 120px; text-align: right !important; }
+	.action-cell { text-align: right; }
+	.action-button { display: inline-flex; min-height: 36px; align-items: center; justify-content: center; gap: 12px; padding: 0 13px; border: 1px solid #ccd4e0; border-radius: 7px; background: white; color: #172033; font-size: 12px; font-weight: 700; cursor: pointer; }
+	.action-dropdown { position: fixed; top: var(--menu-top); left: var(--menu-left); z-index: 120; display: grid; width: 180px; overflow: hidden; padding: 6px; border: 1px solid #d7deea; border-radius: 9px; background: white; box-shadow: 0 12px 30px rgb(15 23 42 / 16%); }
+	.action-dropdown button { min-height: 38px; padding: 0 11px; border: 0; border-radius: 6px; background: white; color: #344054; font-size: 12px; font-weight: 700; text-align: left; cursor: pointer; }
+	.action-dropdown button:hover:not(:disabled) { background: #f3f6fb; color: #2554c7; }
+	.action-dropdown .reopen-option:not(:disabled) { color: #be123c; }
+	.action-dropdown button:disabled { opacity: .35; cursor: not-allowed; }
 	.dialog-layer { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 20px; background: rgb(15 23 42 / 45%); }
 	.settlement-dialog { width: min(100%, 440px); padding: 25px; border-radius: 12px; background: white; box-shadow: 0 24px 70px rgb(15 23 42 / 24%); }
 	.settlement-dialog h2 { margin: 0; color: #172033; font-size: 21px; }
@@ -298,6 +328,6 @@
 	textarea:focus { border-color: #315ee7; box-shadow: 0 0 0 3px rgb(49 94 231 / 12%); }
 	.dialog-error { margin-bottom: 16px; padding: 10px 12px; border-radius: 8px; background: #fef2f2; color: #b42318; font-size: 12px; }
 	.dialog-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 22px; }
-	@media (max-width: 900px) { .payment-summary { grid-template-columns: 1fr 1fr; } .date-toolbar label { width: 100%; } .refresh-button { margin-left: 0; } .data-table { min-width: 1120px; } .action-cell { display: table-cell; white-space: nowrap; } .table-action + .table-action { margin-left: 5px; } }
+	@media (max-width: 900px) { .payment-summary { grid-template-columns: 1fr 1fr; } .date-toolbar label { width: 100%; } .refresh-button { margin-left: 0; } .data-table { min-width: 1120px; } .action-cell { white-space: nowrap; } }
 	@media (max-width: 480px) { .payment-summary { grid-template-columns: 1fr; } }
 </style>
