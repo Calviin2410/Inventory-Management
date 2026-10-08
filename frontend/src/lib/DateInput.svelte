@@ -15,6 +15,7 @@
 	let display = $state(formatDate(value));
 	let lastInternalValue = value;
 	let textInput = $state();
+	let nativePicker = $state();
 
 	$effect(() => {
 		if (value !== lastInternalValue) display = formatDate(value);
@@ -71,6 +72,17 @@
 		onchange?.(event);
 	}
 
+	function openPicker() {
+		if (disabled || !nativePicker) return;
+
+		if (typeof nativePicker.showPicker === "function") {
+			nativePicker.showPicker();
+			return;
+		}
+
+		nativePicker.click();
+	}
+
 </script>
 
 <div class:compact class="date-input">
@@ -88,17 +100,25 @@
 		{required}
 		{disabled}
 	/>
-	<span class="calendar-button" aria-hidden="true">
+	<button
+		class="calendar-button"
+		type="button"
+		aria-label={ariaLabel}
+		{disabled}
+		onclick={openPicker}
+	>
 		<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2v3M17 2v3M3.5 9h17M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2Z" /></svg>
-	</span>
+	</button>
 	<input
+		bind:this={nativePicker}
 		class="native-picker"
 		type="date"
 		{min}
 		{max}
 		value={value}
 		onchange={handleSelection}
-		aria-label={ariaLabel}
+		aria-hidden="true"
+		tabindex="-1"
 		{disabled}
 	/>
 </div>
@@ -134,21 +154,22 @@
 		border: 0;
 		background: transparent;
 		color: #172033;
-		pointer-events: none;
+		cursor: pointer;
 	}
+	.calendar-button:hover:not(:disabled) { background: #f3f6fb; }
+	.calendar-button:focus-visible { outline: 2px solid #4771e8; outline-offset: -2px; }
 	.calendar-button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 	.native-picker {
 		position: absolute;
-		top: 50%;
-		right: 5px;
-		z-index: 2;
-		width: 36px;
-		height: 34px;
+		width: 1px;
+		height: 1px;
+		clip: rect(0 0 0 0);
+		clip-path: inset(50%);
+		overflow: hidden;
 		padding: 0;
-		transform: translateY(-50%);
 		border: 0;
 		opacity: 0;
-		cursor: pointer;
+		pointer-events: none;
 	}
 	.compact > input[type="text"] { min-width: 145px; min-height: 38px; padding-top: 8px; padding-bottom: 8px; }
 	input:disabled { cursor: not-allowed; opacity: 0.65; }
