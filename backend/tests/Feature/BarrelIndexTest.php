@@ -81,4 +81,33 @@ class BarrelIndexTest extends TestCase
             ->assertJsonPath('data.0.invoice_id', null)
             ->assertJsonPath('data.0.invoice_no', null);
     }
+
+    public function test_rented_barrel_shows_latest_invoice_even_with_planned_end_date(): void
+    {
+        Sanctum::actingAs(User::factory()->create(['role' => 'normal_staff']));
+        $customer = Customer::create(['name' => 'Current Customer']);
+        $barrel = Barrel::create([
+            'code' => 'FLOW-002',
+            'status' => 'rented',
+            'current_customer_id' => $customer->id,
+        ]);
+        $invoice = Invoice::create([
+            'invoice_no' => 'TKS-FLOW-002',
+            'customer_id' => $customer->id,
+            'issued_date' => now()->toDateString(),
+            'status' => 'paid',
+        ]);
+        $invoice->items()->create([
+            'barrel_id' => $barrel->id,
+            'rental_start' => now()->toDateString(),
+            'rental_end' => now()->addDays(14)->toDateString(),
+        ]);
+
+        $this->getJson('/api/barrels?search=FLOW-002')
+            ->assertOk()
+            ->assertJsonPath('data.0.status', 'rented')
+            ->assertJsonPath('data.0.invoice_id', $invoice->id)
+            ->assertJsonPath('data.0.invoice_no', 'TKS-FLOW-002')
+            ->assertJsonPath('data.0.current_customer.name', 'Current Customer');
+    }
 }

@@ -83,11 +83,18 @@ class WasteController extends Controller
             ]);
 
             $activeBarrelIds = $lockedInvoice->items()
-                ->whereNull('rental_end')
+                ->get(['id', 'barrel_id'])
+                ->filter(function ($item) {
+                    return ! $item->barrel
+                        ?->invoiceItems()
+                        ->where('id', '>', $item->id)
+                        ->exists();
+                })
                 ->pluck('barrel_id');
 
             Barrel::query()
                 ->whereIn('id', $activeBarrelIds)
+                ->where('status', 'rented')
                 ->update(['status' => 'returning']);
 
             return $lockedInvoice->fresh();

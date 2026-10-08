@@ -39,10 +39,11 @@ class BarrelController extends Controller
         $barrels->getCollection()->transform(
             function ($barrel) {
                 $latestInvoiceItem =
-                    $barrel->invoiceItems
-                        ->whereNull('rental_end')
-                        ->sortByDesc('id')
-                        ->first();
+                    $barrel->status === 'available'
+                        ? null
+                        : $barrel->invoiceItems
+                            ->sortByDesc('id')
+                            ->first();
 
                 $barrel->invoice_no =
                     $latestInvoiceItem

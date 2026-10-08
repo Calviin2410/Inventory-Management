@@ -53,6 +53,7 @@ class WasteSaleTest extends TestCase
         $invoice->items()->create([
             'barrel_id' => $barrel->id,
             'rental_start' => now()->toDateString(),
+            'rental_end' => now()->addDays(14)->toDateString(),
         ]);
 
         $this->patchJson("/api/waste-sales/{$invoice->id}", [
