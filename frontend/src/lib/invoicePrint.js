@@ -232,12 +232,15 @@ export function buildInvoiceDocument(invoice) {
 							minmax(0, 1fr)
 							minmax(0, 1fr);
 
-						gap: 60px;
+						gap: 72px;
 
-						padding: 28px 0;
+						padding: 34px 0 30px;
 					}
 
 					.meta-block {
+						display: grid;
+						align-content: start;
+						gap: 10px;
 						min-width: 0;
 					}
 
@@ -259,11 +262,15 @@ export function buildInvoiceDocument(invoice) {
 					}
 
 					.meta-line {
-						margin: 3px 0;
+						margin: 0;
 
 						color: #172033;
 
 						line-height: 1.5;
+					}
+
+					.meta-line strong {
+						font-weight: 700;
 					}
 
 					.meta-line.address {

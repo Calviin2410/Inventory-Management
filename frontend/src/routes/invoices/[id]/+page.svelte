@@ -388,7 +388,7 @@
 		color: #64748b;
 
 		font-size: 13px;
-		font-weight: 500;
+		font-weight: 700;
 	}
 
 	.detail-item p,
@@ -403,7 +403,7 @@
 	}
 
 	.strong {
-		font-weight: 600;
+		font-weight: 400;
 	}
 
 	/* STATUS */
