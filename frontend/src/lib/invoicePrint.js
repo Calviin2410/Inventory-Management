@@ -240,7 +240,7 @@ export function buildInvoiceDocument(invoice) {
 					.meta-block {
 						display: grid;
 						align-content: start;
-						gap: 10px;
+						gap: 18px;
 						min-width: 0;
 					}
 
@@ -262,6 +262,8 @@ export function buildInvoiceDocument(invoice) {
 					}
 
 					.meta-line {
+						display: grid;
+						gap: 4px;
 						margin: 0;
 
 						color: #172033;
@@ -269,8 +271,14 @@ export function buildInvoiceDocument(invoice) {
 						line-height: 1.5;
 					}
 
-					.meta-line strong {
+					.meta-label {
+						color: #111827;
 						font-weight: 700;
+					}
+
+					.meta-value {
+						color: #172033;
+						font-weight: 400;
 					}
 
 					.meta-line.address {
@@ -523,35 +531,35 @@ export function buildInvoiceDocument(invoice) {
 					<section class="meta">
 						<div class="meta-block">
 							<div class="meta-line">
-								<strong>Invoice No:</strong>
-								${escapeHtml(invoice?.invoice_no || "—")}
+								<div class="meta-label">Invoice Number</div>
+								<div class="meta-value">${escapeHtml(invoice?.invoice_no || "—")}</div>
 							</div>
 
 							<div class="meta-line">
-								<strong>Customer:</strong>
-								${escapeHtml(invoice?.customer?.name || "—")}
+								<div class="meta-label">Customer</div>
+								<div class="meta-value">${escapeHtml(invoice?.customer?.name || "—")}</div>
 							</div>
 
 							<div class="meta-line">
-								<strong>Phone:</strong>
-								${escapeHtml(invoice?.customer?.phone || "—")}
+								<div class="meta-label">Phone</div>
+								<div class="meta-value">${escapeHtml(invoice?.customer?.phone || "—")}</div>
 							</div>
 						</div>
 
 						<div class="meta-block">
 							<div class="meta-line">
-								<strong>Issued Date:</strong>
-								${displayDate(invoice?.issued_date)}
+								<div class="meta-label">Issued Date</div>
+								<div class="meta-value">${displayDate(invoice?.issued_date)}</div>
 							</div>
 
 							<div class="meta-line">
-								<strong>Salesperson:</strong>
-								${escapeHtml(invoice?.created_by?.name || "—")}
+								<div class="meta-label">Salesperson</div>
+								<div class="meta-value">${escapeHtml(invoice?.created_by?.name || "—")}</div>
 							</div>
 
 							<div class="meta-line">
-								<strong>Car Plate:</strong>
-								${escapeHtml(invoice?.vehicle?.plate_number || "—")}
+								<div class="meta-label">Vehicle Plate</div>
+								<div class="meta-value">${escapeHtml(invoice?.vehicle?.plate_number || "—")}</div>
 							</div>
 
 						</div>
