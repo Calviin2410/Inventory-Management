@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Customer;
+use App\Models\Barrel;
 use App\Models\Invoice;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -47,6 +48,11 @@ class WasteSaleTest extends TestCase
         $staff = User::factory()->create(['role' => 'normal_staff']);
         Sanctum::actingAs($staff);
         $invoice = $this->invoice();
+        $barrel = Barrel::create(['code' => 'WASTE-001', 'status' => 'rented']);
+        $invoice->items()->create([
+            'barrel_id' => $barrel->id,
+            'rental_start' => now()->toDateString(),
+        ]);
 
         $this->patchJson("/api/waste-sales/{$invoice->id}", [
             'amount' => 125.50,
@@ -68,6 +74,10 @@ class WasteSaleTest extends TestCase
         $this->assertDatabaseHas('activity_logs', [
             'subject_id' => $invoice->id,
             'action' => 'waste_sale_recorded',
+        ]);
+        $this->assertDatabaseHas('barrels', [
+            'id' => $barrel->id,
+            'status' => 'returning',
         ]);
         $this->assertDatabaseHas('activity_logs', [
             'subject_id' => $invoice->id,
@@ -101,6 +111,11 @@ class WasteSaleTest extends TestCase
 
         $this->getJson('/api/waste-sales?from_date=2026-10-08&to_date=2026-10-08')
             ->assertOk()
+            ->assertJsonPath('per_page', 20)
+            ->assertJsonPath(
+                'total_amount_received',
+                fn ($amount) => (float) $amount === 88.0
+            )
             ->assertJsonFragment(['id' => $included->id])
             ->assertJsonMissing(['id' => $excluded->id]);
     }

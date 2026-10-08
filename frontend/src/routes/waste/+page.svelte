@@ -15,6 +15,7 @@
 	let currentPage = $state(1);
 	let lastPage = $state(1);
 	let totalInvoices = $state(0);
+	let totalAmountReceived = $state(0);
 
 	async function loadWasteSales(page = 1) {
 		loading = true;
@@ -29,6 +30,7 @@
 			currentPage = result?.current_page ?? 1;
 			lastPage = result?.last_page ?? 1;
 			totalInvoices = result?.total ?? 0;
+			totalAmountReceived = result?.total_amount_received ?? 0;
 		} catch (error) {
 			errorMessage = error?.message || "Unable to load waste sales.";
 		} finally {
@@ -80,6 +82,11 @@
 		</div>
 		<div class="filter-summary">{totalInvoices} {totalInvoices === 1 ? "result" : "results"}</div>
 	</div>
+
+	<section class="amount-summary" aria-label="Total waste sale amount received">
+		<div class="amount-icon">RM</div>
+		<div><span>Total Amount Received</span><strong>{formatAmount(totalAmountReceived)}</strong></div>
+	</section>
 
 	<section class="panel waste-panel">
 		{#if loading}
@@ -136,6 +143,11 @@
 	.search { width: 100%; max-width: none; }
 	.filter-actions { display: flex; gap: 8px; }
 	.filter-summary { margin-top: 12px; color: #7e899b; font-size: 11px; font-weight: 600; }
+	.amount-summary { display: flex; align-items: center; gap: 14px; width: min(100%, 360px); margin: 0 0 20px auto; padding: 16px 18px; border: 1px solid #b9ead9; border-radius: 11px; background: #f2fcf8; }
+	.amount-icon { display: grid; width: 42px; height: 42px; place-items: center; flex: none; border-radius: 50%; background: #d5f6e9; color: #087a55; font-size: 11px; font-weight: 800; }
+	.amount-summary div:last-child { display: grid; gap: 3px; }
+	.amount-summary span { color: #64748b; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+	.amount-summary strong { color: #087a55; font-size: 22px; }
 	.waste-panel { overflow: hidden; }
 	.table-card { width: 100%; max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; -webkit-overflow-scrolling: touch; }
 	.data-table { min-width: 900px; }
@@ -159,5 +171,6 @@
 		.filter-grid { grid-template-columns: 1fr; }
 		.filter-actions { grid-column: auto; }
 		.filter-actions .btn { flex: 1; }
+		.amount-summary { width: 100%; margin-left: 0; }
 	}
 </style>

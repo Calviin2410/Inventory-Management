@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
+use App\Models\Barrel;
 use App\Models\Invoice;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -45,7 +46,15 @@ class WasteController extends Controller
             $query->whereDate('waste_sale_recorded_at', '<=', $data['to_date']);
         }
 
-        return response()->json($query->paginate(20));
+        $totalAmountReceived = (clone $query)
+            ->reorder()
+            ->sum('waste_sale_amount');
+        $sales = $query->paginate(20);
+
+        return response()->json(array_merge(
+            $sales->toArray(),
+            ['total_amount_received' => $totalAmountReceived]
+        ));
     }
 
     public function update(Request $request, Invoice $invoice)
@@ -72,6 +81,14 @@ class WasteController extends Controller
                 'waste_sale_recorded_at' => now(),
                 'waste_sale_recorded_by' => $request->user()->id,
             ]);
+
+            $activeBarrelIds = $lockedInvoice->items()
+                ->whereNull('rental_end')
+                ->pluck('barrel_id');
+
+            Barrel::query()
+                ->whereIn('id', $activeBarrelIds)
+                ->update(['status' => 'returning']);
 
             return $lockedInvoice->fresh();
         });
