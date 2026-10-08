@@ -14,6 +14,7 @@
 	let errorMessage = $state("");
 	let exporting = $state(false);
 	let saleDialogOpen = $state(false);
+	let settlementView = $derived(page.url.searchParams.get("source") === "settlement");
 
 	function formatAmount(value) {
 		return new Intl.NumberFormat("en-MY", {
@@ -87,7 +88,8 @@
 			const fullInvoice = await api.getInvoice(invoice.id);
 
 			openInvoicePrintWindow(printWindow, fullInvoice, {
-				settledStamp: fullInvoice.settlement_status === "settled",
+				settledStamp:
+					settlementView && fullInvoice.settlement_status === "settled",
 			});
 		} catch (error) {
 			printWindow.close();
@@ -109,7 +111,9 @@
 <main class="app-page">
 	<div class="page-heading">
 		<div>
-			<a class="back-link" href="/invoices"> ← Back to invoices </a>
+			<a class="back-link" href={settlementView ? "/settlement" : "/invoices"}>
+				← Back to {settlementView ? "settlement" : "invoices"}
+			</a>
 
 			<h1>
 				{invoice?.invoice_no ?? "Invoice"}
@@ -309,7 +313,7 @@
 				</div>
 			</div>
 
-			{#if invoice.settlement_status === "settled"}
+			{#if settlementView && invoice.settlement_status === "settled"}
 				<div class="settlement-proof" aria-label="Settlement confirmation">
 					<div class="settlement-remark">{invoice.settlement_remark || "—"}</div>
 					<div class="settled-stamp">Settled</div>

@@ -252,7 +252,7 @@
 
 	{#if actionInvoice}
 		<div class="action-dropdown" style:--menu-top={`${actionMenuPosition.top}px`} style:--menu-left={`${actionMenuPosition.left}px`}>
-			<a href={`/invoices/${actionInvoice.id}`}>View Invoice</a>
+			<a href={`/invoices/${actionInvoice.id}?source=settlement`}>View Invoice</a>
 			<div class="menu-divider"></div>
 			<button type="button" disabled={actionInvoice.settlement_status !== "settled" || exportingId !== null} onclick={() => exportSettledInvoice(actionInvoice)}>{exportingId === actionInvoice.id ? "Preparing…" : "Export Invoice"}</button>
 			<div class="menu-divider"></div>
