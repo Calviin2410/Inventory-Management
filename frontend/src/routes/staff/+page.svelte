@@ -131,15 +131,17 @@
 	</header>
 
 	<form class="toolbar" onsubmit={(event) => event.preventDefault()}>
-		<input
+		<div class="search-field"><input
 			class="control search"
 			type="search"
 			placeholder="Search staff name or email..."
 			bind:value={search}
 		/>
+		{#if search}<button type="button" class="search-clear" aria-label="Clear search" onclick={() => (search = "")}>×</button>{/if}
+		</div>
 
 		<button type="submit" class="btn">Search</button>
-		<button type="button" class="btn" disabled={!search} onclick={() => (search = "")}>Clear</button>
+		<button type="button" class="btn" onclick={() => { search = ""; loadStaff(); }}>Refresh</button>
 
 		<span class="result-count">
 			{filteredStaff.length} {filteredStaff.length === 1 ? "staff member" : "staff members"}

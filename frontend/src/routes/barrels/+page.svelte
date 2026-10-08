@@ -222,7 +222,7 @@
 	========================= -->
 	<div class="toolbar">
 		<!-- Search -->
-		<input
+		<div class="search-field"><input
 			class="control search"
 			type="text"
 			placeholder="Search barrel code..."
@@ -236,10 +236,12 @@
 		{#if searchCode}
 			<button type="button" class="search-clear" aria-label="Clear search" onclick={() => { searchCode = ""; loadBarrels(1); }}>×</button>
 		{/if}
+		</div>
 
 		<button type="button" class="btn" onclick={() => loadBarrels(1)}>
 			Search
 		</button>
+		<button type="button" class="btn" onclick={() => { searchCode = ""; status = ""; loadBarrels(1); }}>Refresh</button>
 
 		<!-- Status -->
 		<details class="status-filter">

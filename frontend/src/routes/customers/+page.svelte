@@ -87,7 +87,7 @@
 	========================= -->
 
 	<div class="toolbar">
-		<input
+		<div class="search-field"><input
 			class="control search"
 			type="text"
 			placeholder="Search name or phone..."
@@ -101,6 +101,7 @@
 		{#if search}
 			<button type="button" class="search-clear" aria-label="Clear search" onclick={() => { search = ""; loadCustomers(1); }}>×</button>
 		{/if}
+		</div>
 
 		<button type="button" class="btn" onclick={() => loadCustomers(1)}>
 			Search

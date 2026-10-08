@@ -60,7 +60,7 @@
 
 	<div class="toolbar waste-toolbar">
 		<div class="filter-grid">
-			<label class="search-filter"><span>Invoice or Barrel</span>
+			<label class="search-filter"><span>Invoice or Barrel</span><div class="search-field">
 				<input
 					class="control search"
 					type="search"
@@ -68,12 +68,14 @@
 					bind:value={search}
 					onkeydown={(event) => event.key === "Enter" && loadWasteSales(1)}
 				/>
+				{#if search}<button type="button" class="search-clear" aria-label="Clear search" onclick={() => { search = ""; loadWasteSales(1); }}>×</button>{/if}
+				</div>
 			</label>
 		<div class="date-filter"><span>Received From</span><DateInput bind:value={fromDate} ariaLabel="Received from date" /></div>
 		<div class="date-filter"><span>Received To</span><DateInput bind:value={toDate} ariaLabel="Received to date" /></div>
 			<div class="filter-actions">
 				<button class="btn btn-primary" type="button" onclick={() => loadWasteSales(1)}>Search</button>
-				<button class="btn" type="button" onclick={() => { search = ""; fromDate = ""; toDate = ""; loadWasteSales(1); }}>Clear</button>
+				<button class="btn" type="button" onclick={() => { search = ""; fromDate = ""; toDate = ""; loadWasteSales(1); }}>Refresh</button>
 			</div>
 		</div>
 		<div class="filter-summary">{totalInvoices} {totalInvoices === 1 ? "result" : "results"}</div>

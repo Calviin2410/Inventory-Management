@@ -155,7 +155,7 @@
     </header>
 
     <div class="toolbar">
-        <input
+        <div class="search-field"><input
             class="control search"
             type="text"
             placeholder="Search plate number..."
@@ -169,6 +169,7 @@
 		{#if search}
 			<button type="button" class="search-clear" aria-label="Clear search" onclick={() => { search = ""; searchKeyword = ""; }}>×</button>
 		{/if}
+		</div>
 
         <button class="btn" onclick={handleSearch}> Search </button>
 

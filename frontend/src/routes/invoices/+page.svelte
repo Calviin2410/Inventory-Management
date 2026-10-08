@@ -337,7 +337,7 @@
 	========================= -->
 
 	<div class="toolbar">
-		<input
+		<div class="search-field"><input
 			class="control search"
 			type="text"
 			placeholder="Search invoice or customer..."
@@ -351,6 +351,7 @@
 		{#if search}
 			<button type="button" class="search-clear" aria-label="Clear search" onclick={() => { search = ""; loadInvoices(1); }}>×</button>
 		{/if}
+		</div>
 
 		<button type="button" class="btn" onclick={() => loadInvoices(1)}>
 			Search

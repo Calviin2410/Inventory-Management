@@ -167,6 +167,27 @@
 }
 
 .search-clear:hover { background: #e7ebf1; color: #344054; }
+.search-field {
+	position: relative;
+	display: flex;
+	min-width: 0;
+	flex: 1 1 280px;
+	max-width: 560px;
+}
+.search-field .control { width: 100%; max-width: none; padding-right: 42px; }
+.search-field .search-clear {
+	position: absolute;
+	top: 50%;
+	right: 6px;
+	width: 30px;
+	height: 30px;
+	margin: 0;
+	transform: translateY(-50%);
+	border: 0;
+	background: transparent;
+	font-weight: 700;
+}
+.search-field .search-clear:hover { background: #eef2f7; }
 .result-count { margin-left: auto; padding: 0 8px; color: #7e899b; font-size: 11px; font-weight: 600; white-space: nowrap; }
 
 	.btn {

@@ -231,7 +231,7 @@
 		<button class="btn" type="button" onclick={() => loadLogs(1)}
 			>Search</button
 		>
-		<button class="btn" type="button" onclick={clearFilters}>Clear</button>
+		<button class="btn" type="button" onclick={clearFilters}>Refresh</button>
 	</section>
 
 	<div class="count">
