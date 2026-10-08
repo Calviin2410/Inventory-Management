@@ -134,7 +134,7 @@
 
 	<section class="panel waste-panel">
 		{#if loading}
-			<SkeletonTable rows={6} columns={6} />
+			<SkeletonTable rows={6} columns={7} />
 		{:else if errorMessage}
 			<div class="state error">{errorMessage}</div>
 		{:else if invoices.length === 0}
@@ -150,8 +150,8 @@
 							<th>Invoice Number</th>
 							<th>Barrel Code</th>
 							<th>Invoice Date</th>
-							<th>Received Date</th>
 							<th>Total Amount</th>
+							<th>Sell Date</th>
 							<th>Remark</th>
 							<th>Received By</th>
 						</tr></thead
@@ -173,14 +173,14 @@
 										.join(", ") || "—"}</td
 								>
 								<td>{formatDate(invoice.issued_date)}</td>
-								<td
-									>{formatDate(
-										invoice.waste_sale_recorded_at,
-									)}</td
-								>
 								<td class="amount-cell"
 									>{formatAmount(
 										invoice.waste_sale_amount,
+									)}</td
+								>
+								<td
+									>{formatDate(
+										invoice.waste_sale_recorded_at,
 									)}</td
 								>
 								<td class="remark-cell"
