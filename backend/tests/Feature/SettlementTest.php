@@ -92,7 +92,6 @@ class SettlementTest extends TestCase
 
 		$this->getJson("/api/invoices/{$invoice->id}")
 			->assertOk()
-			->assertJsonPath('settled_by_user.name', $admin->name)
 			->assertJsonPath('settlement_remark', 'Daily records checked.');
 
         $this->patchJson("/api/settlements/{$invoice->id}", [

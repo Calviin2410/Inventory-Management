@@ -253,6 +253,7 @@
 	{#if actionInvoice}
 		<div class="action-dropdown" style:--menu-top={`${actionMenuPosition.top}px`} style:--menu-left={`${actionMenuPosition.left}px`}>
 			<button type="button" disabled={actionInvoice.settlement_status !== "settled" || exportingId !== null} onclick={() => exportSettledInvoice(actionInvoice)}>{exportingId === actionInvoice.id ? "Preparing…" : "Export Invoice"}</button>
+			<div class="menu-divider"></div>
 			<button type="button" disabled={actionInvoice.settlement_status === "settled"} onclick={() => openDialog(actionInvoice, "settle")}>Settle</button>
 			<button class="reopen-option" type="button" disabled={actionInvoice.settlement_status !== "settled"} onclick={() => openDialog(actionInvoice, "reopen")}>Reopen</button>
 		</div>
@@ -314,11 +315,13 @@
 	.action-cell { text-align: right; }
 	.more-button { display: inline-flex; width: 38px; height: 36px; align-items: center; justify-content: center; padding: 0; border: 1px solid #d7dce5; border-radius: 8px; background: white; color: #536078; font-size: 20px; font-weight: 700; cursor: pointer; transition: background .15s ease, border-color .15s ease; }
 	.more-button:hover { border-color: #bfc7d4; background: #f5f7fb; }
-	.action-dropdown { position: fixed; top: var(--menu-top); left: var(--menu-left); z-index: 120; display: grid; width: 180px; overflow: hidden; padding: 6px; border: 1px solid #d7deea; border-radius: 9px; background: white; box-shadow: 0 12px 30px rgb(15 23 42 / 16%); }
-	.action-dropdown button { min-height: 38px; padding: 0 11px; border: 0; border-radius: 6px; background: white; color: #344054; font-size: 12px; font-weight: 700; text-align: left; cursor: pointer; }
-	.action-dropdown button:hover:not(:disabled) { background: #f3f6fb; color: #2554c7; }
+	.action-dropdown { position: fixed; top: var(--menu-top); left: var(--menu-left); z-index: 2000; display: grid; width: 180px; max-height: calc(100vh - 16px); overflow: hidden auto; border: 1px solid #e5e7eb; border-radius: 8px; background: white; box-shadow: 0 10px 30px rgb(15 23 42 / 14%); }
+	.action-dropdown button { display: block; width: 100%; box-sizing: border-box; padding: 11px 14px; border: 0; background: white; color: #202939; font-size: 14px; font-weight: 500; text-align: left; cursor: pointer; }
+	.action-dropdown button:hover:not(:disabled) { background: #f3f4f6; color: #202939; }
 	.action-dropdown .reopen-option:not(:disabled) { color: #be123c; }
-	.action-dropdown button:disabled { opacity: .35; cursor: not-allowed; }
+	.action-dropdown .reopen-option:hover:not(:disabled) { background: #fff1f1; color: #be123c; }
+	.action-dropdown button:disabled { background: white; color: #9ca3af; cursor: not-allowed; }
+	.menu-divider { height: 1px; background: #e5e7eb; }
 	.dialog-layer { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 20px; background: rgb(15 23 42 / 45%); }
 	.settlement-dialog { width: min(100%, 440px); padding: 25px; border-radius: 12px; background: white; box-shadow: 0 24px 70px rgb(15 23 42 / 24%); }
 	.settlement-dialog h2 { margin: 0; color: #172033; font-size: 21px; }
