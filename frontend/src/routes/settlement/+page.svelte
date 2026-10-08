@@ -6,6 +6,7 @@
 	import SkeletonTable from "$lib/SkeletonTable.svelte";
 	import Toast from "$lib/Toast.svelte";
 	import DateInput from "$lib/DateInput.svelte";
+	import { openInvoicePrintWindow } from "$lib/invoicePrint.js";
 
 	let invoices = $state([]);
 	let loading = $state(true);
@@ -15,6 +16,7 @@
 	let remark = $state("");
 	let actionError = $state("");
 	let submitting = $state(false);
+	let exportingId = $state(null);
 	let successMessage = $state("");
 	let fromDate = $state(malaysiaToday());
 	let toDate = $state(malaysiaToday());
@@ -104,6 +106,33 @@
 		}
 	}
 
+	async function exportSettledInvoice(invoice) {
+		if (invoice.settlement_status !== "settled" || exportingId !== null) return;
+
+		const printWindow = window.open("", "_blank");
+		if (!printWindow) {
+			errorMessage = "Please allow pop-ups to export this invoice.";
+			return;
+		}
+
+		printWindow.document.write('<p style="font: 14px sans-serif; padding: 24px;">Preparing settled invoice...</p>');
+		exportingId = invoice.id;
+		errorMessage = "";
+
+		try {
+			const fullInvoice = await api.getInvoice(invoice.id);
+			if (fullInvoice.settlement_status !== "settled") {
+				throw new Error("Only settled invoices can be exported with the Settled stamp.");
+			}
+			openInvoicePrintWindow(printWindow, fullInvoice, { settledStamp: true });
+		} catch (error) {
+			printWindow.close();
+			errorMessage = error?.message || "Unable to export settled invoice.";
+		} finally {
+			exportingId = null;
+		}
+	}
+
 	onMount(loadSettlements);
 </script>
 
@@ -188,6 +217,7 @@
 								<td class="remark-cell">{invoice.settlement_remark || "—"}</td>
 								<td class="settlement-date">{formatDateTime(invoice.settled_at)}</td>
 								<td class="action-cell">
+									<button class="table-action export-action" type="button" disabled={invoice.settlement_status !== "settled" || exportingId !== null} onclick={() => exportSettledInvoice(invoice)}>{exportingId === invoice.id ? "Preparing…" : "Export Invoice"}</button>
 									<button class="table-action settle-action" type="button" disabled={invoice.settlement_status === "settled"} onclick={() => openDialog(invoice, "settle")}>Settle</button>
 									<button class="table-action reopen-action" type="button" disabled={invoice.settlement_status !== "settled"} onclick={() => openDialog(invoice, "reopen")}>Reopen</button>
 								</td>
@@ -251,9 +281,10 @@
 	.invoice-link { color: #172033; font-weight: 700; text-decoration: none; }
 	.invoice-link:hover { color: #2554c7; text-decoration: underline; }
 	.settlement-date { white-space: nowrap; }
-	.action-column { width: 190px; text-align: right !important; }
+	.action-column { width: 270px; text-align: right !important; }
 	.action-cell { display: flex; justify-content: flex-end; gap: 7px; }
 	.table-action { min-height: 34px; padding: 0 11px; border: 1px solid #d7deea; border-radius: 7px; background: white; color: #344054; font-size: 12px; font-weight: 700; cursor: pointer; }
+	.export-action:not(:disabled) { border-color: #b9c8f5; color: #2554c7; }
 	.settle-action:not(:disabled) { border-color: #9dddc9; color: #087a55; }
 	.reopen-action:not(:disabled) { border-color: #f5b9c5; color: #be123c; }
 	.table-action:disabled { opacity: .35; cursor: not-allowed; }

@@ -28,7 +28,8 @@ function displayAmount(value) {
 	}).format(Number(value ?? 0));
 }
 
-export function buildInvoiceDocument(invoice) {
+export function buildInvoiceDocument(invoice, options = {}) {
+	const showSettledStamp = options.settledStamp === true;
 	const items = Array.isArray(invoice?.items)
 		? invoice.items
 		: [];
@@ -143,6 +144,7 @@ export function buildInvoiceDocument(invoice) {
 					}
 
 					.invoice-page {
+						position: relative;
 						width: 100%;
 						max-width: 794px;
 						margin: 0 auto;
@@ -490,6 +492,25 @@ export function buildInvoiceDocument(invoice) {
 						font-size: 11px;
 					}
 
+					.settled-stamp {
+						position: absolute;
+						right: 19mm;
+						bottom: 41mm;
+						display: grid;
+						width: 92px;
+						height: 92px;
+						place-items: center;
+						border: 4px double #c72c36;
+						border-radius: 50%;
+						color: #c72c36;
+						font-size: 18px;
+						font-weight: 800;
+						letter-spacing: 0.06em;
+						text-transform: uppercase;
+						transform: rotate(-12deg);
+						opacity: 0.82;
+					}
+
 					@media print {
 						html,
 						body {
@@ -506,6 +527,7 @@ export function buildInvoiceDocument(invoice) {
 
 			<body>
 				<div class="invoice-page">
+					${showSettledStamp ? '<div class="settled-stamp" aria-label="Settled">Settled</div>' : ''}
 					<header class="header">
 						<div class="header-left">
 							<div class="company-logo-wrap">
@@ -666,14 +688,15 @@ export function buildInvoiceDocument(invoice) {
 
 export function openInvoicePrintWindow(
 	printWindow,
-	invoice
+	invoice,
+	options = {}
 ) {
 	printWindow.opener = null;
 
 	printWindow.document.open();
 
 	printWindow.document.write(
-		buildInvoiceDocument(invoice)
+		buildInvoiceDocument(invoice, options)
 	);
 
 	printWindow.document.close();
