@@ -51,7 +51,6 @@ class WasteSaleTest extends TestCase
         $this->patchJson("/api/waste-sales/{$invoice->id}", [
             'amount' => 125.50,
             'remark' => 'Sold recyclable material.',
-            'received_date' => '2026-10-07',
         ])->assertOk()->assertJsonFragment([
             'waste_sale_amount' => '125.50',
             'waste_sale_remark' => 'Sold recyclable material.',
@@ -61,7 +60,6 @@ class WasteSaleTest extends TestCase
         $this->patchJson("/api/waste-sales/{$invoice->id}", [
             'amount' => 150,
             'remark' => null,
-            'received_date' => '2026-10-08',
         ])->assertOk()->assertJsonFragment([
             'waste_sale_amount' => '150.00',
             'waste_sale_remark' => null,
@@ -88,7 +86,6 @@ class WasteSaleTest extends TestCase
 
         $this->patchJson("/api/waste-sales/{$invoice->id}", [
             'amount' => -1,
-            'received_date' => '2026-10-08',
         ])->assertUnprocessable()->assertJsonValidationErrors('amount');
     }
 

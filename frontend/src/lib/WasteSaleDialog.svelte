@@ -1,22 +1,16 @@
 <script>
 	import { onMount } from "svelte";
-	import DateInput from "$lib/DateInput.svelte";
 	import { api } from "$lib/api.js";
 
 	let { invoice, oncancel, onsaved } = $props();
 	let amount = $state("");
 	let remark = $state("");
-	let receivedDate = $state("");
 	let saving = $state(false);
 	let errorMessage = $state("");
 
 	onMount(() => {
 		amount = invoice?.waste_sale_amount ?? "";
 		remark = invoice?.waste_sale_remark ?? "";
-		receivedDate = invoice?.waste_sale_recorded_at?.slice(0, 10)
-			?? new Date(Date.now() - new Date().getTimezoneOffset() * 60_000)
-				.toISOString()
-				.slice(0, 10);
 	});
 
 	async function submit() {
@@ -27,12 +21,10 @@
 			const updated = await api.updateWasteSale(invoice.id, {
 				amount: Number(amount),
 				remark: remark.trim() || null,
-				received_date: receivedDate,
 			});
 			onsaved?.(updated);
 		} catch (error) {
 			errorMessage = error?.errors?.amount?.[0]
-				|| error?.errors?.received_date?.[0]
 				|| error?.message
 				|| "Unable to save waste sale.";
 		} finally {
@@ -47,7 +39,6 @@
 		<p>{invoice?.invoice_no}</p>
 		{#if errorMessage}<div class="dialog-error" role="alert">{errorMessage}</div>{/if}
 		<label>Amount (RM)<input type="number" min="0" max="9999999999.99" step="0.01" bind:value={amount} required /></label>
-		<label>Received Date<DateInput bind:value={receivedDate} required ariaLabel="Waste sale received date" /></label>
 		<label>Remark <small>Optional</small><textarea rows="4" maxlength="1000" bind:value={remark}></textarea></label>
 		<div class="dialog-actions">
 			<button class="btn" type="button" onclick={() => oncancel?.()} disabled={saving}>Cancel</button>

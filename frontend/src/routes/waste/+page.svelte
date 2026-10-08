@@ -58,19 +58,25 @@
 		</div>
 	</header>
 
-	<div class="toolbar">
-		<input
-			class="control search"
-			type="search"
-			placeholder="Search invoice or barrel code..."
-			bind:value={search}
-			onkeydown={(event) => event.key === "Enter" && loadWasteSales(1)}
-		/>
-		<button class="btn" type="button" onclick={() => loadWasteSales(1)}>Search</button>
+	<div class="toolbar waste-toolbar">
+		<div class="filter-grid">
+			<label class="search-filter"><span>Invoice or Barrel</span>
+				<input
+					class="control search"
+					type="search"
+					placeholder="Search invoice or barrel code..."
+					bind:value={search}
+					onkeydown={(event) => event.key === "Enter" && loadWasteSales(1)}
+				/>
+			</label>
 		<div class="date-filter"><span>Received From</span><DateInput bind:value={fromDate} ariaLabel="Received from date" /></div>
 		<div class="date-filter"><span>Received To</span><DateInput bind:value={toDate} ariaLabel="Received to date" /></div>
-		<button class="btn" type="button" onclick={() => { search = ""; fromDate = ""; toDate = ""; loadWasteSales(1); }}>Clear</button>
-		<span class="result-count">{totalInvoices} {totalInvoices === 1 ? "result" : "results"}</span>
+			<div class="filter-actions">
+				<button class="btn btn-primary" type="button" onclick={() => loadWasteSales(1)}>Search</button>
+				<button class="btn" type="button" onclick={() => { search = ""; fromDate = ""; toDate = ""; loadWasteSales(1); }}>Clear</button>
+			</div>
+		</div>
+		<div class="filter-summary">{totalInvoices} {totalInvoices === 1 ? "result" : "results"}</div>
 	</div>
 
 	<section class="panel waste-panel">
@@ -121,9 +127,13 @@
 </main>
 
 <style>
-	.search { flex: 1 1 320px; max-width: 560px; }
-	.date-filter { display: grid; gap: 5px; min-width: 175px; }
-	.date-filter span { color: #64748b; font-size: 11px; font-weight: 700; }
+	.waste-toolbar { display: block; padding: 16px; }
+	.filter-grid { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(175px, 220px) minmax(175px, 220px) auto; align-items: end; gap: 12px; }
+	.search-filter, .date-filter { display: grid; gap: 6px; min-width: 0; }
+	.search-filter span, .date-filter span { color: #536078; font-size: 12px; font-weight: 700; }
+	.search { width: 100%; max-width: none; }
+	.filter-actions { display: flex; gap: 8px; }
+	.filter-summary { margin-top: 12px; color: #7e899b; font-size: 11px; font-weight: 600; }
 	.waste-panel { overflow: hidden; }
 	.table-card { width: 100%; max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; -webkit-overflow-scrolling: touch; }
 	.data-table { min-width: 900px; }
@@ -136,9 +146,16 @@
 	.state p { margin: 0; }
 	.state.error { color: #b42318; }
 	@media (max-width: 1280px) {
+		.filter-grid { grid-template-columns: minmax(250px, 1fr) repeat(2, minmax(170px, 1fr)); }
+		.filter-actions { grid-column: 1 / -1; }
 		.data-table th:first-child, .data-table td:first-child { position: sticky; left: 0; z-index: 2; background: white; box-shadow: 8px 0 12px -12px rgb(15 23 42 / 45%); }
 		.data-table th:first-child { z-index: 3; background: #f7f9fb; }
 		.data-table th:last-child, .data-table td:last-child { position: sticky; right: 0; z-index: 2; background: white; box-shadow: -8px 0 12px -12px rgb(15 23 42 / 45%); }
 		.data-table th:last-child { z-index: 3; background: #f7f9fb; }
+	}
+	@media (max-width: 720px) {
+		.filter-grid { grid-template-columns: 1fr; }
+		.filter-actions { grid-column: auto; }
+		.filter-actions .btn { flex: 1; }
 	}
 </style>

@@ -39,12 +39,16 @@
 		{ value: "", label: "All Status" },
 		{ value: "available", label: "Available" },
 		{ value: "rented", label: "Rented" },
-		{ value: "returning", label: "Returning" },
+		{ value: "returning", label: "In Transit" },
 	];
 
 	let selectedStatusLabel = $derived(
 		statusOptions.find((option) => option.value === status)?.label ?? "All Status",
 	);
+
+	function displayStatus(status) {
+		return status === "returning" ? "In Transit" : status;
+	}
 
 	function selectStatus(value, event) {
 		status = value;
@@ -293,7 +297,7 @@
 
 			<span>
 				<i class="returning"></i>
-				Returning
+				In Transit
 				<strong>{statusCounts.returning}</strong>
 			</span>
 		</div>
@@ -345,7 +349,7 @@
 
 								<div class="visual-actions">
 									<span class="badge {barrel.status}">
-										{barrel.status}
+										{displayStatus(barrel.status)}
 									</span>
 
 									<button
@@ -414,7 +418,7 @@
 
 									<td>
 										<span class="badge {barrel.status}">
-											{barrel.status}
+											{displayStatus(barrel.status)}
 										</span>
 									</td>
 
@@ -494,7 +498,7 @@
 		>
 			<button type="button" disabled={updatingBarrelId === menuBarrel.id} onclick={() => handleStatusUpdate(menuBarrel, "available")}>Set Available</button>
 			<button type="button" disabled={updatingBarrelId === menuBarrel.id} onclick={() => handleStatusUpdate(menuBarrel, "rented")}>Set Rented</button>
-			<button type="button" disabled={updatingBarrelId === menuBarrel.id} onclick={() => handleStatusUpdate(menuBarrel, "returning")}>Set Returning</button>
+			<button type="button" disabled={updatingBarrelId === menuBarrel.id} onclick={() => handleStatusUpdate(menuBarrel, "returning")}>Set In Transit</button>
 			{#if isAdmin}
 				<div class="menu-divider"></div>
 				<button type="button" class="delete-action" disabled={menuBarrel.status === "rented"} onclick={() => requestBarrelDeletion(menuBarrel)}>Delete Barrel</button>
@@ -715,7 +719,7 @@
 	}
 
 	.legend i.returning {
-		background: #5577df;
+		background: #f59e0b;
 	}
 
 	.legend strong {
@@ -847,8 +851,8 @@
 
 	.badge.returning,
 	.barrel-code-badge.returning {
-		background: #eef2ff;
-		color: #4564c8;
+		background: #fff1cc;
+		color: #b45309;
 	}
 
 	/* =========================
@@ -900,11 +904,11 @@
 	}
 
 	.barrel-card.returning {
-		--status-color: #5577df;
+		--status-color: #f59e0b;
 
-		--barrel-light: #dce4ff;
-		--barrel-main: #7892e7;
-		--barrel-dark: #3b59ba;
+		--barrel-light: #fde7ad;
+		--barrel-main: #fbbf24;
+		--barrel-dark: #b45309;
 	}
 
 	/* =========================

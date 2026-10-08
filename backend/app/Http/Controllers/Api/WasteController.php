@@ -53,7 +53,6 @@ class WasteController extends Controller
         $data = $request->validate([
             'amount' => ['required', 'numeric', 'min:0', 'max:9999999999.99'],
             'remark' => ['nullable', 'string', 'max:1000'],
-            'received_date' => ['required', 'date'],
         ]);
 
         $before = $invoice->only([
@@ -70,7 +69,7 @@ class WasteController extends Controller
                 'waste_sale_remark' => filled($data['remark'] ?? null)
                     ? trim($data['remark'])
                     : null,
-                'waste_sale_recorded_at' => $data['received_date'],
+                'waste_sale_recorded_at' => now(),
                 'waste_sale_recorded_by' => $request->user()->id,
             ]);
 
