@@ -511,9 +511,9 @@
         display: grid;
 
         grid-template-columns:
-            1fr
-            1fr
-            auto;
+            minmax(170px, 1fr)
+            minmax(170px, 1fr)
+            minmax(0, auto);
 
         align-items: end;
 
@@ -523,6 +523,7 @@
     .field {
         display: flex;
         flex-direction: column;
+		min-width: 0;
 
         gap: 7px;
     }
@@ -536,9 +537,25 @@
 
     .filter-actions {
         display: flex;
-
+		min-width: 0;
+		flex-wrap: wrap;
         gap: 10px;
     }
+
+	.filter-actions .btn {
+		flex: 1 1 105px;
+		white-space: normal;
+	}
+
+	@media (max-width: 1280px) {
+		.filter-grid {
+			grid-template-columns: repeat(2, minmax(170px, 1fr));
+		}
+
+		.filter-actions {
+			grid-column: 1 / -1;
+		}
+	}
 
     .btn-export {
         border-color: #15803d;

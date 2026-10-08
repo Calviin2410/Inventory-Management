@@ -232,7 +232,8 @@
 	.summary-card strong { color: #172033; font-size: 22px; line-height: 1; }
 	.summary-card div span { color: #64748b; font-size: 12px; font-weight: 650; }
 	.date-toolbar { align-items: flex-end; margin-bottom: 20px; }
-	.date-toolbar label { display: grid; gap: 6px; color: #536078; font-size: 11px; font-weight: 700; }
+	.date-toolbar label { display: grid; min-width: 0; flex: 1 1 190px; gap: 6px; color: #536078; font-size: 11px; font-weight: 700; }
+	.date-toolbar .btn { flex: 0 1 auto; }
 	.refresh-button { margin-left: 0; }
 	.state { padding: 28px; color: #64748b; text-align: center; }
 	.state h3 { margin: 0 0 6px; color: #111827; }
