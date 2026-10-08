@@ -42,7 +42,7 @@ export function buildInvoiceDocument(invoice) {
 			: "UNPAID";
 
 	const rows = items
-		.map((item, index) => {
+		.map((item) => {
 			const barrelCode =
 				item?.barrel?.code || "—";
 
@@ -51,10 +51,6 @@ export function buildInvoiceDocument(invoice) {
 
 			return `
 				<tr>
-					<td class="number-cell">
-						${index + 1}
-					</td>
-
 					<td>
 						<strong>
 							${escapeHtml(barrelCode)}
@@ -252,9 +248,7 @@ export function buildInvoiceDocument(invoice) {
 						font-size: 12px;
 						font-weight: 700;
 
-						letter-spacing: 0.12em;
-
-						text-transform: uppercase;
+						letter-spacing: normal;
 					}
 
 					.payment-title {
@@ -344,9 +338,7 @@ export function buildInvoiceDocument(invoice) {
 						font-size: 12px;
 						font-weight: 700;
 
-						letter-spacing: 0.05em;
-
-						text-transform: uppercase;
+						letter-spacing: normal;
 					}
 
 					td {
@@ -361,12 +353,6 @@ export function buildInvoiceDocument(invoice) {
 
 					tbody tr:last-child td {
 						border-bottom: none;
-					}
-
-					.number-cell {
-						width: 42px;
-
-						text-align: center;
 					}
 
 					.barrel-type {
@@ -405,8 +391,7 @@ export function buildInvoiceDocument(invoice) {
 						color: #111827;
 						font-size: 11px;
 						font-weight: 700;
-						letter-spacing: 0.06em;
-						text-transform: uppercase;
+						letter-spacing: normal;
 					}
 
 					.payment-value {
@@ -574,7 +559,6 @@ export function buildInvoiceDocument(invoice) {
 						<table>
 							<thead>
 								<tr>
-									<th>#</th>
 									<th>Barrel</th>
 									<th>Description</th>
 									<th>Rental Start</th>
@@ -588,7 +572,7 @@ export function buildInvoiceDocument(invoice) {
 		`
 										<tr>
 											<td
-												colspan="6"
+												colspan="5"
 												style="
 													text-align: center;
 													color: #697386;
