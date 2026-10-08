@@ -24,7 +24,29 @@
 	let totalInvoices = $state(0);
 	let paidInvoices = $state(0);
 	let unpaidInvoices = $state(0);
-	let totalCustomers = $state(0);
+	let settledInvoices = $state(0);
+	let unsettledInvoices = $state(0);
+	const reportColumns = [
+		{ key: "invoice", label: "Invoice" },
+		{ key: "invoiceDate", label: "Invoice Date" },
+		{ key: "customer", label: "Customer" },
+		{ key: "barrel", label: "Barrel" },
+		{ key: "rentalStart", label: "Rental Start" },
+		{ key: "rentalEnd", label: "Rental End" },
+		{ key: "settlementStatus", label: "Settlement Status" },
+		{ key: "paymentStatus", label: "Payment Status" },
+	];
+	let visibleColumns = $state(Object.fromEntries(reportColumns.map((column) => [column.key, true])));
+	let allColumnsVisible = $derived(reportColumns.every((column) => visibleColumns[column.key]));
+
+	function toggleColumn(key) {
+		if (visibleColumns[key] && reportColumns.filter((column) => visibleColumns[column.key]).length === 1) return;
+		visibleColumns = { ...visibleColumns, [key]: !visibleColumns[key] };
+	}
+
+	function toggleAllColumns() {
+		visibleColumns = Object.fromEntries(reportColumns.map((column) => [column.key, true]));
+	}
 
     function reportParams(page = 1) {
 		const params = { page };
@@ -48,7 +70,8 @@
 			totalInvoices = result?.summary?.total_invoices ?? result?.total ?? 0;
 			paidInvoices = result?.summary?.paid_invoices ?? 0;
 			unpaidInvoices = result?.summary?.unpaid_invoices ?? 0;
-			totalCustomers = result?.summary?.total_customers ?? 0;
+			settledInvoices = result?.summary?.settled_invoices ?? 0;
+			unsettledInvoices = result?.summary?.unsettled_invoices ?? 0;
         } catch (error) {
             errorMessage =
                 error instanceof Error
@@ -103,7 +126,8 @@
                 barrel: item?.barrel?.code ?? "",
                 rentalStart: excelDate(item?.rental_start),
                 rentalEnd: excelDate(item?.rental_end),
-                status: invoice.status === "paid" ? "Paid" : "Unpaid",
+				settlementStatus: invoice.settlement_status === "settled" ? "Settled" : "Unsettled",
+				paymentStatus: invoice.status === "paid" ? "Paid" : "Unpaid",
             }));
         });
     }
@@ -137,10 +161,11 @@
                 { key: "barrel", width: 16 },
                 { key: "rentalStart", width: 18 },
                 { key: "rentalEnd", width: 18 },
-                { key: "status", width: 14 },
+				{ key: "settlementStatus", width: 20 },
+				{ key: "paymentStatus", width: 16 },
             ];
 
-            worksheet.mergeCells("A1:G1");
+            worksheet.mergeCells("A1:H1");
             worksheet.getCell("A1").value = "Rental Report";
             worksheet.getCell("A1").font = {
                 bold: true,
@@ -155,16 +180,17 @@
             worksheet.getCell("A1").alignment = { vertical: "middle" };
             worksheet.getRow(1).height = 32;
 
-            worksheet.mergeCells("A2:G2");
+            worksheet.mergeCells("A2:H2");
             worksheet.getCell("A2").value = `Invoice Date Period: ${fromDate || "All dates"} to ${toDate || "All dates"}`;
             worksheet.getCell("A2").font = { color: { argb: "FF475569" } };
 
-            worksheet.mergeCells("A3:G3");
+            worksheet.mergeCells("A3:H3");
 			const exportPaid = exportInvoices.filter((invoice) => invoice.status === "paid").length;
 			const exportUnpaid = exportInvoices.filter((invoice) => invoice.status === "unpaid").length;
-			const exportCustomers = new Set(exportInvoices.map((invoice) => invoice.customer_id).filter(Boolean)).size;
+			const exportSettled = exportInvoices.filter((invoice) => invoice.settlement_status === "settled").length;
+			const exportUnsettled = exportInvoices.filter((invoice) => invoice.settlement_status !== "settled").length;
             worksheet.getCell("A3").value =
-                `Total Invoices: ${exportInvoices.length}   |   Paid: ${exportPaid}   |   Unpaid: ${exportUnpaid}   |   Customers: ${exportCustomers}`;
+				`Total: ${exportInvoices.length}   |   Paid: ${exportPaid}   |   Unpaid: ${exportUnpaid}   |   Settled: ${exportSettled}   |   Unsettled: ${exportUnsettled}`;
             worksheet.getCell("A3").font = { bold: true };
 
             const headerRow = worksheet.getRow(5);
@@ -175,7 +201,8 @@
                 "Barrel",
                 "Rental Start",
                 "Rental End",
-                "Status",
+				"Settlement Status",
+				"Payment Status",
             ];
             headerRow.height = 24;
             headerRow.eachCell((cell) => {
@@ -194,19 +221,19 @@
                 row.getCell("rentalStart").numFmt = "dd mmm yyyy";
                 row.getCell("rentalEnd").numFmt = "dd mmm yyyy";
 
-                const statusCell = row.getCell("status");
+				const statusCell = row.getCell("paymentStatus");
                 statusCell.font = {
                     bold: true,
                     color: {
                         argb:
-                            rowData.status === "Paid"
+							rowData.paymentStatus === "Paid"
                                 ? "FF047857"
                                 : "FFDC2626",
                     },
                 };
             }
 
-            worksheet.autoFilter = "A5:G5";
+            worksheet.autoFilter = "A5:H5";
 
             const buffer = await workbook.xlsx.writeBuffer();
             const blob = new Blob([buffer], {
@@ -352,10 +379,18 @@
                 </div>
 
                 <div class="summary-card">
-                    <span> Customers </span>
+                    <span> Settled Invoices </span>
 
                     <strong>
-                        {totalCustomers}
+						{settledInvoices}
+					</strong>
+				</div>
+
+				<div class="summary-card">
+					<span> Unsettled Invoices </span>
+
+					<strong>
+						{unsettledInvoices}
                     </strong>
                 </div>
             </div>
@@ -372,6 +407,22 @@
                         period.
                     </p>
                 </div>
+
+				<details class="column-picker">
+					<summary>Columns <span aria-hidden="true">⌄</span></summary>
+					<div class="column-menu">
+						<label class="all-columns">
+							<input type="checkbox" checked={allColumnsVisible} onchange={toggleAllColumns} />
+							<span>All</span>
+						</label>
+						{#each reportColumns as column}
+							<label>
+								<input type="checkbox" checked={visibleColumns[column.key]} onchange={() => toggleColumn(column.key)} />
+								<span>{column.label}</span>
+							</label>
+						{/each}
+					</div>
+				</details>
             </div>
 
             {#if filteredInvoices.length === 0}
@@ -381,19 +432,21 @@
                     <table>
                         <thead>
                             <tr>
-                                <th> Invoice </th>
+                                {#if visibleColumns.invoice}<th> Invoice </th>{/if}
 
-								<th> Invoice Date </th>
+								{#if visibleColumns.invoiceDate}<th> Invoice Date </th>{/if}
 
-                                <th> Customer </th>
+								{#if visibleColumns.customer}<th> Customer </th>{/if}
 
-                                <th> Barrel </th>
+								{#if visibleColumns.barrel}<th> Barrel </th>{/if}
 
-                                <th> Rental Start </th>
+								{#if visibleColumns.rentalStart}<th> Rental Start </th>{/if}
 
-                                <th> Rental End </th>
+								{#if visibleColumns.rentalEnd}<th> Rental End </th>{/if}
 
-                                <th> Status </th>
+								{#if visibleColumns.settlementStatus}<th> Settlement Status </th>{/if}
+
+								{#if visibleColumns.paymentStatus}<th> Payment Status </th>{/if}
                             </tr>
                         </thead>
 
@@ -402,29 +455,35 @@
                                 {#if invoice.items?.length}
                                     {#each invoice.items as item}
                                         <tr>
-                                            <td class="invoice-number">
-                                                {invoice.invoice_no}
-                                            </td>
+											{#if visibleColumns.invoice}
+												<td><a class="invoice-link" href={`/invoices/${invoice.id}`}>{invoice.invoice_no}</a></td>
+											{/if}
 
-											<td>{formatDate(invoice.issued_date)}</td>
+											{#if visibleColumns.invoiceDate}<td>{formatDate(invoice.issued_date)}</td>{/if}
 
-                                            <td>
+											{#if visibleColumns.customer}<td>
                                                 {invoice.customer?.name ?? "-"}
-                                            </td>
+                                            </td>{/if}
 
-                                            <td>
+											{#if visibleColumns.barrel}<td>
                                                 {item.barrel?.code ?? "-"}
-                                            </td>
+                                            </td>{/if}
 
-                                            <td>
+											{#if visibleColumns.rentalStart}<td>
                                                 {formatDate(item.rental_start)}
-                                            </td>
+                                            </td>{/if}
 
-                                            <td>
+											{#if visibleColumns.rentalEnd}<td>
                                                 {formatDate(item.rental_end)}
-                                            </td>
+                                            </td>{/if}
 
-                                            <td>
+											{#if visibleColumns.settlementStatus}<td>
+												<span class="settlement-badge" class:settled={invoice.settlement_status === "settled"}>
+													{invoice.settlement_status === "settled" ? "Settled" : "Unsettled"}
+												</span>
+											</td>{/if}
+
+											{#if visibleColumns.paymentStatus}<td>
                                                 <span
                                                     class="status-badge"
                                                     class:paid={invoice.status ===
@@ -436,28 +495,34 @@
                                                         ? "Paid"
                                                         : "Unpaid"}
                                                 </span>
-                                            </td>
+											</td>{/if}
                                         </tr>
                                     {/each}
                                 {:else}
                                     <tr>
-                                        <td class="invoice-number">
-                                            {invoice.invoice_no}
-                                        </td>
+										{#if visibleColumns.invoice}
+											<td><a class="invoice-link" href={`/invoices/${invoice.id}`}>{invoice.invoice_no}</a></td>
+										{/if}
 
-									<td>{formatDate(invoice.issued_date)}</td>
+									{#if visibleColumns.invoiceDate}<td>{formatDate(invoice.issued_date)}</td>{/if}
 
-                                        <td>
+									{#if visibleColumns.customer}<td>
                                             {invoice.customer?.name ?? "-"}
-                                        </td>
+                                        </td>{/if}
 
-                                        <td> - </td>
+									{#if visibleColumns.barrel}<td> - </td>{/if}
 
-                                        <td> - </td>
+									{#if visibleColumns.rentalStart}<td> - </td>{/if}
 
-                                        <td> - </td>
+									{#if visibleColumns.rentalEnd}<td> - </td>{/if}
 
-                                        <td>
+									{#if visibleColumns.settlementStatus}<td>
+										<span class="settlement-badge" class:settled={invoice.settlement_status === "settled"}>
+											{invoice.settlement_status === "settled" ? "Settled" : "Unsettled"}
+										</span>
+									</td>{/if}
+
+									{#if visibleColumns.paymentStatus}<td>
                                             <span
                                                 class="status-badge"
                                                 class:paid={invoice.status ===
@@ -469,7 +534,7 @@
                                                     ? "Paid"
                                                     : "Unpaid"}
                                             </span>
-                                        </td>
+									</td>{/if}
                                     </tr>
                                 {/if}
                             {/each}
@@ -592,7 +657,7 @@
     .summary-grid {
         display: grid;
 
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(5, minmax(0, 1fr));
 
         gap: 16px;
     }
@@ -629,6 +694,10 @@
     }
 
     .section-heading {
+		display: flex;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: 16px;
         margin-bottom: 14px;
     }
 
@@ -643,6 +712,17 @@
 
         font-size: 13px;
     }
+
+	.column-picker { position: relative; flex: none; }
+	.column-picker summary { display: flex; min-width: 120px; min-height: 42px; align-items: center; justify-content: space-between; gap: 18px; padding: 0 13px; border: 1px solid #ccd4e0; border-radius: 8px; background: white; color: #172033; font-size: 13px; font-weight: 700; cursor: pointer; list-style: none; }
+	.column-picker summary::-webkit-details-marker { display: none; }
+	.column-picker[open] summary { border-color: #4771e8; box-shadow: 0 0 0 3px rgb(53 99 233 / 12%); }
+	.column-picker[open] summary span { transform: rotate(180deg); }
+	.column-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 20; display: grid; width: 230px; max-height: 340px; overflow-y: auto; padding: 7px; border: 1px solid #d7deea; border-radius: 9px; background: white; box-shadow: 0 14px 34px rgb(15 23 42 / 16%); }
+	.column-menu label { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 6px; color: #273348; font-size: 13px; cursor: pointer; }
+	.column-menu label:hover { background: #f4f7fb; }
+	.column-menu input { width: 16px; height: 16px; margin: 0; accent-color: #315ee7; }
+	.column-menu .all-columns { margin-bottom: 4px; border-bottom: 1px solid #e7ebf1; border-radius: 6px 6px 0 0; font-weight: 700; }
 
     /* =========================
 	   REPORT TABLE
@@ -694,9 +774,8 @@
         background: #fafafa;
     }
 
-    .invoice-number {
-        font-weight: 600;
-    }
+	.invoice-link { color: #172033; font-weight: 700; text-decoration: none; }
+	.invoice-link:hover { color: #2554c7; text-decoration: underline; }
 
     /* =========================
 	   STATUS
@@ -728,6 +807,9 @@
 
         color: #dc2626;
     }
+
+	.settlement-badge { display: inline-flex; min-width: 82px; align-items: center; justify-content: center; padding: 5px 10px; border-radius: 6px; background: #fff1f2; color: #be123c; font-size: 12px; font-weight: 700; }
+	.settlement-badge.settled { background: #dff8ee; color: #087a55; }
 
     /* =========================
 	   STATES
@@ -767,6 +849,9 @@
         .summary-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
         }
+		.section-heading { align-items: stretch; flex-direction: column; }
+		.column-picker summary { width: 100%; }
+		.column-menu { right: auto; left: 0; width: min(100%, 280px); }
     }
 
     @media (max-width: 900px) {
@@ -776,7 +861,7 @@
             -webkit-overflow-scrolling: touch;
         }
         .table-card table {
-            min-width: 900px;
+			min-width: 1100px;
         }
         .table-card th:first-child,
         .table-card td:first-child {

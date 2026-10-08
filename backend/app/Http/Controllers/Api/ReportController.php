@@ -46,8 +46,8 @@ class ReportController extends Controller
         $summaryQuery = clone $query;
         $summaryInvoices = $summaryQuery->get([
             'id',
-            'customer_id',
             'status',
+            'settlement_status',
         ]);
 
         $results = $query->paginate(20);
@@ -58,7 +58,8 @@ class ReportController extends Controller
                 'total_invoices' => $summaryInvoices->count(),
                 'paid_invoices' => $summaryInvoices->where('status', 'paid')->count(),
                 'unpaid_invoices' => $summaryInvoices->where('status', 'unpaid')->count(),
-                'total_customers' => $summaryInvoices->pluck('customer_id')->filter()->unique()->count(),
+                'settled_invoices' => $summaryInvoices->where('settlement_status', 'settled')->count(),
+                'unsettled_invoices' => $summaryInvoices->where('settlement_status', 'unsettled')->count(),
             ]]
         ));
     }
