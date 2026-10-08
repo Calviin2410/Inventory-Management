@@ -280,6 +280,8 @@ export function buildInvoiceDocument(invoice) {
 					}
 
 					.address-block {
+						display: grid;
+						gap: 4px;
 						margin-bottom: 24px;
 						padding-bottom: 20px;
 						border-bottom: 1px solid #e4e9f1;
@@ -551,7 +553,7 @@ export function buildInvoiceDocument(invoice) {
 					</section>
 
 					<section class="address-block">
-						<div class="meta-title">Address</div>
+						<div class="meta-label">Address</div>
 						<div class="meta-line address">${escapeHtml(invoice?.address || "—")}</div>
 					</section>
 
