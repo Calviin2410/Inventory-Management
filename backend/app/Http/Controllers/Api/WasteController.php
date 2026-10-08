@@ -116,6 +116,9 @@ class WasteController extends Controller
 
         return response()->json(
             $invoice->load([
+                'customer',
+                'createdBy:id,name',
+                'vehicle:id,plate_number',
                 'items.barrel:id,code',
                 'wasteSaleRecordedBy:id,name',
             ])

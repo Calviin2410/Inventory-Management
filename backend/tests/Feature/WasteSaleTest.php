@@ -48,6 +48,7 @@ class WasteSaleTest extends TestCase
         $staff = User::factory()->create(['role' => 'normal_staff']);
         Sanctum::actingAs($staff);
         $invoice = $this->invoice();
+        $invoice->update(['user_id' => $staff->id]);
         $barrel = Barrel::create(['code' => 'WASTE-001', 'status' => 'rented']);
         $invoice->items()->create([
             'barrel_id' => $barrel->id,
@@ -61,7 +62,8 @@ class WasteSaleTest extends TestCase
             'waste_sale_amount' => '125.50',
             'waste_sale_remark' => 'Sold recyclable material.',
             'waste_sale_recorded_by' => $staff->id,
-        ]);
+        ])->assertJsonPath('customer.name', 'Waste Customer')
+            ->assertJsonPath('created_by.name', $staff->name);
 
         $this->patchJson("/api/waste-sales/{$invoice->id}", [
             'amount' => 150,
