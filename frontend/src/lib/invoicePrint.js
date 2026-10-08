@@ -247,7 +247,7 @@ export function buildInvoiceDocument(invoice) {
 					.meta-title {
 						margin-bottom: 10px;
 
-						color: #7a8496;
+						color: #111827;
 
 						font-size: 12px;
 						font-weight: 700;
@@ -329,7 +329,7 @@ export function buildInvoiceDocument(invoice) {
 
 						background: #f3f6fb;
 
-						color: #596579;
+						color: #111827;
 
 						text-align: left;
 
@@ -394,7 +394,7 @@ export function buildInvoiceDocument(invoice) {
 
 					.payment-label {
 						margin-bottom: 4px;
-						color: #697386;
+						color: #111827;
 						font-size: 11px;
 						font-weight: 700;
 						letter-spacing: 0.06em;

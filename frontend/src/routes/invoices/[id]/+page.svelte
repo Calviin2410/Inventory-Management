@@ -385,7 +385,7 @@
 
 		margin-bottom: 6px;
 
-		color: #64748b;
+		color: #111827;
 
 		font-size: 13px;
 		font-weight: 700;
@@ -496,10 +496,10 @@
 
 		text-align: left;
 
-		color: #64748b;
+		color: #111827;
 
 		font-size: 13px;
-		font-weight: 600;
+		font-weight: 700;
 	}
 
 	td {
