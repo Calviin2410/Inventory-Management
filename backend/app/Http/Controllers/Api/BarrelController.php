@@ -47,6 +47,10 @@ class BarrelController extends Controller
                     $latestInvoiceItem
                         ?->invoice
                         ?->invoice_no;
+				$barrel->invoice_id =
+					$latestInvoiceItem
+						?->invoice
+						?->id;
 
                 unset(
                     $barrel->invoiceItems

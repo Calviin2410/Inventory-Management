@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\StaffController;
 use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\SettlementController;
+use App\Http\Controllers\Api\WasteController;
 use Illuminate\Support\Facades\Route;
 
 // ---- 公开路由(不需要登录) ----
@@ -30,6 +31,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/activity-logs', [ActivityLogController::class, 'index']);
     Route::get('/settlements', [SettlementController::class, 'index']);
     Route::patch('/settlements/{invoice}', [SettlementController::class, 'update']);
+	Route::get('/waste-sales', [WasteController::class, 'index']);
+	Route::patch('/waste-sales/{invoice}', [WasteController::class, 'update']);
 
     Route::apiResource('products', ProductController::class);
 

@@ -94,6 +94,12 @@ export const api = {
 	},
 	updateSettlement: (id, payload) =>
 		request(`/settlements/${id}`, { method: 'PATCH', body: payload }),
+	getWasteSales: (params = {}) => {
+		const query = new URLSearchParams(params).toString();
+		return request(`/waste-sales${query ? `?${query}` : ''}`);
+	},
+	updateWasteSale: (id, payload) =>
+		request(`/waste-sales/${id}`, { method: 'PATCH', body: payload }),
 
 	getDashboardSummary: () =>
 		request('/dashboard-summary'),

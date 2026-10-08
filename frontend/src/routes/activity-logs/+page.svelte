@@ -30,6 +30,8 @@
 		password_reset: "Password reset",
 		settled: "Settled",
 		reopened: "Reopened",
+		waste_sale_recorded: "Waste sale recorded",
+		waste_sale_updated: "Waste sale updated",
 	};
 
 	const actionOptions = [
@@ -39,6 +41,8 @@
 		{ value: "returned", label: "Returned" },
 		{ value: "deleted", label: "Deleted" },
 		{ value: "password_reset", label: "Password reset" },
+		{ value: "waste_sale_recorded", label: "Waste sale recorded" },
+		{ value: "waste_sale_updated", label: "Waste sale updated" },
 	];
 
 	const recordTypeOptions = [

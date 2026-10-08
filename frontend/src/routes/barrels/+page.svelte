@@ -373,7 +373,11 @@
 									<dt>Invoice</dt>
 
 									<dd>
-										{barrel.invoice_no || "—"}
+										{#if barrel.invoice_id}
+											<a class="invoice-link" href={`/invoices/${barrel.invoice_id}`}>{barrel.invoice_no}</a>
+										{:else}
+											—
+										{/if}
 									</dd>
 								</div>
 							</dl>
@@ -415,7 +419,11 @@
 									</td>
 
 									<td>
-										{barrel.invoice_no || "—"}
+										{#if barrel.invoice_id}
+											<a class="invoice-link" href={`/invoices/${barrel.invoice_id}`}>{barrel.invoice_no}</a>
+										{:else}
+											—
+										{/if}
 									</td>
 
 									<td>
@@ -792,6 +800,16 @@
 
 		font-size: 14px;
 		font-weight: 700;
+	}
+
+	.invoice-link {
+		color: #2554c7;
+		font-weight: 700;
+		text-decoration: none;
+	}
+
+	.invoice-link:hover {
+		text-decoration: underline;
 	}
 
 	/* =========================

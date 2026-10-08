@@ -26,6 +26,10 @@ class Invoice extends Model
         'settled_at',
         'settled_by',
         'total_amount',
+		'waste_sale_amount',
+		'waste_sale_remark',
+		'waste_sale_recorded_at',
+		'waste_sale_recorded_by',
         'notes',
     ];
 
@@ -35,6 +39,8 @@ class Invoice extends Model
             'issued_date' => 'date:Y-m-d',
             'payment_date' => 'date:Y-m-d',
             'settled_at' => 'datetime',
+			'waste_sale_amount' => 'decimal:2',
+			'waste_sale_recorded_at' => 'datetime',
         ];
     }
 
@@ -62,4 +68,9 @@ class Invoice extends Model
     {
         return $this->belongsTo(User::class, 'settled_by');
     }
+
+	public function wasteSaleRecordedBy(): BelongsTo
+	{
+		return $this->belongsTo(User::class, 'waste_sale_recorded_by');
+	}
 }
