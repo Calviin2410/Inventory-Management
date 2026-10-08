@@ -62,7 +62,8 @@ class InvoiceController extends Controller
                 'customer',
                 'createdBy:id,name',
                 'vehicle',
-                'items.barrel'
+                'items.barrel',
+                'settledByUser:id,name',
             ])
         );
     }
