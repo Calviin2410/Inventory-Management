@@ -37,6 +37,7 @@ export function buildInvoiceDocument(invoice, options = {}) {
 
 	const status =
 		String(invoice?.status ?? "unpaid").toLowerCase();
+	const statusText = status === "paid" ? "PAID" : "UNPAID";
 
 	const rows = items
 		.map((item) => {
@@ -376,7 +377,7 @@ export function buildInvoiceDocument(invoice, options = {}) {
 
 					.payment-details {
 						display: grid;
-						grid-template-columns: repeat(2, minmax(0, 1fr));
+						grid-template-columns: repeat(3, minmax(0, 1fr));
 						gap: 24px;
 						margin-top: 22px;
 						padding: 16px 18px;
@@ -641,6 +642,12 @@ export function buildInvoiceDocument(invoice, options = {}) {
 							<div class="payment-label">Payment Date</div>
 							<div class="payment-value">${status === "paid" ? displayDate(invoice?.payment_date) : "—"}</div>
 						</div>
+						<div>
+							<div class="payment-label">Status</div>
+							<div class="payment-value">
+								<span class="status-badge ${status === "paid" ? "status-paid" : "status-unpaid"}">${statusText}</span>
+							</div>
+						</div>
 					</section>
 
 					${invoice?.notes
@@ -679,10 +686,9 @@ export function buildInvoiceDocument(invoice, options = {}) {
 									<div class="settlement-remark">${escapeHtml(settlementRemark)}</div>
 									<div class="settled-stamp" aria-label="Settled">Settled</div>
 								</div>
-							` : `
-								<div class="signature-line"></div>
-								<div class="signature-label">Authorised Signature</div>
-							`}
+							` : ''}
+							<div class="signature-line"></div>
+							<div class="signature-label">Authorised Signature</div>
 						</div>
 					</div>
 

@@ -299,6 +299,18 @@
 					<span class="label"> Payment Date </span>
 					<p>{invoice.status === "paid" ? formatDate(invoice.payment_date) : "—"}</p>
 				</div>
+				<div class="detail-item">
+					<span class="label"> Status </span>
+					<p>
+						<span
+							class="status-badge"
+							class:paid={invoice.status === "paid"}
+							class:unpaid={invoice.status === "unpaid"}
+						>
+							{invoice.status === "paid" ? "Paid" : "Unpaid"}
+						</span>
+					</p>
+				</div>
 			</div>
 
 			<div class="invoice-bottom">
@@ -317,10 +329,9 @@
 							<div class="settlement-remark">{invoice.settlement_remark || "—"}</div>
 							<div class="settled-stamp">Settled</div>
 						</div>
-					{:else}
-						<div class="signature-line"></div>
-						<div class="signature-label">Authorised Signature</div>
 					{/if}
+					<div class="signature-line"></div>
+					<div class="signature-label">Authorised Signature</div>
 				</div>
 			</div>
 
@@ -435,9 +446,23 @@
 
 	.payment-details {
 		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
+		grid-template-columns: repeat(3, minmax(0, 1fr));
 		gap: 24px 40px;
 	}
+
+	.status-badge {
+		display: inline-flex;
+		min-width: 64px;
+		align-items: center;
+		justify-content: center;
+		padding: 5px 10px;
+		border-radius: 6px;
+		font-size: 13px;
+		font-weight: 600;
+	}
+
+	.status-badge.paid { background: #ccfbf1; color: #0f766e; }
+	.status-badge.unpaid { background: #fee2e2; color: #dc2626; }
 
 	.invoice-bottom {
 		display: grid;
