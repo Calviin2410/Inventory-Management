@@ -153,14 +153,13 @@
 
 .search-clear {
 	display: grid;
-	width: 32px;
-	height: 32px;
+	width: 42px;
+	height: 42px;
 	place-items: center;
 	flex: none;
-	margin-left: -50px;
-	margin-right: 8px;
-	border: 0;
-	border-radius: 7px;
+	margin: 0;
+	border: 1px solid #d7dee8;
+	border-radius: 8px;
 	background: #f0f3f7;
 	color: #7b8798;
 	font-size: 17px;
@@ -443,7 +442,6 @@
 			max-width: none;
 		}
 	}
-	.search-clear { margin-top: -47px; margin-right: 8px; margin-left: auto; }
 	.result-count { width: 100%; margin: 2px 0 0; padding: 0 3px; }
 
 	.data-table td {

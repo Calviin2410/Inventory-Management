@@ -80,10 +80,35 @@ class InvoicePaymentTest extends TestCase
             'payment_date' => '2026-09-23',
         ]);
 
-        $this->patchJson("/api/invoices/{$invoice->id}", ['status' => 'unpaid'])
+        $this->patchJson("/api/invoices/{$invoice->id}", [
+            'status' => 'unpaid',
+            'unpaid_remark' => 'Payment was reversed by the customer.',
+        ])
             ->assertOk()
             ->assertJsonPath('payment_method', null)
             ->assertJsonPath('payment_date', null);
+
+        $this->assertDatabaseHas('activity_logs', [
+            'subject_id' => $invoice->id,
+            'action' => 'updated',
+        ]);
+
+        $log = \App\Models\ActivityLog::latest('id')->firstOrFail();
+        $this->assertSame(
+            'Payment was reversed by the customer.',
+            $log->new_values['unpaid_remark']
+        );
+    }
+
+    public function test_setting_unpaid_requires_a_remark(): void
+    {
+        Sanctum::actingAs(User::factory()->create(['role' => 'normal_staff']));
+        $invoice = $this->invoice();
+        $invoice->update(['status' => 'paid']);
+
+        $this->patchJson("/api/invoices/{$invoice->id}", ['status' => 'unpaid'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('unpaid_remark');
     }
 
     public function test_staff_can_view_an_invoice(): void

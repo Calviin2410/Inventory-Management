@@ -89,6 +89,7 @@ class InvoiceController extends Controller
             'status',
             'payment_method',
             'payment_date',
+            'unpaid_remark',
         ];
 
         if (! $request->user()?->isAdmin()) {
@@ -141,6 +142,14 @@ class InvoiceController extends Controller
                 'date',
             ],
 
+            'unpaid_remark' => [
+                $request->input('status') === 'unpaid' && $invoice->status !== 'unpaid'
+                    ? 'required'
+                    : 'nullable',
+                'string',
+                'max:1000',
+            ],
+
             'items' => ['sometimes', 'array'],
             'items.*.id' => [
                 'required',
@@ -161,6 +170,11 @@ class InvoiceController extends Controller
             $data['payment_method'] = null;
             $data['payment_date'] = null;
         }
+
+        $unpaidRemark = isset($data['unpaid_remark'])
+            ? trim($data['unpaid_remark'])
+            : null;
+        unset($data['unpaid_remark']);
 
         $trackedFields = [
             'customer_id',
@@ -209,6 +223,10 @@ class InvoiceController extends Controller
         if ($beforeItems !== $afterItems) {
             $changedBefore['items'] = $beforeItems;
             $changedAfter['items'] = $afterItems;
+        }
+
+        if ($unpaidRemark !== null && array_key_exists('status', $changedAfter)) {
+            $changedAfter['unpaid_remark'] = $unpaidRemark;
         }
 
         if ($changedAfter !== []) {

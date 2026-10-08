@@ -28,6 +28,10 @@
 	let paymentDate = $state("");
 	let paymentSaving = $state(false);
 	let paymentError = $state("");
+	let unpaidInvoice = $state(null);
+	let unpaidRemark = $state("");
+	let unpaidSaving = $state(false);
+	let unpaidError = $state("");
 	let selectedInvoice = $state(null);
 	let deletingInvoice = $state(false);
 	let deleteError = $state("");
@@ -226,6 +230,35 @@
 			paymentError = error?.message || "Unable to record payment";
 		} finally {
 			paymentSaving = false;
+		}
+	}
+
+	function openUnpaidDialog(invoice) {
+		unpaidInvoice = invoice;
+		unpaidRemark = "";
+		unpaidError = "";
+		openMenuId = null;
+	}
+
+	function closeUnpaidDialog() {
+		if (!unpaidSaving) unpaidInvoice = null;
+	}
+
+	async function markInvoiceUnpaid() {
+		if (!unpaidInvoice || !unpaidRemark.trim() || unpaidSaving) return;
+		unpaidSaving = true;
+		unpaidError = "";
+		try {
+			const updated = await api.updateInvoice(unpaidInvoice.id, {
+				status: "unpaid",
+				unpaid_remark: unpaidRemark.trim(),
+			});
+			invoices = invoices.map((item) => item.id === updated.id ? updated : item);
+			unpaidInvoice = null;
+		} catch (error) {
+			unpaidError = error?.errors?.unpaid_remark?.[0] || error?.message || "Unable to set invoice as unpaid";
+		} finally {
+			unpaidSaving = false;
 		}
 	}
 
@@ -507,7 +540,7 @@
 			<a class="menu-link" href={`/invoices/${menuInvoice.id}`}>View Invoice</a>
 			<div class="menu-divider"></div>
 			<button type="button" disabled={menuInvoice.status === "paid"} onclick={() => openPaymentDialog(menuInvoice)}>Set Paid</button>
-			<button type="button" disabled={menuInvoice.status === "unpaid"} onclick={() => updateInvoiceStatus(menuInvoice, "unpaid")}>Set Unpaid</button>
+			<button type="button" disabled={menuInvoice.status === "unpaid"} onclick={() => openUnpaidDialog(menuInvoice)}>Set Unpaid</button>
 			<div class="menu-divider"></div>
 			<button type="button" disabled={exportingId === menuInvoice.id} onclick={() => exportPdf(menuInvoice)}>
 				{exportingId === menuInvoice.id ? "Preparing..." : "Export PDF"}
@@ -557,6 +590,23 @@
 					<button type="submit" class="btn btn-primary" disabled={paymentSaving}>
 						{paymentSaving ? "Saving..." : "Confirm Paid"}
 					</button>
+				</div>
+			</form>
+		</div>
+	{/if}
+
+	{#if unpaidInvoice}
+		<div class="dialog-layer" role="presentation" onclick={(event) => event.currentTarget === event.target && closeUnpaidDialog()}>
+			<form class="payment-dialog" onsubmit={(event) => { event.preventDefault(); markInvoiceUnpaid(); }}>
+				<h2>Set Invoice Unpaid</h2>
+				<p>Explain why {unpaidInvoice.invoice_no} is being changed to unpaid.</p>
+				{#if unpaidError}<div class="dialog-error" role="alert">{unpaidError}</div>{/if}
+				<label>Remark
+					<textarea rows="4" maxlength="1000" bind:value={unpaidRemark} required placeholder="Enter the reason..."></textarea>
+				</label>
+				<div class="dialog-actions">
+					<button type="button" class="btn" onclick={closeUnpaidDialog} disabled={unpaidSaving}>Cancel</button>
+					<button type="submit" class="btn btn-primary" disabled={unpaidSaving || !unpaidRemark.trim()}>{unpaidSaving ? "Saving..." : "Confirm Unpaid"}</button>
 				</div>
 			</form>
 		</div>
@@ -959,7 +1009,8 @@
 	.payment-dialog h2 { margin: 0 0 6px; }
 	.payment-dialog > p { margin: 0 0 20px; color: #64748b; }
 	.payment-dialog label { display: grid; gap: 7px; margin-top: 16px; font-size: 14px; font-weight: 600; }
-	.payment-dialog select { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: white; font: inherit; }
+	.payment-dialog select, .payment-dialog textarea { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: white; font: inherit; }
+	.payment-dialog textarea { width: 100%; resize: vertical; }
 	.dialog-error { margin-bottom: 12px; padding: 10px 12px; border-radius: 8px; background: #fef2f2; color: #b42318; }
 	.dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
 

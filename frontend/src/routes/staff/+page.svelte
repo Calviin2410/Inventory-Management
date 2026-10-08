@@ -130,7 +130,7 @@
 		<button class="btn btn-primary" type="button" onclick={() => { createError = ""; addingStaff = true; }}>+ Add Staff</button>
 	</header>
 
-	<div class="toolbar">
+	<form class="toolbar" onsubmit={(event) => event.preventDefault()}>
 		<input
 			class="control search"
 			type="search"
@@ -138,14 +138,13 @@
 			bind:value={search}
 		/>
 
-		{#if search}
-			<button type="button" class="search-clear" aria-label="Clear search" onclick={() => (search = "")}>×</button>
-		{/if}
+		<button type="submit" class="btn">Search</button>
+		<button type="button" class="btn" disabled={!search} onclick={() => (search = "")}>Clear</button>
 
 		<span class="result-count">
 			{filteredStaff.length} {filteredStaff.length === 1 ? "staff member" : "staff members"}
 		</span>
-	</div>
+	</form>
 
 	<section class="panel staff-panel">
 		{#if loading}
