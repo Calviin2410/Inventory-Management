@@ -174,7 +174,12 @@
 	flex: 1 1 280px;
 	max-width: 560px;
 }
-.search-field .control { width: 100%; max-width: none; padding-right: 42px; }
+.search-field > .control {
+	width: 100% !important;
+	max-width: none !important;
+	flex: 1 1 auto !important;
+	padding-right: 42px !important;
+}
 .search-field .search-clear {
 	position: absolute;
 	top: 50%;

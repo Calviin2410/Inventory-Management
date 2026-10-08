@@ -371,7 +371,7 @@
 		<details class="status-filter">
 			<summary class="control" aria-label="Filter invoices by payment status">
 				<span>{selectedStatusLabel}</span>
-				<span class="select-chevron" aria-hidden="true">⌄</span>
+				<span class="select-chevron" aria-hidden="true"></span>
 			</summary>
 			<div class="status-options">
 				{#each statusOptions as option}
@@ -662,13 +662,19 @@
 	}
 
 	.select-chevron {
-		font-size: 17px;
-		line-height: 1;
+		width: 7px;
+		height: 7px;
+		flex: none;
+		margin: -3px 2px 0 0;
+		border-right: 1.5px solid currentColor;
+		border-bottom: 1.5px solid currentColor;
+		transform: rotate(45deg);
 		transition: transform 0.15s ease;
 	}
 
 	.status-filter[open] .select-chevron {
-		transform: rotate(180deg);
+		margin-top: 3px;
+		transform: rotate(225deg);
 	}
 
 	.status-options {
