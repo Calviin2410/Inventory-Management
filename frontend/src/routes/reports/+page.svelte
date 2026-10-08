@@ -409,7 +409,7 @@
                 </div>
 
 				<details class="column-picker">
-					<summary>Columns <span aria-hidden="true">⌄</span></summary>
+					<summary>Columns <span class="select-chevron" aria-hidden="true"></span></summary>
 					<div class="column-menu">
 						<label class="all-columns">
 							<input type="checkbox" checked={allColumnsVisible} onchange={toggleAllColumns} />
@@ -717,7 +717,8 @@
 	.column-picker summary { display: flex; min-width: 120px; min-height: 42px; align-items: center; justify-content: space-between; gap: 18px; padding: 0 13px; border: 1px solid #ccd4e0; border-radius: 8px; background: white; color: #172033; font-size: 13px; font-weight: 700; cursor: pointer; list-style: none; }
 	.column-picker summary::-webkit-details-marker { display: none; }
 	.column-picker[open] summary { border-color: #4771e8; box-shadow: 0 0 0 3px rgb(53 99 233 / 12%); }
-	.column-picker[open] summary span { transform: rotate(180deg); }
+	.select-chevron { width: 7px; height: 7px; flex: none; margin: -3px 2px 0 0; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg); transition: transform 0.15s ease; }
+	.column-picker[open] .select-chevron { margin-top: 3px; transform: rotate(225deg); }
 	.column-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 20; display: grid; width: 230px; max-height: 340px; overflow-y: auto; padding: 7px; border: 1px solid #d7deea; border-radius: 9px; background: white; box-shadow: 0 14px 34px rgb(15 23 42 / 16%); }
 	.column-menu label { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 6px; color: #273348; font-size: 13px; cursor: pointer; }
 	.column-menu label:hover { background: #f4f7fb; }
