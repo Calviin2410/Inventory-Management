@@ -640,7 +640,7 @@
 	========================= */
 
 	.invoice-panel {
-		overflow: visible;
+		overflow: hidden;
 	}
 
 	/* =========================
@@ -649,7 +649,12 @@
 
 	.table-card {
 		position: relative;
-		overflow: visible;
+		width: 100%;
+		max-width: 100%;
+		overflow-x: auto;
+		overflow-y: hidden;
+		overscroll-behavior-inline: contain;
+		-webkit-overflow-scrolling: touch;
 
 		border: 1px solid #e5e7eb;
 		border-radius: 8px;
@@ -946,6 +951,40 @@
 	   RESPONSIVE
 	========================= */
 
+	@media (max-width: 1280px) {
+		table {
+			min-width: 760px;
+		}
+
+		th:first-child,
+		td:first-child {
+			position: sticky;
+			left: 0;
+			z-index: 2;
+			background: white;
+			box-shadow: 8px 0 12px -12px rgb(15 23 42 / 45%);
+		}
+
+		th:first-child {
+			z-index: 3;
+			background: #f8fafc;
+		}
+
+		th:last-child,
+		td:last-child {
+			position: sticky;
+			right: 0;
+			z-index: 2;
+			background: white;
+			box-shadow: -8px 0 12px -12px rgb(15 23 42 / 45%);
+		}
+
+		th:last-child {
+			z-index: 3;
+			background: #f8fafc;
+		}
+	}
+
 	@media (max-width: 900px) {
 		.toolbar {
 			flex-wrap: wrap;
@@ -964,28 +1003,6 @@
 			border-radius: 12px;
 			box-shadow: 0 20px 60px rgb(15 23 42 / 28%);
 		}
-		.table-card {
-			overflow-x: auto;
-			overscroll-behavior-inline: contain;
-			-webkit-overflow-scrolling: touch;
-		}
-
-		table {
-			min-width: 760px;
-		}
-		th:first-child,
-		td:first-child {
-			position: sticky;
-			left: 0;
-			z-index: 2;
-			background: white;
-			box-shadow: 8px 0 12px -12px rgb(15 23 42 / 45%);
-		}
-		th:first-child {
-			z-index: 3;
-			background: #f8fafc;
-		}
-
 		.search {
 			width: 100%;
 			max-width: none;
