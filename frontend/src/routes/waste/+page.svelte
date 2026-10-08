@@ -160,7 +160,8 @@
 	.state p { margin: 0; }
 	.state.error { color: #b42318; }
 	@media (max-width: 1280px) {
-		.filter-grid { grid-template-columns: minmax(250px, 1fr) repeat(2, minmax(170px, 1fr)); }
+		.filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+		.search-filter { grid-column: 1 / -1; }
 		.filter-actions { grid-column: 1 / -1; }
 		.data-table th:first-child, .data-table td:first-child { position: sticky; left: 0; z-index: 2; background: white; box-shadow: 8px 0 12px -12px rgb(15 23 42 / 45%); }
 		.data-table th:first-child { z-index: 3; background: #f7f9fb; }
@@ -169,6 +170,7 @@
 	}
 	@media (max-width: 720px) {
 		.filter-grid { grid-template-columns: 1fr; }
+		.search-filter { grid-column: auto; }
 		.filter-actions { grid-column: auto; }
 		.filter-actions .btn { flex: 1; }
 		.amount-summary { width: 100%; margin-left: 0; }
