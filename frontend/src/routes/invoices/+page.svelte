@@ -1351,19 +1351,6 @@
 			background: #f8fafc;
 		}
 
-		th:last-child,
-		td:last-child {
-			position: sticky;
-			right: 0;
-			z-index: 2;
-			background: white;
-			box-shadow: -8px 0 12px -12px rgb(15 23 42 / 45%);
-		}
-
-		th:last-child {
-			z-index: 3;
-			background: #f8fafc;
-		}
 	}
 
 	@media (max-width: 900px) {

@@ -388,18 +388,6 @@
 			z-index: 3;
 			background: #f7f9fb;
 		}
-		.data-table th:last-child,
-		.data-table td:last-child {
-			position: sticky;
-			right: 0;
-			z-index: 2;
-			background: white;
-			box-shadow: -8px 0 12px -12px rgb(15 23 42 / 45%);
-		}
-		.data-table th:last-child {
-			z-index: 3;
-			background: #f7f9fb;
-		}
 	}
 	@media (max-width: 720px) {
 		.filter-grid {
