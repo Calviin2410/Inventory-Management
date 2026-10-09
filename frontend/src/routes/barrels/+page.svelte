@@ -1329,4 +1329,102 @@
 			background: #f7f9fb;
 		}
 	}
+
+	@media (max-width: 560px) {
+		.barrel-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 10px;
+			padding: 10px;
+		}
+
+		.barrel-picture {
+			height: 84px;
+		}
+
+		.barrel-top,
+		.barrel-bottom {
+			width: 62px;
+			height: 10px;
+			border-width: 3px;
+		}
+
+		.barrel-body {
+			width: 64px;
+			height: 74px;
+			border-right-width: 4px;
+			border-left-width: 4px;
+			border-radius: 12px / 28px;
+		}
+
+		.band {
+			right: -7px;
+			left: -7px;
+			height: 5px;
+		}
+
+		.band.top {
+			top: 16px;
+		}
+
+		.band.bottom {
+			bottom: 16px;
+		}
+
+		.barrel-code {
+			padding: 3px 5px;
+			font-size: 10px;
+		}
+
+		.barrel-info {
+			flex-direction: column;
+			gap: 6px;
+			padding: 8px;
+		}
+
+		.barrel-info strong {
+			font-size: 12px;
+		}
+
+		.visual-actions {
+			width: 100%;
+			justify-content: space-between;
+			gap: 5px;
+		}
+
+		.badge {
+			min-width: 0;
+			padding: 4px 7px;
+			font-size: 11px;
+		}
+
+		.barrel-info .more-button {
+			width: 30px;
+			height: 28px;
+			font-size: 18px;
+		}
+
+		dl {
+			gap: 6px;
+			padding: 8px;
+		}
+
+		.barrel-card dl > div {
+			min-width: 0;
+		}
+
+		dl div + div {
+			padding-left: 7px;
+		}
+
+		dt {
+			margin-bottom: 3px;
+			font-size: 8px;
+		}
+
+		dd {
+			font-size: 11px;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+	}
 </style>

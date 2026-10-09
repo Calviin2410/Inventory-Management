@@ -1,4 +1,5 @@
 	:root {
+		--sidebar-width: 248px;
 		--primary: #2554c7;
 		--primary-dark: #1c419e;
 		--ink: #182235;
@@ -37,7 +38,7 @@
 		width: auto;
 		min-width: 0;
 		max-width: 1480px;
-		margin: 0 0 0 248px;
+		margin: 0 0 0 var(--sidebar-width);
 		padding: 98px 42px 72px;
 	}
 
@@ -445,7 +446,7 @@
 		}
 
 		.page-heading .eyebrow,
-		.page-heading p {
+		.page-heading p:not(.eyebrow) {
 			display: none;
 		}
 
@@ -490,6 +491,55 @@
 		font-size: 14px;
 
 		vertical-align: middle;
+	}
+
+	/* Let the workspace use high-resolution desktop displays instead of
+	   leaving a large unused strip beside the fixed-width content column. */
+	@media (min-width: 1600px) {
+		:root {
+			--sidebar-width: 268px;
+		}
+
+		.app-page {
+			max-width: none;
+			padding-right: clamp(42px, 2.4vw, 72px);
+			padding-left: clamp(42px, 2.4vw, 72px);
+		}
+
+		.sidebar .nav-links a {
+			font-size: 14px;
+		}
+
+		.sidebar .nav-label {
+			font-size: 12px;
+		}
+	}
+
+	/* Increase reading and control sizes on large desktop viewports. */
+	@media (min-width: 1600px) {
+		.page-heading h1 {
+			font-size: clamp(30px, 1.4vw, 36px);
+		}
+
+		.page-heading p {
+			font-size: 16px;
+		}
+
+		body .app-page .btn,
+		body .app-page .control,
+		body .app-page input,
+		body .app-page select,
+		body .app-page textarea {
+			font-size: clamp(15px, 0.68vw, 17px);
+		}
+
+		body .app-page th {
+			font-size: 14px;
+		}
+
+		body .app-page td {
+			font-size: clamp(15px, 0.64vw, 16px);
+		}
 	}
 
 	.data-table tbody tr {

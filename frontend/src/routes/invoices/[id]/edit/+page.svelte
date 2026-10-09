@@ -12,7 +12,6 @@
 	import { formatDate } from "$lib/format.js";
 
 	let invoice = $state(null);
-	let customers = $state([]);
 
 	let loading = $state(true);
 	let saving = $state(false);
@@ -20,7 +19,8 @@
 	let errorMessage = $state("");
 	let successMessage = $state("");
 
-	let customerId = $state("");
+	let customerName = $state("");
+	let customerPhone = $state("");
 	let issuedDate = $state("");
 	let address = $state("");
 	let notes = $state("");
@@ -40,16 +40,12 @@
 		try {
 			const id = page.params.id;
 
-			const [invoiceData, customerData] = await Promise.all([
-				api.getInvoice(id),
-				api.getCustomerOptions(),
-			]);
+			const invoiceData = await api.getInvoice(id);
 
 			invoice = invoiceData;
 
-			customers = customerData ?? [];
-
-			customerId = String(invoice.customer_id ?? "");
+			customerName = invoice.customer?.name ?? "";
+			customerPhone = invoice.customer?.phone ?? "";
 
 			issuedDate = invoice.issued_date ?? "";
 
@@ -96,30 +92,28 @@
 		try {
 			const id = page.params.id;
 
-			const payload = {
-				customer_id: Number(customerId),
-
-				issued_date: issuedDate,
-
-				address: address.trim() || null,
-
-				notes: notes.trim() || null,
-
-				total_amount: Number(totalAmount),
-
-				status,
-				payment_method: status === "paid" ? paymentMethod : null,
-				payment_date: status === "paid" ? paymentDate : null,
-				...(isAdmin
-					? {
-						items: invoiceItems.map((item) => ({
-							id: item.id,
-							rental_start: item.rental_start,
-							rental_end: item.rental_end || null,
-						})),
-					}
-					: {}),
-			};
+			const payload = isAdmin
+				? {
+					customer_name: customerName.trim(),
+					customer_phone: customerPhone.trim() || null,
+					issued_date: issuedDate,
+					address: address.trim() || null,
+					notes: notes.trim() || null,
+					total_amount: Number(totalAmount),
+					status,
+					payment_method: status === "paid" ? paymentMethod : null,
+					payment_date: status === "paid" ? paymentDate : null,
+					items: invoiceItems.map((item) => ({
+						id: item.id,
+						rental_end: item.rental_end || null,
+					})),
+				}
+				: {
+					items: invoiceItems.map((item) => ({
+						id: item.id,
+						rental_end: item.rental_end || null,
+					})),
+				};
 
 			const updatedInvoice = await api.updateInvoice(id, payload);
 
@@ -191,26 +185,14 @@
 				</div>
 			{/if}
 
-			<div class="form-grid">
+			{#if isAdmin}<div class="form-grid">
 				<!-- CUSTOMER -->
 
 				<div class="field full-width">
-					<label for="customer"> Customer </label>
-
-					<select id="customer" bind:value={customerId} required>
-						<option value="" disabled> Select customer </option>
-
-						{#each customers as customer}
-							<option value={String(customer.id)}>
-								{customer.name}
-
-								{#if customer.phone}
-									- {customer.phone}
-								{/if}
-							</option>
-						{/each}
-					</select>
+					<label for="customer-name">Customer Name</label>
+					<input id="customer-name" bind:value={customerName} required />
 				</div>
+				<div class="field"><label for="customer-phone">Customer Phone</label><input id="customer-phone" type="tel" bind:value={customerPhone} /></div>
 
 				<!-- ISSUED DATE -->
 
@@ -285,7 +267,7 @@
 						placeholder="Optional notes"
 					></textarea>
 				</div>
-			</div>
+			</div>{:else}<p class="user-edit-note">You can only update rental end dates.</p>{/if}
 
 			<!-- ITEMS -->
 
@@ -294,7 +276,7 @@
 					<div>
 						<h2>Invoice Items</h2>
 
-						<p>{isAdmin ? "Administrators can update rental dates." : "Rental dates are view-only."}</p>
+						<p>Rental start dates cannot be changed. {isAdmin ? "Administrators can update other invoice details." : "You can update rental end dates."}</p>
 					</div>
 				</div>
 
@@ -326,19 +308,11 @@
 									</td>
 
 									<td>
-										{#if isAdmin}
-											<DateInput compact bind:value={item.rental_start} required ariaLabel="Select rental start date" />
-										{:else}
-											{formatDate(item.rental_start)}
-										{/if}
+						{formatDate(item.rental_start)}
 									</td>
 
 									<td>
-										{#if isAdmin}
-											<DateInput compact min={item.rental_start} bind:value={item.rental_end} ariaLabel="Select rental end date" />
-										{:else}
-											{formatDate(item.rental_end)}
-										{/if}
+						<DateInput compact min={item.rental_start} bind:value={item.rental_end} ariaLabel="Select rental end date" />
 									</td>
 								</tr>
 							{:else}

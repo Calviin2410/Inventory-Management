@@ -129,7 +129,7 @@
 				>
 					{invoice.waste_sale_amount === null
 						? "Sell Waste"
-						: "Update Sale"}
+						: "UpdateSell"}
 				</button>
 				<button
 					type="button"
@@ -140,12 +140,14 @@
 					{exporting ? "Preparing..." : "Export PDF"}
 				</button>
 
-				<a
-					class="btn btn-primary"
-					href={`/invoices/${invoice.id}/edit`}
-				>
-					Edit Invoice
-				</a>
+				{#if !settlementView}
+					<a
+						class="btn btn-primary"
+						href={`/invoices/${invoice.id}/edit`}
+					>
+						Edit Invoice
+					</a>
+				{/if}
 			</div>
 		{/if}
 	</div>

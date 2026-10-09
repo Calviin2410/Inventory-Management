@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Barrel;
 use App\Models\Invoice;
+use App\Models\Customer;
 use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -20,9 +21,7 @@ class InvoiceController extends Controller
             'createdBy:id,name',
             'vehicle:id,plate_number',
             'items.barrel:id,code',
-        ])  
-            ->latest('issued_date')
-            ->latest('id');
+        ]);
 
         if ($search = $request->query('search')) {
             $query->where(function ($q) use ($search) {
@@ -48,6 +47,20 @@ class InvoiceController extends Controller
             $query->where('status', $request->query('status'));
         }
 
+        $sortDirection = $request->query('direction') === 'desc' ? 'desc' : 'asc';
+        if ($request->query('sort') === 'invoice_no') {
+            $numberExpression = match (DB::connection()->getDriverName()) {
+                'mysql' => 'CAST(SUBSTRING(invoice_no, 4) AS UNSIGNED)',
+                'pgsql', 'sqlite' => 'CAST(SUBSTR(invoice_no, 4) AS INTEGER)',
+                default => 'CAST(SUBSTRING(invoice_no, 4) AS INTEGER)',
+            };
+
+            $query->orderByRaw($numberExpression.' '.$sortDirection)
+                ->orderBy('id', $sortDirection);
+        } else {
+            $query->latest('issued_date')->latest('id');
+        }
+
         return response()->json(
             $query->paginate(20)
         );
@@ -70,12 +83,12 @@ class InvoiceController extends Controller
     public function update(Request $request, Invoice $invoice)
     {
         $managementFields = [
-            'customer_id',
+            'customer_name',
+            'customer_phone',
             'issued_date',
             'address',
             'notes',
             'total_amount',
-            'items',
         ];
 
         if ($request->hasAny($managementFields)) {
@@ -91,6 +104,7 @@ class InvoiceController extends Controller
             'payment_method',
             'payment_date',
             'unpaid_remark',
+            'items',
         ];
 
         if (! $request->user()?->isAdmin()) {
@@ -105,11 +119,8 @@ class InvoiceController extends Controller
             && $invoice->status !== 'paid';
 
         $data = $request->validate([
-            'customer_id' => [
-                'sometimes',
-                'required',
-                'exists:customers,id'
-            ],
+            'customer_name' => ['sometimes', 'required', 'string', 'max:255'],
+            'customer_phone' => ['sometimes', 'nullable', 'string', 'max:20'],
 
             'issued_date' => [
                 'sometimes',
@@ -167,13 +178,25 @@ class InvoiceController extends Controller
                     fn ($query) => $query->where('invoice_id', $invoice->id)
                 ),
             ],
-            'items.*.rental_start' => ['required', 'date'],
             'items.*.rental_end' => [
                 'nullable',
                 'date',
-                'after_or_equal:items.*.rental_start',
             ],
         ]);
+
+        foreach ($data['items'] ?? [] as $itemData) {
+            $item = $invoice->items()->whereKey($itemData['id'])->firstOrFail();
+            if (
+                ! empty($itemData['rental_end'])
+                && \Illuminate\Support\Carbon::parse($itemData['rental_end'])
+                    ->lt(\Illuminate\Support\Carbon::parse($item->rental_start))
+            ) {
+                return response()->json([
+                    'message' => 'Rental end date must be on or after rental start date.',
+                    'errors' => ['items' => ['Rental end date must be on or after rental start date.']],
+                ], 422);
+            }
+        }
 
         if (($data['status'] ?? null) === 'unpaid') {
             $data['payment_method'] = null;
@@ -202,15 +225,28 @@ class InvoiceController extends Controller
             ->toArray();
 
         DB::transaction(function () use ($invoice, $data) {
-            $invoice->update(collect($data)->except('items')->all());
+            $invoiceFields = collect($data)->except(['items', 'customer_name', 'customer_phone'])->all();
+            $invoice->update($invoiceFields);
+
+            if (array_key_exists('customer_name', $data) || array_key_exists('customer_phone', $data)) {
+                $customer = $invoice->customer;
+                if ($customer) {
+                    $customerChanges = [];
+                    if (array_key_exists('customer_name', $data)) {
+                        $customerChanges['name'] = $data['customer_name'];
+                    }
+                    if (array_key_exists('customer_phone', $data)) {
+                        $phone = Customer::normalizePhone($data['customer_phone']);
+                        $customerChanges['phone'] = $phone;
+                        $customerChanges['phone_normalized'] = $phone;
+                    }
+                    $customer->update($customerChanges);
+                }
+            }
 
             foreach ($data['items'] ?? [] as $itemData) {
-                $invoice->items()
-                    ->whereKey($itemData['id'])
-                    ->update([
-                        'rental_start' => $itemData['rental_start'],
-                        'rental_end' => $itemData['rental_end'] ?? null,
-                    ]);
+                $invoice->items()->whereKey($itemData['id'])
+                    ->update(['rental_end' => $itemData['rental_end'] ?? null]);
             }
         });
 
@@ -438,6 +474,11 @@ class InvoiceController extends Controller
                  * TKS00002
                  * TKS00003
                  */
+                DB::table('invoice_number_sequences')
+                    ->where('prefix', 'TKS')
+                    ->lockForUpdate()
+                    ->first();
+
                 $invoiceNo =
                     $this->generateNextInvoiceNo();
 
@@ -530,59 +571,34 @@ class InvoiceController extends Controller
     }
 
 
-    /*
-     * Generate the next invoice number.
+    /**
+     * Return the smallest unused positive TKS invoice number.
      *
-     * Examples:
-     * TKS00001
-     * TKS00002
-     * TKS00003
+     * Existing TKS numbers are inspected by their numeric suffix so deleted
+     * invoices leave reusable gaps (TKS00002 before TKS00011, for example).
      */
     private function generateNextInvoiceNo(): string
     {
-        /*
-         * Only look for invoices
-         * using the TKS format.
-         */
-        $lastInvoice = Invoice::where(
-            'invoice_no',
-            'like',
-            'TKS%'
-        )
-            ->orderByDesc('id')
-            ->first();
+        $usedNumbers = [];
+        $invoiceNumbers = Invoice::query()
+            ->where('invoice_no', 'like', 'TKS%')
+            ->pluck('invoice_no');
 
-
-        /*
-         * No TKS invoice yet.
-         */
-        if (!$lastInvoice) {
-            return 'TKS00001';
+        foreach ($invoiceNumbers as $invoiceNo) {
+            if (preg_match('/^TKS(\d+)$/', $invoiceNo, $matches)) {
+                $number = (int) $matches[1];
+                if ($number > 0) {
+                    $usedNumbers[$number] = true;
+                }
+            }
         }
 
+        $nextNumber = 1;
+        while (isset($usedNumbers[$nextNumber])) {
+            $nextNumber++;
+        }
 
-        /*
-         * TKS00001 -> 00001 -> 1
-         */
-        $lastNumber = (int) str_replace(
-            'TKS',
-            '',
-            $lastInvoice->invoice_no
-        );
-
-
-        $nextNumber =
-            $lastNumber + 1;
-
-
-        /*
-         * 2
-         * ↓
-         * 00002
-         * ↓
-         * TKS00002
-         */
-        return 'TKS' . str_pad(
+        return 'TKS'.str_pad(
             (string) $nextNumber,
             5,
             '0',

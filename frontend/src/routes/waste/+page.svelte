@@ -5,6 +5,7 @@
 	import DateInput from "$lib/DateInput.svelte";
 	import { api } from "$lib/api.js";
 	import { formatDate } from "$lib/format.js";
+	import WasteSaleDialog from "$lib/WasteSaleDialog.svelte";
 
 	let invoices = $state([]);
 	let loading = $state(true);
@@ -16,6 +17,7 @@
 	let lastPage = $state(1);
 	let totalInvoices = $state(0);
 	let totalAmountReceived = $state(0);
+	let saleInvoice = $state(null);
 
 	async function loadWasteSales(page = 1) {
 		loading = true;
@@ -154,6 +156,7 @@
 							<th>Sell Date</th>
 							<th>Remark</th>
 							<th>Received By</th>
+							<th>Action</th>
 						</tr></thead
 					>
 					<tbody>
@@ -190,6 +193,7 @@
 									>{invoice.waste_sale_recorded_by?.name ||
 										"—"}</td
 								>
+								<td><button class="btn update-sale-button" type="button" onclick={() => saleInvoice = invoice}>UpdateSell</button></td>
 							</tr>
 						{/each}
 					</tbody>
@@ -220,6 +224,18 @@
 		{/if}
 	</section>
 </main>
+
+{#if saleInvoice}
+	<WasteSaleDialog
+		invoice={saleInvoice}
+		oncancel={() => saleInvoice = null}
+		onsaved={(updated) => {
+			invoices = invoices.map((invoice) => invoice.id === updated.id ? updated : invoice);
+			saleInvoice = null;
+			loadWasteSales(currentPage);
+		}}
+	/>
+{/if}
 
 <style>
 	.waste-toolbar {
@@ -320,6 +336,9 @@
 	.invoice-link:hover {
 		color: #2554c7;
 		text-decoration: underline;
+	}
+	.update-sale-button {
+		white-space: nowrap;
 	}
 	.amount-cell {
 		color: #087a55;

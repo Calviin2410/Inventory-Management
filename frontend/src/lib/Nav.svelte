@@ -152,7 +152,7 @@
 		inset: 0 auto 0 0;
 		z-index: 60;
 		display: flex;
-		width: 248px;
+		width: var(--sidebar-width, 248px);
 		box-sizing: border-box;
 		flex-direction: column;
 		padding: 22px 16px 16px;
@@ -294,7 +294,7 @@
 	}
 	.topbar {
 		position: fixed;
-		inset: 0 0 auto 248px;
+		inset: 0 0 auto var(--sidebar-width, 248px);
 		z-index: 45;
 		display: flex;
 		height: 64px;

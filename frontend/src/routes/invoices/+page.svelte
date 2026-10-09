@@ -19,6 +19,7 @@
 	let errorMessage = $state("");
 	let search = $state("");
 	let statusFilter = $state("");
+	let invoiceSortDirection = $state("");
 
 	let openMenuId = $state(null);
 	let actionMenuPosition = $state({ top: 0, left: 0 });
@@ -44,6 +45,30 @@
 	let currentPage = $state(1);
 	let lastPage = $state(1);
 	let totalInvoices = $state(0);
+	const invoiceColumns = [
+		{ key: "invoiceNumber", label: "Invoice Number" },
+		{ key: "customer", label: "Customer" },
+		{ key: "barrelCode", label: "Barrel Code" },
+		{ key: "invoiceDate", label: "Invoice Date" },
+		{ key: "totalAmount", label: "Total Amount" },
+		{ key: "createdBy", label: "Created By" },
+		{ key: "status", label: "Status" },
+	];
+	let visibleColumns = $state(Object.fromEntries(invoiceColumns.map((column) => [column.key, true])));
+	let allColumnsVisible = $derived(invoiceColumns.every((column) => visibleColumns[column.key]));
+
+	function toggleColumn(key) {
+		if (visibleColumns[key] && invoiceColumns.filter((column) => visibleColumns[column.key]).length === 1) return;
+		visibleColumns = { ...visibleColumns, [key]: !visibleColumns[key] };
+	}
+
+	function toggleAllColumns() {
+		visibleColumns = Object.fromEntries(invoiceColumns.map((column) => [column.key, true]));
+	}
+
+	function formatAmount(value) {
+		return `RM ${Number(value ?? 0).toFixed(2)}`;
+	}
 
 	const statusOptions = [
 		{ value: "", label: "All statuses" },
@@ -59,6 +84,11 @@
 	function selectStatusFilter(value, event) {
 		statusFilter = value;
 		event.currentTarget.closest("details")?.removeAttribute("open");
+		loadInvoices(1);
+	}
+
+	function toggleInvoiceNumberSort() {
+		invoiceSortDirection = invoiceSortDirection === "asc" ? "desc" : "asc";
 		loadInvoices(1);
 	}
 
@@ -133,6 +163,11 @@
 
 			if (statusFilter) {
 				params.status = statusFilter;
+			}
+
+			if (invoiceSortDirection) {
+				params.sort = "invoice_no";
+				params.direction = invoiceSortDirection;
 			}
 
 			const result = await api.getInvoices(params);
@@ -375,6 +410,7 @@
 			onclick={() => {
 				search = "";
 				statusFilter = "";
+				invoiceSortDirection = "";
 				loadInvoices(1);
 			}}
 		>
@@ -398,6 +434,21 @@
 					>
 						{option.label}
 					</button>
+				{/each}
+			</div>
+		</details>
+		<details class="column-picker">
+			<summary>Columns <span class="select-chevron" aria-hidden="true"></span></summary>
+			<div class="column-menu">
+				<label class="all-columns">
+					<input type="checkbox" checked={allColumnsVisible} onchange={toggleAllColumns} />
+					<span>All</span>
+				</label>
+				{#each invoiceColumns as column}
+					<label>
+						<input type="checkbox" checked={visibleColumns[column.key]} onchange={() => toggleColumn(column.key)} />
+						<span>{column.label}</span>
+					</label>
 				{/each}
 			</div>
 		</details>
@@ -432,17 +483,25 @@
 				<table>
 					<thead>
 						<tr>
-							<th> Invoice Number </th>
+							{#if visibleColumns.invoiceNumber}
+								<th aria-sort={invoiceSortDirection === "asc" ? "ascending" : invoiceSortDirection === "desc" ? "descending" : "none"}>
+									<button class="sort-header" type="button" onclick={toggleInvoiceNumberSort} aria-label="Sort by invoice number">
+										Invoice Number
+										<span aria-hidden="true">{invoiceSortDirection === "asc" ? "↑" : invoiceSortDirection === "desc" ? "↓" : "↕"}</span>
+									</button>
+								</th>
+							{/if}
 
-							<th> Customer </th>
+							{#if visibleColumns.customer}<th> Customer </th>{/if}
 
-							<th> Barrel Code </th>
+							{#if visibleColumns.barrelCode}<th> Barrel Code </th>{/if}
 
-							<th> Invoice Date </th>
+							{#if visibleColumns.invoiceDate}<th> Invoice Date </th>{/if}
+							{#if visibleColumns.totalAmount}<th> Total Amount </th>{/if}
 
-							<th> Created By </th>
+							{#if visibleColumns.createdBy}<th> Created By </th>{/if}
 
-							<th class="status-column"> Status </th>
+							{#if visibleColumns.status}<th class="status-column"> Status </th>{/if}
 
 							<th class="action-column"></th>
 						</tr>
@@ -451,34 +510,37 @@
 					<tbody>
 						{#each invoices as invoice (invoice.id)}
 							<tr>
-								<td class="invoice-number">
+								{#if visibleColumns.invoiceNumber}<td class="invoice-number">
 									{invoice.invoice_no}
-								</td>
+								</td>{/if}
 
-								<td>
+								{#if visibleColumns.customer}<td>
 									{invoice.customer?.name ?? "-"}
-								</td>
+								</td>{/if}
 
-								<td class="barrel-codes">
+								{#if visibleColumns.barrelCode}<td class="barrel-codes">
 									{invoice.items
 										?.map((item) => item.barrel?.code)
 										.filter(Boolean)
 										.join(", ") || "—"}
-								</td>
+								</td>{/if}
 
-								<td>
+								{#if visibleColumns.invoiceDate}<td>
 									{formatDate(invoice.issued_date)}
-								</td>
+								</td>{/if}
+								{#if visibleColumns.totalAmount}<td>
+									{formatAmount(invoice.total_amount)}
+								</td>{/if}
 
-								<td>
+								{#if visibleColumns.createdBy}<td>
 									{invoice.created_by?.name ?? "—"}
-								</td>
+								</td>{/if}
 
 								<!-- =========================
 								     STATUS
 								========================= -->
 
-								<td class="status-cell">
+								{#if visibleColumns.status}<td class="status-cell">
 									<span
 										class="status-badge"
 										class:paid={invoice.status === "paid"}
@@ -489,7 +551,7 @@
 											? "Paid"
 											: "Unpaid"}
 									</span>
-								</td>
+								</td>{/if}
 
 								<!-- =========================
 								     ACTION
@@ -589,7 +651,7 @@
 			>
 				{menuInvoice.waste_sale_amount === null
 					? "Sell Waste"
-					: "Update Sale"}
+					: "UpdateSell"}
 			</button>
 			{#if isAdmin}
 				<div class="menu-divider"></div>
@@ -786,6 +848,88 @@
 		transform: rotate(225deg);
 	}
 
+	.column-picker {
+		position: relative;
+		flex: none;
+	}
+
+	.column-picker summary {
+		display: flex;
+		min-width: 150px;
+		min-height: 42px;
+		align-items: center;
+		justify-content: space-between;
+		gap: 18px;
+		padding: 0 13px;
+		border: 1px solid #ccd4e0;
+		border-radius: 8px;
+		background: white;
+		color: #172033;
+		font-size: 13px;
+		font-weight: 700;
+		cursor: pointer;
+		list-style: none;
+	}
+
+	.column-picker summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.column-picker[open] summary {
+		border-color: #4771e8;
+		box-shadow: 0 0 0 3px rgb(53 99 233 / 12%);
+	}
+
+	.column-picker[open] .select-chevron {
+		margin-top: 3px;
+		transform: rotate(225deg);
+	}
+
+	.column-menu {
+		position: absolute;
+		top: calc(100% + 6px);
+		right: 0;
+		z-index: 20;
+		display: grid;
+		width: 230px;
+		max-height: 340px;
+		overflow-y: auto;
+		padding: 7px;
+		border: 1px solid #d7deea;
+		border-radius: 9px;
+		background: white;
+		box-shadow: 0 14px 34px rgb(15 23 42 / 16%);
+	}
+
+	.column-menu label {
+		display: flex;
+		align-items: center;
+		gap: 9px;
+		padding: 9px 10px;
+		border-radius: 6px;
+		color: #273348;
+		font-size: 13px;
+		cursor: pointer;
+	}
+
+	.column-menu label:hover {
+		background: #f4f7fb;
+	}
+
+	.column-menu input {
+		width: 16px;
+		height: 16px;
+		margin: 0;
+		accent-color: #315ee7;
+	}
+
+	.column-menu .all-columns {
+		margin-bottom: 4px;
+		border-bottom: 1px solid #e7ebf1;
+		border-radius: 6px 6px 0 0;
+		font-weight: 700;
+	}
+
 	.status-options {
 		position: absolute;
 		top: calc(100% + 6px);
@@ -864,6 +1008,28 @@
 
 		font-size: 14px;
 		font-weight: 600;
+	}
+
+	.sort-header {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		margin: 0;
+		padding: 0;
+		border: 0;
+		background: transparent;
+		color: inherit;
+		font: inherit;
+		cursor: pointer;
+	}
+
+	.sort-header:hover {
+		color: #2554c7;
+	}
+
+	.sort-header span {
+		color: #2554c7;
+		font-size: 15px;
 	}
 
 	th:first-child {
@@ -1225,6 +1391,16 @@
 
 		.status-filter {
 			width: 100%;
+		}
+
+		.column-picker,
+		.column-picker summary {
+			width: 100%;
+	}
+		.column-menu {
+			right: auto;
+			left: 0;
+			width: min(100%, 280px);
 		}
 
 		.result-count {
