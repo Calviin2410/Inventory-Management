@@ -15,6 +15,13 @@
 	let lastPage = $state(1);
 	let totalCustomers = $state(0);
 
+	function getCustomerPhones(customer) {
+		const phones = customer.phone_numbers?.length
+			? customer.phone_numbers
+			: customer.phone ? [customer.phone] : [];
+		return phones.join(", ") || "—";
+	}
+
 	async function loadCustomers(page = 1) {
 		loading = true;
 		errorMessage = "";
@@ -173,7 +180,7 @@
 								</td>
 
 								<td>
-									{customer.phone || "—"}
+					<span class="customer-phones">{getCustomerPhones(customer)}</span>
 								</td>
 
 								<td>
@@ -259,6 +266,8 @@
 		color: #315ee7;
 		text-decoration: underline;
 	}
+
+	.customer-phones { overflow-wrap: anywhere; }
 
 	/* =========================
 	   STATES

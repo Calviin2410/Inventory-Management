@@ -239,6 +239,13 @@ class InvoiceController extends Controller
                         $phone = Customer::normalizePhone($data['customer_phone']);
                         $customerChanges['phone'] = $phone;
                         $customerChanges['phone_normalized'] = $phone;
+                        $existingNumbers = $customer->phone_numbers ?? array_filter([$customer->phone_normalized]);
+                        $customerChanges['phone_numbers'] = $phone === null
+                            ? []
+                            : array_values(array_unique(array_merge(
+                                [$phone],
+                                array_filter($existingNumbers, fn ($number) => $number !== $customer->phone_normalized)
+                            )));
                     }
                     $customer->update($customerChanges);
                 }

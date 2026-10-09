@@ -21,6 +21,13 @@
 
     let isAdmin = $derived($user?.role === "admin");
 
+    function getCustomerPhones(record) {
+        const phones = record?.phone_numbers?.length
+            ? record.phone_numbers
+            : record?.phone ? [record.phone] : [];
+        return phones.join(", ") || "No phone number";
+    }
+
     const statusOptions = [
         { value: "", label: "All statuses" },
         { value: "paid", label: "Paid" },
@@ -83,7 +90,7 @@
             <a href="/customers">← Back to customers</a>
             <p class="eyebrow">CUSTOMER HISTORY</p>
             <h1>{customer?.name ?? "Customer"}</h1>
-            <p>{customer?.phone ?? "No phone number"}</p>
+            <p>{getCustomerPhones(customer)}</p>
         </div>
     </header>
 

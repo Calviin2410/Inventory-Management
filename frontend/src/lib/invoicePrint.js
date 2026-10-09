@@ -572,7 +572,7 @@ export function buildInvoiceDocument(invoice, options = {}) {
 
 							<div class="meta-line">
 								<div class="meta-label">Phone</div>
-								<div class="meta-value">${escapeHtml(invoice?.customer?.phone || "—")}</div>
+								<div class="meta-value">${escapeHtml(invoice?.customer?.phone_numbers?.join(", ") || invoice?.customer?.phone || "—")}</div>
 							</div>
 						</div>
 

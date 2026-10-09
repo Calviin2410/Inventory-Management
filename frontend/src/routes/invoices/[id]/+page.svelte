@@ -205,7 +205,7 @@
 					<span class="label"> Phone </span>
 
 					<p>
-						{invoice.customer?.phone ?? "-"}
+						{invoice.customer?.phone_numbers?.join(", ") || invoice.customer?.phone || "-"}
 					</p>
 				</div>
 

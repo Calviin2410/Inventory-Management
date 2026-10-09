@@ -16,10 +16,11 @@ class CustomerController extends Controller
             ->latest('id');
 
         if ($request->filled('phone_exact')) {
-            $query->where(
-                'phone_normalized',
-                Customer::normalizePhone($request->query('phone_exact'))
-            );
+            $phone = Customer::normalizePhone($request->query('phone_exact'));
+            $query->where(function ($q) use ($phone) {
+                $q->where('phone_normalized', $phone)
+                    ->orWhereJsonContains('phone_numbers', $phone);
+            });
         } elseif ($search = $request->query('search')) {
             $normalizedSearch = Customer::normalizePhone($search);
 
@@ -40,7 +41,7 @@ class CustomerController extends Controller
                         'phone_normalized',
                         'like',
                         '%' . $normalizedSearch . '%'
-                    );
+                    )->orWhereJsonContains('phone_numbers', $normalizedSearch);
                 }
             });
         }
@@ -55,31 +56,48 @@ class CustomerController extends Controller
         $data = $request->validate([
             'name' => ['nullable', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:20'],
+            'phone_numbers' => ['sometimes', 'array', 'max:10'],
+            'phone_numbers.*' => ['nullable', 'string', 'max:20'],
         ]);
 
-        $normalizedPhone = Customer::normalizePhone($data['phone'] ?? null);
+        $enteredNumbers = $data['phone_numbers'] ?? array_filter([$data['phone'] ?? null]);
+        $normalizedNumbers = array_values(array_unique(array_filter(array_map(
+            fn ($phone) => Customer::normalizePhone($phone),
+            $enteredNumbers
+        ))));
 
-        if (
-            $normalizedPhone !== null
-            && ! in_array(strlen($normalizedPhone), [10, 11], true)
-        ) {
-            return response()->json([
-                'message' => 'Please enter a valid phone number.',
-                'errors' => [
-                    'phone' => ['The phone number must contain 10 or 11 digits.'],
-                ],
-            ], 422);
+        foreach ($normalizedNumbers as $number) {
+            if (! in_array(strlen($number), [10, 11], true)) {
+                return response()->json([
+                    'message' => 'Please enter valid phone numbers.',
+                    'errors' => ['phone_numbers' => ['Each phone number must contain 10 or 11 digits.']],
+                ], 422);
+            }
         }
 
-        if ($normalizedPhone !== null) {
-            $existingCustomer = Customer::where(
-                'phone_normalized',
-                $normalizedPhone
-            )->first();
+        $normalizedPhone = $normalizedNumbers[0] ?? null;
 
-            if ($existingCustomer) {
+        if ($normalizedNumbers !== []) {
+            $matches = Customer::query()->where(function ($query) use ($normalizedNumbers) {
+                foreach ($normalizedNumbers as $number) {
+                    $query->orWhere('phone_normalized', $number)
+                        ->orWhereJsonContains('phone_numbers', $number);
+                }
+            })->get();
+
+            if ($matches->pluck('id')->unique()->count() > 1) {
+                return response()->json([
+                    'message' => 'These phone numbers belong to different customers. Please check the numbers.',
+                ], 422);
+            }
+
+            if ($existingCustomer = $matches->first()) {
+                $existingCustomer->phone_numbers = array_values(array_unique(array_merge(
+                    $existingCustomer->phone_numbers ?? array_filter([$existingCustomer->phone_normalized]),
+                    $normalizedNumbers
+                )));
+                $existingCustomer->save();
                 $existingCustomer->setAttribute('already_exists', true);
-
                 return response()->json($existingCustomer);
             }
         }
@@ -89,6 +107,7 @@ class CustomerController extends Controller
                 'name' => $data['name'] ?? null,
                 'phone' => $normalizedPhone,
                 'phone_normalized' => $normalizedPhone,
+                'phone_numbers' => $normalizedNumbers,
             ]);
         } catch (QueryException $error) {
             if ($normalizedPhone === null) {

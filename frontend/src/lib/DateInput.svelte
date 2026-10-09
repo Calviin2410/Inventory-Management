@@ -82,7 +82,6 @@
 
 		nativePicker.click();
 	}
-
 </script>
 
 <div class:compact class="date-input">
@@ -170,6 +169,22 @@
 		border: 0;
 		opacity: 0;
 		pointer-events: none;
+	}
+	@media (pointer: coarse) {
+		.calendar-button { pointer-events: none; }
+		.native-picker {
+			top: 50%;
+			right: 5px;
+			z-index: 1;
+			width: 36px;
+			height: 34px;
+			transform: translateY(-50%);
+			margin: 0;
+			clip: auto;
+			clip-path: none;
+			pointer-events: auto;
+			cursor: pointer;
+		}
 	}
 	.compact > input[type="text"] { min-width: 145px; min-height: 38px; padding-top: 8px; padding-bottom: 8px; }
 	input:disabled { cursor: not-allowed; opacity: 0.65; }

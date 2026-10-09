@@ -10,7 +10,7 @@
 	let invoiceId = $state("");
 	let customerName = $state("");
 
-	let phone = $state("");
+	let phones = $state([""]);
 
 	const today = new Date().toISOString().slice(0, 10);
 	let rentalStart = $state(today);
@@ -32,8 +32,8 @@
 	const phonePattern = "[0-9]{10,11}";
 	guardUnsaved(() => formDirty);
 
-	function handlePhoneInput(event) {
-		phone = event.currentTarget.value.replace(/\D/g, "").slice(0, 11);
+	function handlePhoneInput(index, event) {
+		phones[index] = event.currentTarget.value.replace(/\D/g, "").slice(0, 11);
 	}
 
 
@@ -70,26 +70,25 @@
 
 	async function findOrCreateCustomer() {
 		const name = customerName.trim();
-		const enteredPhone = phone.trim();
+		const enteredPhones = phones.map((item) => item.trim()).filter(Boolean);
 
-		if (enteredPhone) {
-			const result = await api.getCustomers({
-				phone_exact: enteredPhone,
+		if (enteredPhones.length) {
+			const result = await api.createCustomer({
+				name: name || null,
+				phone: enteredPhones[0],
+				phone_numbers: enteredPhones,
 			});
-			const existingCustomer = result?.data?.[0];
-
-			if (existingCustomer) {
+			if (result?.already_exists) {
 				if (
 					name &&
-					existingCustomer.name?.trim().toLowerCase() !==
+					result.name?.trim().toLowerCase() !==
 						name.toLowerCase()
 				) {
-					matchedCustomer = existingCustomer;
+					matchedCustomer = result;
 					return null;
 				}
-
-				return existingCustomer;
 			}
+			return result;
 		}
 
 		if (name) {
@@ -112,7 +111,8 @@
 
 		const customer = await api.createCustomer({
 			name: name || null,
-			phone: enteredPhone || null,
+			phone: null,
+			phone_numbers: [],
 		});
 
 		if (
@@ -267,20 +267,30 @@
 					/>
 				</label>
 
-				<label>
-					<span>Phone <small>Optional</small></span>
-					<input
-						type="tel"
-						inputmode="numeric"
-						autocomplete="tel"
-						placeholder="e.g. 0123456789"
-						value={phone}
-						oninput={handlePhoneInput}
-						minlength="10"
-						maxlength="11"
-						pattern={phonePattern}
-					/>
-				</label>
+				<div class="phone-fields">
+					<span class="field-label">Phone <small>Optional</small></span>
+					{#each phones as phone, index}
+						<div class="phone-row">
+							<input
+								type="tel"
+								inputmode="numeric"
+								autocomplete={index === 0 ? "tel" : "off"}
+								placeholder="e.g. 0123456789"
+								value={phone}
+								oninput={(event) => handlePhoneInput(index, event)}
+								minlength="10"
+								maxlength="11"
+								pattern={phonePattern}
+								aria-label={`Phone number ${index + 1}`}
+							/>
+							{#if index === phones.length - 1}
+								<button class="phone-add" type="button" aria-label="Add phone number" onclick={() => phones = [...phones, ""]}>+</button>
+							{:else}
+								<button class="phone-remove" type="button" aria-label={`Remove phone number ${index + 1}`} onclick={() => phones = phones.filter((_, phoneIndex) => phoneIndex !== index)}>−</button>
+							{/if}
+						</div>
+					{/each}
+				</div>
 
 				<label class="full-width">
 					<span>
@@ -512,6 +522,12 @@
 		gap: 22px;
 		padding: 25px;
 	}
+	.phone-fields { display: flex; flex-direction: column; gap: 8px; }
+	.field-label { display: flex; align-items: center; gap: 7px; color: #344054; font-size: 13px; font-weight: 700; }
+	.phone-row { display: flex; gap: 8px; }
+	.phone-row input { min-width: 0; }
+	.phone-add, .phone-remove { flex: 0 0 42px; padding: 0; border: 1px solid #ccd4e0; background: #fff; color: #344054; font-size: 22px; line-height: 1; }
+	.phone-add { border-color: #3563e9; background: #3563e9; color: #fff; }
 	label {
 		display: flex;
 		flex-direction: column;

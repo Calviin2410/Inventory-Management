@@ -28,6 +28,7 @@
 	let status = $state("unpaid");
 	let paymentMethod = $state("cash");
 	let paymentDate = $state("");
+	let unpaidRemark = $state("");
 	let invoiceItems = $state([]);
 	let isAdmin = $derived($user?.role === "admin");
 	let formDirty = $state(false);
@@ -57,6 +58,7 @@
 			status = invoice.status ?? "unpaid";
 			paymentMethod = invoice.payment_method ?? "cash";
 			paymentDate = invoice.payment_date ?? "";
+			unpaidRemark = "";
 			invoiceItems = (invoice.items ?? []).map((item) => ({
 				...item,
 				rental_start: item.rental_start ?? "",
@@ -103,12 +105,17 @@
 					status,
 					payment_method: status === "paid" ? paymentMethod : null,
 					payment_date: status === "paid" ? paymentDate : null,
+					unpaid_remark: status === "unpaid" && invoice.status === "paid" ? unpaidRemark.trim() : null,
 					items: invoiceItems.map((item) => ({
 						id: item.id,
 						rental_end: item.rental_end || null,
 					})),
 				}
 				: {
+					status,
+					payment_method: status === "paid" ? paymentMethod : null,
+					payment_date: status === "paid" ? paymentDate : null,
+					unpaid_remark: status === "unpaid" && invoice.status === "paid" ? unpaidRemark.trim() : null,
 					items: invoiceItems.map((item) => ({
 						id: item.id,
 						rental_end: item.rental_end || null,
@@ -202,18 +209,6 @@
 					<DateInput id="issued-date" bind:value={issuedDate} required ariaLabel="Select issued date" />
 				</div>
 
-				<!-- STATUS -->
-
-				<div class="field">
-					<label for="status"> Status </label>
-
-					<select id="status" bind:value={status} required>
-						<option value="unpaid"> Unpaid </option>
-
-						<option value="paid"> Paid </option>
-					</select>
-				</div>
-
 				<div class="field">
 					<label for="total-amount"> Total Amount (RM) </label>
 					<input
@@ -226,21 +221,6 @@
 						required
 					/>
 				</div>
-
-				{#if status === "paid"}
-					<div class="field">
-						<label for="payment-method"> Payment Method </label>
-						<select id="payment-method" bind:value={paymentMethod} required>
-							<option value="cash"> Cash </option>
-							<option value="bank_in"> Bank In </option>
-						</select>
-					</div>
-
-					<div class="field">
-						<label for="payment-date"> Payment Date </label>
-						<DateInput id="payment-date" bind:value={paymentDate} required ariaLabel="Select payment date" />
-					</div>
-				{/if}
 
 				<!-- ADDRESS -->
 
@@ -267,7 +247,36 @@
 						placeholder="Optional notes"
 					></textarea>
 				</div>
-			</div>{:else}<p class="user-edit-note">You can only update rental end dates.</p>{/if}
+			</div>{:else}<p class="user-edit-note">You can update payment details and rental end dates.</p>{/if}
+
+			<div class="form-grid payment-fields">
+				<div class="field">
+					<label for="status">Payment Status</label>
+					<select id="status" bind:value={status} required>
+						<option value="unpaid">Unpaid</option>
+						<option value="paid">Paid</option>
+					</select>
+				</div>
+				{#if status === "paid"}
+					<div class="field">
+						<label for="payment-method">Paid By</label>
+						<select id="payment-method" bind:value={paymentMethod} required>
+							<option value="cash">Cash</option>
+							<option value="bank_in">Bank In</option>
+						</select>
+					</div>
+					<div class="field">
+						<label for="payment-date">Payment Date</label>
+						<DateInput id="payment-date" bind:value={paymentDate} required ariaLabel="Select payment date" />
+					</div>
+				{/if}
+				{#if status === "unpaid" && invoice.status === "paid"}
+					<div class="field full-width">
+						<label for="unpaid-remark">Reason for setting unpaid</label>
+						<textarea id="unpaid-remark" rows="3" bind:value={unpaidRemark} required maxlength="1000"></textarea>
+					</div>
+				{/if}
+			</div>
 
 			<!-- ITEMS -->
 
@@ -276,7 +285,7 @@
 					<div>
 						<h2>Invoice Items</h2>
 
-						<p>Rental start dates cannot be changed. {isAdmin ? "Administrators can update other invoice details." : "You can update rental end dates."}</p>
+						<p>Rental start dates cannot be changed. {isAdmin ? "Administrators can update other invoice details." : "You can update payment details and rental end dates."}</p>
 					</div>
 				</div>
 
@@ -375,6 +384,7 @@
 
 		gap: 20px;
 	}
+	.payment-fields { padding: 20px 0 0; }
 
 	.field {
 		display: flex;

@@ -10,9 +10,11 @@ class Customer extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'phone', 'phone_normalized'];
+    protected $fillable = ['name', 'phone', 'phone_normalized', 'phone_numbers'];
 
     protected $hidden = ['phone_normalized'];
+
+    protected $casts = ['phone_numbers' => 'array'];
 
     public static function normalizePhone(?string $phone): ?string
     {
