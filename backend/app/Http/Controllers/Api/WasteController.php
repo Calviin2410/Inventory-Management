@@ -62,7 +62,7 @@ class WasteController extends Controller
         abort_unless(
             $request->user()?->isAdmin() || (int) $invoice->user_id === (int) $request->user()?->id,
             403,
-            'Only the invoice creator or an administrator can update its waste sale.'
+            'Only the invoice creator or an administrator can update its waste sell.'
         );
 
         $data = $request->validate([
@@ -151,7 +151,7 @@ class WasteController extends Controller
             $invoice->id,
             $invoice->invoice_no,
             ($action === 'waste_sale_recorded' ? 'Recorded' : 'Updated')
-                .' waste sale for invoice '.$invoice->invoice_no,
+                .' waste sell for invoice '.$invoice->invoice_no,
             array_merge($before, $barrelStatusesBefore),
             $after,
         );

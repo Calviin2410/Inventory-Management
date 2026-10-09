@@ -128,7 +128,7 @@ class BarrelController extends Controller
         if ($barrel->status === 'rented') {
             throw ValidationException::withMessages([
                 'status' => [
-                    'A rented barrel cannot be marked available directly. Record the waste sale first.'
+                    'A rented barrel cannot be marked available directly. Record the waste sell first.'
                 ],
             ]);
         }
@@ -141,7 +141,7 @@ class BarrelController extends Controller
     {
         if ($barrel->status === 'rented') {
             throw ValidationException::withMessages([
-                'status' => ['A rented barrel cannot be marked available directly. Record the waste sale first.'],
+                'status' => ['A rented barrel cannot be marked available directly. Record the waste sell first.'],
             ]);
         }
 
