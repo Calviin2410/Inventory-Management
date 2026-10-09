@@ -77,6 +77,9 @@
 
 	function formatChangeValue(key, value, actorName = "") {
 		if (value === null || value === undefined || value === "") return "—";
+		if ((key === "status" || key.endsWith("_status")) && String(value).toLowerCase() === "returning") {
+			return "In Transit";
+		}
 
 		if (["issued_date", "payment_date"].includes(key)) {
 			const dateOnly = String(value).match(/^\d{4}-\d{2}-\d{2}/)?.[0];
@@ -285,7 +288,7 @@
 									<small>{formatRecordLabel(log)}</small>
 								</td>
 								<td class="activity-cell">
-									<span>{log.description}</span>
+									<span>{log.description?.replace(/\breturning\b/gi, "In Transit")}</span>
 									{#if log.old_values || log.new_values}
 										<details>
 											<summary>View changes</summary>

@@ -9,6 +9,7 @@ use App\Models\Customer;
 use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
 
 class InvoiceController extends Controller
@@ -477,8 +478,10 @@ class InvoiceController extends Controller
         /*
          * Create Invoice
          */
+        $barrelStatusesBefore = [];
+        $barrelStatusesAfter = [];
         $invoice = DB::transaction(
-            function () use ($data, $request) {
+            function () use ($data, $request, $barrelIds, &$barrelStatusesBefore, &$barrelStatusesAfter) {
 
                 /*
                  * Generate invoice number:
@@ -491,6 +494,25 @@ class InvoiceController extends Controller
                     ->where('prefix', 'TKS')
                     ->lockForUpdate()
                     ->first();
+
+                // Serialize invoice creation against returns/waste updates, and
+                // recheck availability while holding the barrel row locks.
+                $lockedBarrels = Barrel::whereIn('id', $barrelIds)
+                    ->orderBy('id')
+                    ->lockForUpdate()
+                    ->get();
+                if ($lockedBarrels->count() !== $barrelIds->unique()->count()
+                    || $lockedBarrels->contains(fn ($barrel) => $barrel->status !== 'available')) {
+                    throw ValidationException::withMessages([
+                        'items' => ['One or more selected barrels are no longer available. Refresh and try again.'],
+                    ]);
+                }
+
+                foreach ($lockedBarrels as $barrel) {
+                    $key = 'barrel_'.$barrel->code.'_status';
+                    $barrelStatusesBefore[$key] = $barrel->status;
+                    $barrelStatusesAfter[$key] = 'rented';
+                }
 
                 $invoiceNo =
                     $this->generateNextInvoiceNo();
@@ -554,6 +576,15 @@ class InvoiceController extends Controller
             }
         );
 
+        $invoiceCreatedValues = $invoice->only([
+            'invoice_no',
+            'customer_id',
+            'vehicle_id',
+            'issued_date',
+            'status',
+        ]);
+        $invoiceCreatedValues = array_merge($invoiceCreatedValues, $barrelStatusesAfter);
+
         ActivityLog::record(
             $request,
             'created',
@@ -561,14 +592,8 @@ class InvoiceController extends Controller
             $invoice->id,
             $invoice->invoice_no,
             'Created invoice '.$invoice->invoice_no,
-            null,
-            $invoice->only([
-                'invoice_no',
-                'customer_id',
-                'vehicle_id',
-                'issued_date',
-                'status',
-            ])
+            $barrelStatusesBefore,
+            $invoiceCreatedValues
         );
 
 

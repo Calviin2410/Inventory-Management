@@ -77,7 +77,16 @@ class WasteController extends Controller
             'waste_sale_recorded_by',
         ]);
 
-        $invoice = DB::transaction(function () use ($data, $invoice, $request) {
+        $barrelStatusesBefore = [];
+        $barrelStatusesAfter = [];
+
+        $invoice = DB::transaction(function () use (
+            $data,
+            $invoice,
+            $request,
+            &$barrelStatusesBefore,
+            &$barrelStatusesAfter
+        ) {
             $lockedInvoice = Invoice::query()->lockForUpdate()->findOrFail($invoice->id);
             $lockedInvoice->update([
                 'waste_sale_amount' => $data['amount'],
@@ -98,13 +107,27 @@ class WasteController extends Controller
                 })
                 ->pluck('barrel_id');
 
-            Barrel::query()
+            $activeBarrels = Barrel::query()
                 ->whereIn('id', $activeBarrelIds)
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get();
+
+            $rentedBarrels = $activeBarrels->where('status', 'rented');
+            foreach ($rentedBarrels as $barrel) {
+                $key = 'barrel_'.$barrel->code.'_status';
+                $barrelStatusesBefore[$key] = $barrel->status;
+                // `returning` is the persisted value displayed as “In Transit”.
+                $barrelStatusesAfter[$key] = 'returning';
+            }
+
+            Barrel::query()
+                ->whereIn('id', $rentedBarrels->modelKeys())
                 ->where('status', 'rented')
                 ->update([
-					'status' => 'returning',
-					'current_customer_id' => $lockedInvoice->customer_id,
-				]);
+                    'status' => 'returning',
+                    'current_customer_id' => $lockedInvoice->customer_id,
+                ]);
 
             return $lockedInvoice->fresh();
         });
@@ -112,6 +135,14 @@ class WasteController extends Controller
         $action = $before['waste_sale_amount'] === null
             ? 'waste_sale_recorded'
             : 'waste_sale_updated';
+
+        $after = $invoice->only([
+            'waste_sale_amount',
+            'waste_sale_remark',
+            'waste_sale_recorded_at',
+            'waste_sale_recorded_by',
+        ]);
+        $after = array_merge($after, $barrelStatusesAfter);
 
         ActivityLog::record(
             $request,
@@ -121,13 +152,8 @@ class WasteController extends Controller
             $invoice->invoice_no,
             ($action === 'waste_sale_recorded' ? 'Recorded' : 'Updated')
                 .' waste sale for invoice '.$invoice->invoice_no,
-            $before,
-            $invoice->only([
-                'waste_sale_amount',
-                'waste_sale_remark',
-                'waste_sale_recorded_at',
-                'waste_sale_recorded_by',
-            ]),
+            array_merge($before, $barrelStatusesBefore),
+            $after,
         );
 
         return response()->json(

@@ -120,56 +120,32 @@ class BarrelController extends Controller
         $data = $request->validate([
             'status' => [
                 'required',
-                'in:available,rented,returning'
+                // Rented/in-transit states are assigned by invoice and waste-sale flows.
+                'in:available'
             ],
         ]);
 
-        if (
-            $data['status'] === 'rented'
-            &&
-            !$barrel->current_customer_id
-        ) {
+        if ($barrel->status === 'rented') {
             throw ValidationException::withMessages([
                 'status' => [
-                    'A barrel can only be marked rented through an invoice.'
+                    'A rented barrel cannot be marked available directly. Record the waste sale first.'
                 ],
             ]);
         }
 
-        if ($data['status'] === 'available') {
-            return $this->markReturned($request, $barrel);
-        }
-
-        $before = $barrel->only(['status', 'current_customer_id']);
-
-        $barrel->update([
-            'status' => $data['status']
-        ]);
-
-        ActivityLog::record(
-            $request,
-            'updated',
-            'Barrel',
-            $barrel->id,
-            $barrel->code,
-            'Changed barrel '.$barrel->code.' status from '
-                .$before['status'].' to '.$data['status'],
-            $before,
-            $barrel->fresh()->only(['status', 'current_customer_id'])
-        );
-
-        return response()->json(
-            $barrel
-                ->fresh()
-                ->load('currentCustomer')
-        );
+        return $this->markReturned($request, $barrel);
     }
 
 
     public function markReturned(Request $request, Barrel $barrel)
     {
-        // Returning a barrel is idempotent. A repeated click or network retry must
-        // not create an "available -> available" activity log entry.
+        if ($barrel->status === 'rented') {
+            throw ValidationException::withMessages([
+                'status' => ['A rented barrel cannot be marked available directly. Record the waste sale first.'],
+            ]);
+        }
+
+        // Repeated return requests should not create duplicate activity entries.
         if (
             $barrel->status === 'available'
             && $barrel->current_customer_id === null

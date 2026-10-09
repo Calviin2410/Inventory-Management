@@ -359,9 +359,9 @@
 					<DateInput bind:value={rentalStart} required ariaLabel="Select rental start date" />
 				</label>
 				<label>
-					<span>Rental end <b>Required</b></span>
+					<span>Rental end <small>Optional</small></span>
 
-					<DateInput bind:value={rentalEnd} min={rentalStart} required ariaLabel="Select rental end date" />
+					<DateInput bind:value={rentalEnd} min={rentalStart} ariaLabel="Select rental end date" />
 				</label>
 				<label>
 					<span>Total amount (RM) <b>Required</b></span>

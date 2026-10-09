@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Customer;
 use App\Models\Barrel;
+use App\Models\ActivityLog;
 use App\Models\Invoice;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -78,6 +79,12 @@ class WasteSaleTest extends TestCase
             'subject_id' => $invoice->id,
             'action' => 'waste_sale_recorded',
         ]);
+        $recordedLog = ActivityLog::query()
+            ->where('subject_id', $invoice->id)
+            ->where('action', 'waste_sale_recorded')
+            ->firstOrFail();
+        $this->assertSame('rented', $recordedLog->old_values['barrel_WASTE-001_status']);
+        $this->assertSame('returning', $recordedLog->new_values['barrel_WASTE-001_status']);
         $this->assertDatabaseHas('barrels', [
             'id' => $barrel->id,
             'status' => 'returning',

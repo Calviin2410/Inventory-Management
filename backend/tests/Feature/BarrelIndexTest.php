@@ -49,7 +49,7 @@ class BarrelIndexTest extends TestCase
         );
     }
 
-    public function test_available_barrel_does_not_show_a_historical_invoice(): void
+    public function test_rented_barrel_cannot_be_manually_set_available(): void
     {
         Sanctum::actingAs(User::factory()->create(['role' => 'normal_staff']));
         $customer = Customer::create(['name' => 'Flow Customer']);
@@ -71,15 +71,15 @@ class BarrelIndexTest extends TestCase
 
         $this->patchJson("/api/barrels/{$barrel->id}", [
             'status' => 'available',
-        ])->assertOk();
+        ])->assertUnprocessable()->assertJsonValidationErrors('status');
 
-        $this->assertNotNull($item->fresh()->rental_end);
+        $this->assertNull($item->fresh()->rental_end);
         $this->getJson('/api/barrels?search=FLOW-001')
             ->assertOk()
-            ->assertJsonPath('data.0.status', 'available')
-            ->assertJsonPath('data.0.current_customer_id', null)
-            ->assertJsonPath('data.0.invoice_id', null)
-            ->assertJsonPath('data.0.invoice_no', null);
+            ->assertJsonPath('data.0.status', 'rented')
+            ->assertJsonPath('data.0.current_customer_id', $customer->id)
+            ->assertJsonPath('data.0.invoice_id', $invoice->id)
+            ->assertJsonPath('data.0.invoice_no', 'TKS-FLOW-001');
     }
 
     public function test_rented_barrel_shows_latest_invoice_even_with_planned_end_date(): void
@@ -109,6 +109,41 @@ class BarrelIndexTest extends TestCase
             ->assertJsonPath('data.0.invoice_id', $invoice->id)
             ->assertJsonPath('data.0.invoice_no', 'TKS-FLOW-002')
             ->assertJsonPath('data.0.current_customer.name', 'Current Customer');
+    }
+
+    public function test_available_barrel_cannot_be_manually_set_in_transit(): void
+    {
+        Sanctum::actingAs(User::factory()->create(['role' => 'normal_staff']));
+        $barrel = Barrel::create([
+            'code' => 'FLOW-TRANSIT-GUARD',
+            'status' => 'available',
+        ]);
+
+        $this->patchJson("/api/barrels/{$barrel->id}", [
+            'status' => 'returning',
+        ])->assertUnprocessable()->assertJsonValidationErrors('status');
+
+        $this->assertDatabaseHas('barrels', [
+            'id' => $barrel->id,
+            'status' => 'available',
+        ]);
+    }
+
+    public function test_in_transit_barrel_can_be_marked_available_but_not_rented(): void
+    {
+        Sanctum::actingAs(User::factory()->create(['role' => 'normal_staff']));
+        $barrel = Barrel::create([
+            'code' => 'FLOW-TRANSIT-AVAILABLE',
+            'status' => 'returning',
+        ]);
+
+        $this->patchJson("/api/barrels/{$barrel->id}", [
+            'status' => 'rented',
+        ])->assertUnprocessable()->assertJsonValidationErrors('status');
+
+        $this->patchJson("/api/barrels/{$barrel->id}", [
+            'status' => 'available',
+        ])->assertOk()->assertJsonPath('status', 'available');
     }
 
 	public function test_in_transit_barrel_falls_back_to_latest_invoice_customer(): void

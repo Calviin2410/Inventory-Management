@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Barrel;
+use App\Models\ActivityLog;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\User;
@@ -55,6 +56,17 @@ class InvoiceNumberingTest extends TestCase
                 'rental_start' => '2026-10-09',
             ]],
         ])->assertCreated()->assertJsonPath('invoice_no', 'TKS00002');
+
+        $this->assertDatabaseHas('barrels', [
+            'id' => $barrel->id,
+            'status' => 'rented',
+        ]);
+        $createdLog = ActivityLog::query()
+            ->where('subject_label', 'TKS00002')
+            ->where('action', 'created')
+            ->firstOrFail();
+        $this->assertSame('available', $createdLog->old_values['barrel_NUM-001_status']);
+        $this->assertSame('rented', $createdLog->new_values['barrel_NUM-001_status']);
 
         $this->getJson('/api/invoices-next-number')
             ->assertOk()

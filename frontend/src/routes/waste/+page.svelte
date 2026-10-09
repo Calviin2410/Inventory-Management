@@ -39,7 +39,7 @@
 			totalInvoices = result?.total ?? 0;
 			totalAmountReceived = result?.total_amount_received ?? 0;
 		} catch (error) {
-			errorMessage = error?.message || "Unable to load waste sales.";
+			errorMessage = error?.message || "Unable to load waste sell.";
 		} finally {
 			loading = false;
 		}
@@ -61,7 +61,7 @@
 <main class="app-page">
 	<header class="page-heading">
 		<div>
-			<p class="eyebrow">WASTE SALES</p>
+			<p class="eyebrow">WASTE SELL</p>
 			<h1>Waste</h1>
 			<p>Record money received when collected waste is sold.</p>
 		</div>
@@ -129,7 +129,7 @@
 
 	<section
 		class="amount-summary"
-		aria-label="Total waste sale amount received"
+		aria-label="Total waste sell amount received"
 	>
 		<div class="amount-icon">RM</div>
 		<div>
@@ -198,7 +198,15 @@
 									>{invoice.waste_sale_recorded_by?.name ||
 										"—"}</td
 								>
-								<td>{#if canManageInvoice(invoice)}<button class="btn update-sale-button" type="button" onclick={() => saleInvoice = invoice}>UpdateSell</button>{:else}—{/if}</td>
+								<td
+									>{#if canManageInvoice(invoice)}<button
+											class="btn update-sale-button"
+											type="button"
+											onclick={() =>
+												(saleInvoice = invoice)}
+											>UpdateSell</button
+										>{:else}—{/if}</td
+								>
 							</tr>
 						{/each}
 					</tbody>
@@ -233,9 +241,11 @@
 {#if saleInvoice}
 	<WasteSaleDialog
 		invoice={saleInvoice}
-		oncancel={() => saleInvoice = null}
+		oncancel={() => (saleInvoice = null)}
 		onsaved={(updated) => {
-			invoices = invoices.map((invoice) => invoice.id === updated.id ? updated : invoice);
+			invoices = invoices.map((invoice) =>
+				invoice.id === updated.id ? updated : invoice,
+			);
 			saleInvoice = null;
 			loadWasteSales(currentPage);
 		}}
@@ -249,10 +259,9 @@
 	}
 	.filter-grid {
 		display: grid;
-		grid-template-columns: minmax(260px, 1fr) minmax(175px, 220px) minmax(
-				175px,
-				220px
-			) auto;
+		grid-template-columns:
+			minmax(260px, 1fr) minmax(175px, 220px) minmax(175px, 220px)
+			auto;
 		align-items: end;
 		gap: 12px;
 	}

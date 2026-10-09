@@ -502,9 +502,11 @@
 			style:--menu-top={`${actionMenuPosition.top}px`}
 			style:--menu-left={`${actionMenuPosition.left}px`}
 		>
-			<button type="button" disabled={updatingBarrelId === menuBarrel.id} onclick={() => handleStatusUpdate(menuBarrel, "available")}>Set Available</button>
-			<button type="button" disabled={updatingBarrelId === menuBarrel.id} onclick={() => handleStatusUpdate(menuBarrel, "rented")}>Set Rented</button>
-			<button type="button" disabled={updatingBarrelId === menuBarrel.id} onclick={() => handleStatusUpdate(menuBarrel, "returning")}>Set In Transit</button>
+			{#if menuBarrel.status === "returning"}
+				<button type="button" disabled={updatingBarrelId === menuBarrel.id} onclick={() => handleStatusUpdate(menuBarrel, "available")}>Set Available</button>
+			{:else if !isAdmin}
+				<span class="menu-empty">No actions available</span>
+			{/if}
 			{#if isAdmin}
 				<div class="menu-divider"></div>
 				<button type="button" class="delete-action" disabled={menuBarrel.status === "rented"} onclick={() => requestBarrelDeletion(menuBarrel)}>Delete Barrel</button>
@@ -1201,6 +1203,13 @@
 		font-weight: 500;
 
 		cursor: pointer;
+	}
+
+	.menu-empty {
+		display: block;
+		padding: 10px 14px;
+		color: #7a8496;
+		font-size: 13px;
 	}
 
 	.dropdown-menu button:hover {
