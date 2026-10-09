@@ -1,5 +1,5 @@
 <script>
-	import { onMount } from "svelte";
+	import { onMount, tick } from "svelte";
 	import { api } from "$lib/api.js";
 	import Nav from "$lib/Nav.svelte";
 	import ConfirmDialog from "$lib/ConfirmDialog.svelte";
@@ -20,6 +20,7 @@
 
 	let openMenuId = $state(null);
 	let actionMenuPosition = $state({ top: 0, left: 0 });
+	let actionMenuElement = $state(null);
 	let selectedBarrel = $state(null);
 	let deletingBarrel = $state(false);
 	let deleteError = $state("");
@@ -56,29 +57,34 @@
 		loadBarrels(1);
 	}
 
-	function toggleActionMenu(barrelId, event) {
+	async function toggleActionMenu(barrelId, event) {
 		if (openMenuId === barrelId) {
 			openMenuId = null;
 			return;
 		}
 
-		const rect = event.currentTarget.getBoundingClientRect();
-		const width = 190;
-		const height = isAdmin ? 190 : 146;
+		const anchorRect = event.currentTarget.getBoundingClientRect();
+		openMenuId = barrelId;
+		await tick();
+
+		const menuRect = actionMenuElement?.getBoundingClientRect();
+		if (!menuRect || openMenuId !== barrelId) return;
+
+		const width = menuRect.width;
+		const height = menuRect.height;
 		const gap = 8;
 		const padding = 8;
-		const fitsBelow = rect.bottom + gap + height <= window.innerHeight - padding;
+		const fitsBelow = anchorRect.bottom + gap + height <= window.innerHeight - padding;
 
 		actionMenuPosition = {
 			top: fitsBelow
-				? rect.bottom + gap
-				: Math.max(padding, rect.top - height - gap),
+				? anchorRect.bottom + gap
+				: Math.max(padding, anchorRect.top - height - gap),
 			left: Math.min(
-				Math.max(padding, rect.right - width),
+				Math.max(padding, anchorRect.right - width),
 				window.innerWidth - width - padding,
 			),
 		};
-		openMenuId = barrelId;
 	}
 
 	// =========================
@@ -498,6 +504,7 @@
 
 	{#if menuBarrel}
 		<div
+			bind:this={actionMenuElement}
 			class="dropdown-menu floating-action-menu"
 			style:--menu-top={`${actionMenuPosition.top}px`}
 			style:--menu-left={`${actionMenuPosition.left}px`}
