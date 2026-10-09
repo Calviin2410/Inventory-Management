@@ -30,8 +30,8 @@
 		password_reset: "Password reset",
 		settled: "Settled",
 		reopened: "Reopened",
-		waste_sale_recorded: "Waste sale recorded",
-		waste_sale_updated: "Waste sale updated",
+		waste_sell_recorded: "Waste sell recorded",
+		waste_sell_updated: "Waste sell updated",
 	};
 
 	const actionOptions = [
@@ -41,8 +41,8 @@
 		{ value: "returned", label: "Returned" },
 		{ value: "deleted", label: "Deleted" },
 		{ value: "password_reset", label: "Password reset" },
-		{ value: "waste_sale_recorded", label: "Waste sale recorded" },
-		{ value: "waste_sale_updated", label: "Waste sale updated" },
+		{ value: "waste_sale_recorded", label: "Waste sell recorded" },
+		{ value: "waste_sale_updated", label: "Waste sell updated" },
 	];
 
 	const recordTypeOptions = [
@@ -77,9 +77,6 @@
 
 	function formatChangeValue(key, value, actorName = "") {
 		if (value === null || value === undefined || value === "") return "—";
-		if ((key === "status" || key.endsWith("_status")) && String(value).toLowerCase() === "returning") {
-			return "In Transit";
-		}
 
 		if (["issued_date", "payment_date"].includes(key)) {
 			const dateOnly = String(value).match(/^\d{4}-\d{2}-\d{2}/)?.[0];
@@ -106,10 +103,7 @@
 	function formatRecordLabel(log) {
 		const label = log.subject_label || `#${log.subject_id}`;
 
-		if (
-			log.subject_type === "Vehicle" &&
-			log.subject_id
-		) {
+		if (log.subject_type === "Vehicle" && log.subject_id) {
 			return `${label} (ID: ${log.subject_id})`;
 		}
 
@@ -234,7 +228,8 @@
 		<button class="btn" type="button" onclick={() => loadLogs(1)}
 			>Search</button
 		>
-		<button class="btn" type="button" onclick={clearFilters}>Refresh</button>
+		<button class="btn" type="button" onclick={clearFilters}>Refresh</button
+		>
 	</section>
 
 	<div class="count">
@@ -288,7 +283,7 @@
 									<small>{formatRecordLabel(log)}</small>
 								</td>
 								<td class="activity-cell">
-									<span>{log.description?.replace(/\breturning\b/gi, "In Transit")}</span>
+									<span>{log.description}</span>
 									{#if log.old_values || log.new_values}
 										<details>
 											<summary>View changes</summary>
@@ -342,10 +337,12 @@
 <style>
 	.filter-card {
 		display: grid;
-		grid-template-columns: minmax(240px, 1fr) repeat(2, minmax(145px, auto)) repeat(
+		grid-template-columns:
+			minmax(240px, 1fr) repeat(2, minmax(145px, auto)) repeat(
 				2,
 				minmax(145px, auto)
-			) auto auto;
+			)
+			auto auto;
 		align-items: end;
 		gap: 10px;
 		margin-bottom: 12px;
