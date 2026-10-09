@@ -25,12 +25,12 @@ class WasteSaleTest extends TestCase
         ]);
     }
 
-    public function test_all_authenticated_users_can_view_waste_sales(): void
+    public function test_all_authenticated_users_can_view_waste_sells(): void
     {
         $invoice = $this->invoice();
         $invoice->update([
-            'waste_sale_amount' => 50,
-            'waste_sale_recorded_at' => '2026-10-08',
+            'waste_sell_amount' => 50,
+            'waste_sell_recorded_at' => '2026-10-08',
         ]);
 
         foreach (['admin', 'normal_staff'] as $role) {
@@ -44,7 +44,7 @@ class WasteSaleTest extends TestCase
         }
     }
 
-    public function test_staff_can_record_and_update_a_waste_sale(): void
+    public function test_staff_can_record_and_update_a_waste_sell(): void
     {
         $staff = User::factory()->create(['role' => 'normal_staff']);
         Sanctum::actingAs($staff);
@@ -61,9 +61,9 @@ class WasteSaleTest extends TestCase
             'amount' => 125.50,
             'remark' => 'Sold recyclable material.',
         ])->assertOk()->assertJsonFragment([
-            'waste_sale_amount' => '125.50',
-            'waste_sale_remark' => 'Sold recyclable material.',
-        ])->assertJsonPath('waste_sale_recorded_by.id', $staff->id)
+            'waste_sell_amount' => '125.50',
+            'waste_sell_remark' => 'Sold recyclable material.',
+        ])->assertJsonPath('waste_sell_recorded_by.id', $staff->id)
             ->assertJsonPath('customer.name', 'Waste Customer')
             ->assertJsonPath('created_by.name', $staff->name);
 
@@ -71,17 +71,17 @@ class WasteSaleTest extends TestCase
             'amount' => 150,
             'remark' => null,
         ])->assertOk()->assertJsonFragment([
-            'waste_sale_amount' => '150.00',
-            'waste_sale_remark' => null,
+            'waste_sell_amount' => '150.00',
+            'waste_sell_remark' => null,
         ]);
 
         $this->assertDatabaseHas('activity_logs', [
             'subject_id' => $invoice->id,
-            'action' => 'waste_sale_recorded',
+            'action' => 'waste_sell_recorded',
         ]);
         $recordedLog = ActivityLog::query()
             ->where('subject_id', $invoice->id)
-            ->where('action', 'waste_sale_recorded')
+            ->where('action', 'waste_sell_recorded')
             ->firstOrFail();
         $this->assertSame('rented', $recordedLog->old_values['barrel_WASTE-001_status']);
         $this->assertSame('returning', $recordedLog->new_values['barrel_WASTE-001_status']);
@@ -92,7 +92,7 @@ class WasteSaleTest extends TestCase
         ]);
         $this->assertDatabaseHas('activity_logs', [
             'subject_id' => $invoice->id,
-            'action' => 'waste_sale_updated',
+            'action' => 'waste_sell_updated',
         ]);
     }
 
@@ -115,8 +115,8 @@ class WasteSaleTest extends TestCase
         Sanctum::actingAs(User::factory()->create(['role' => 'normal_staff']));
         $included = $this->invoice();
         $included->update([
-            'waste_sale_amount' => 88,
-            'waste_sale_recorded_at' => '2026-10-08',
+            'waste_sell_amount' => 88,
+            'waste_sell_recorded_at' => '2026-10-08',
         ]);
         $excluded = $this->invoice();
 

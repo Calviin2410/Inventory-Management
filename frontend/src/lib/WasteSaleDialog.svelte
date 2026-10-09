@@ -9,8 +9,8 @@
 	let errorMessage = $state("");
 
 	onMount(() => {
-		amount = invoice?.waste_sale_amount ?? "";
-		remark = invoice?.waste_sale_remark ?? "";
+		amount = invoice?.waste_sell_amount ?? "";
+		remark = invoice?.waste_sell_remark ?? "";
 	});
 
 	async function submit() {
@@ -48,7 +48,7 @@
 		}}
 	>
 		<h2>
-			{invoice?.waste_sale_amount === null
+			{invoice?.waste_sell_amount === null
 				? "Record Waste Sell"
 				: "Update Waste Sell"}
 		</h2>

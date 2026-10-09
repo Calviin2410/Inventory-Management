@@ -15,9 +15,13 @@
 	let errorMessage = $state("");
 	let exporting = $state(false);
 	let saleDialogOpen = $state(false);
-	let settlementView = $derived(page.url.searchParams.get("source") === "settlement");
+	let settlementView = $derived(
+		page.url.searchParams.get("source") === "settlement",
+	);
 	let canManageInvoice = $derived(
-		invoice && ($user?.role === "admin" || Number(invoice.user_id) === Number($user?.id)),
+		invoice &&
+			($user?.role === "admin" ||
+				Number(invoice.user_id) === Number($user?.id)),
 	);
 
 	function formatAmount(value) {
@@ -93,7 +97,8 @@
 
 			openInvoicePrintWindow(printWindow, fullInvoice, {
 				settledStamp:
-					settlementView && fullInvoice.settlement_status === "settled",
+					settlementView &&
+					fullInvoice.settlement_status === "settled",
 			});
 		} catch (error) {
 			printWindow.close();
@@ -115,7 +120,10 @@
 <main class="app-page">
 	<div class="page-heading">
 		<div>
-			<a class="back-link" href={settlementView ? "/settlement" : "/invoices"}>
+			<a
+				class="back-link"
+				href={settlementView ? "/settlement" : "/invoices"}
+			>
 				← Back to {settlementView ? "settlement" : "invoices"}
 			</a>
 
@@ -132,7 +140,7 @@
 						class="btn sale-button"
 						onclick={() => (saleDialogOpen = true)}
 					>
-						{invoice.waste_sale_amount === null
+						{invoice.waste_sell_amount === null
 							? "Sell Waste"
 							: "UpdateSell"}
 					</button>
@@ -211,7 +219,9 @@
 					<span class="label"> Phone </span>
 
 					<p>
-						{invoice.customer?.phone_numbers?.join(", ") || invoice.customer?.phone || "-"}
+						{invoice.customer?.phone_numbers?.join(", ") ||
+							invoice.customer?.phone ||
+							"-"}
 					</p>
 				</div>
 
@@ -299,13 +309,19 @@
 					<span class="label"> Paid By </span>
 					<p class="strong">
 						{invoice.status === "paid"
-							? invoice.payment_method === "bank_in" ? "Bank In" : "Cash"
+							? invoice.payment_method === "bank_in"
+								? "Bank In"
+								: "Cash"
 							: "—"}
 					</p>
 				</div>
 				<div class="detail-item">
 					<span class="label"> Payment Date </span>
-					<p>{invoice.status === "paid" ? formatDate(invoice.payment_date) : "—"}</p>
+					<p>
+						{invoice.status === "paid"
+							? formatDate(invoice.payment_date)
+							: "—"}
+					</p>
 				</div>
 				<div class="detail-item">
 					<span class="label"> Status </span>
@@ -333,8 +349,13 @@
 
 				<div class="signature-area">
 					{#if settlementView && invoice.settlement_status === "settled"}
-						<div class="settlement-proof" aria-label="Settlement confirmation">
-							<div class="settlement-remark">{invoice.settlement_remark || "—"}</div>
+						<div
+							class="settlement-proof"
+							aria-label="Settlement confirmation"
+						>
+							<div class="settlement-remark">
+								{invoice.settlement_remark || "—"}
+							</div>
 							<div class="settled-stamp">Settled</div>
 						</div>
 					{/if}
@@ -469,12 +490,18 @@
 		font-weight: 600;
 	}
 
-	.status-badge.paid { background: #ccfbf1; color: #0f766e; }
-	.status-badge.unpaid { background: #fee2e2; color: #dc2626; }
+	.status-badge.paid {
+		background: #ccfbf1;
+		color: #0f766e;
+	}
+	.status-badge.unpaid {
+		background: #fee2e2;
+		color: #dc2626;
+	}
 
 	.invoice-bottom {
 		display: grid;
-		grid-template-columns: minmax(0, 1.8fr) minmax(210px, .8fr);
+		grid-template-columns: minmax(0, 1.8fr) minmax(210px, 0.8fr);
 		align-items: end;
 		gap: 40px;
 		margin-top: 32px;
@@ -512,11 +539,11 @@
 		font-size: 14px;
 		font-weight: 800;
 		line-height: 1;
-		letter-spacing: .03em;
+		letter-spacing: 0.03em;
 		text-align: center;
 		text-transform: uppercase;
 		transform: rotate(-12deg);
-		opacity: .82;
+		opacity: 0.82;
 	}
 
 	.signature-area {

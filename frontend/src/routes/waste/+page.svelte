@@ -183,19 +183,19 @@
 								<td>{formatDate(invoice.issued_date)}</td>
 								<td class="amount-cell"
 									>{formatAmount(
-										invoice.waste_sale_amount,
+										invoice.waste_sell_amount,
 									)}</td
 								>
 								<td
 									>{formatDate(
-										invoice.waste_sale_recorded_at,
+										invoice.waste_sell_recorded_at,
 									)}</td
 								>
 								<td class="remark-cell"
-									>{invoice.waste_sale_remark || "—"}</td
+									>{invoice.waste_sell_remark || "—"}</td
 								>
 								<td
-									>{invoice.waste_sale_recorded_by?.name ||
+									>{invoice.waste_sell_recorded_by?.name ||
 										"—"}</td
 								>
 								<td

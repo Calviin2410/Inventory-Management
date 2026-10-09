@@ -24,7 +24,7 @@ class WasteController extends Controller
                 'items.barrel:id,code',
                 'wasteSaleRecordedBy:id,name',
             ])
-            ->whereNotNull('waste_sale_amount')
+            ->whereNotNull('waste_sell_amount')
             ->latest('issued_date')
             ->latest('id');
 
@@ -39,16 +39,16 @@ class WasteController extends Controller
         }
 
         if (! empty($data['from_date'])) {
-            $query->whereDate('waste_sale_recorded_at', '>=', $data['from_date']);
+            $query->whereDate('waste_sell_recorded_at', '>=', $data['from_date']);
         }
 
         if (! empty($data['to_date'])) {
-            $query->whereDate('waste_sale_recorded_at', '<=', $data['to_date']);
+            $query->whereDate('waste_sell_recorded_at', '<=', $data['to_date']);
         }
 
         $totalAmountReceived = (clone $query)
             ->reorder()
-            ->sum('waste_sale_amount');
+            ->sum('waste_sell_amount');
         $sales = $query->paginate(20);
 
         return response()->json(array_merge(
@@ -71,10 +71,10 @@ class WasteController extends Controller
         ]);
 
         $before = $invoice->only([
-            'waste_sale_amount',
-            'waste_sale_remark',
-            'waste_sale_recorded_at',
-            'waste_sale_recorded_by',
+            'waste_sell_amount',
+            'waste_sell_remark',
+            'waste_sell_recorded_at',
+            'waste_sell_recorded_by',
         ]);
 
         $barrelStatusesBefore = [];
@@ -89,12 +89,12 @@ class WasteController extends Controller
         ) {
             $lockedInvoice = Invoice::query()->lockForUpdate()->findOrFail($invoice->id);
             $lockedInvoice->update([
-                'waste_sale_amount' => $data['amount'],
-                'waste_sale_remark' => filled($data['remark'] ?? null)
+                'waste_sell_amount' => $data['amount'],
+                'waste_sell_remark' => filled($data['remark'] ?? null)
                     ? trim($data['remark'])
                     : null,
-                'waste_sale_recorded_at' => now(),
-                'waste_sale_recorded_by' => $request->user()->id,
+                'waste_sell_recorded_at' => now(),
+                'waste_sell_recorded_by' => $request->user()->id,
             ]);
 
             $activeBarrelIds = $lockedInvoice->items()
@@ -132,15 +132,15 @@ class WasteController extends Controller
             return $lockedInvoice->fresh();
         });
 
-        $action = $before['waste_sale_amount'] === null
-            ? 'waste_sale_recorded'
-            : 'waste_sale_updated';
+        $action = $before['waste_sell_amount'] === null
+            ? 'waste_sell_recorded'
+            : 'waste_sell_updated';
 
         $after = $invoice->only([
-            'waste_sale_amount',
-            'waste_sale_remark',
-            'waste_sale_recorded_at',
-            'waste_sale_recorded_by',
+            'waste_sell_amount',
+            'waste_sell_remark',
+            'waste_sell_recorded_at',
+            'waste_sell_recorded_by',
         ]);
         $after = array_merge($after, $barrelStatusesAfter);
 
@@ -150,7 +150,7 @@ class WasteController extends Controller
             'Invoice',
             $invoice->id,
             $invoice->invoice_no,
-            ($action === 'waste_sale_recorded' ? 'Recorded' : 'Updated')
+            ($action === 'waste_sell_recorded' ? 'Recorded' : 'Updated')
                 .' waste sell for invoice '.$invoice->invoice_no,
             array_merge($before, $barrelStatusesBefore),
             $after,

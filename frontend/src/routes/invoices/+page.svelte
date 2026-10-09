@@ -57,16 +57,27 @@
 		{ key: "createdBy", label: "Created By" },
 		{ key: "status", label: "Status" },
 	];
-	let visibleColumns = $state(Object.fromEntries(invoiceColumns.map((column) => [column.key, true])));
-	let allColumnsVisible = $derived(invoiceColumns.every((column) => visibleColumns[column.key]));
+	let visibleColumns = $state(
+		Object.fromEntries(invoiceColumns.map((column) => [column.key, true])),
+	);
+	let allColumnsVisible = $derived(
+		invoiceColumns.every((column) => visibleColumns[column.key]),
+	);
 
 	function toggleColumn(key) {
-		if (visibleColumns[key] && invoiceColumns.filter((column) => visibleColumns[column.key]).length === 1) return;
+		if (
+			visibleColumns[key] &&
+			invoiceColumns.filter((column) => visibleColumns[column.key])
+				.length === 1
+		)
+			return;
 		visibleColumns = { ...visibleColumns, [key]: !visibleColumns[key] };
 	}
 
 	function toggleAllColumns() {
-		visibleColumns = Object.fromEntries(invoiceColumns.map((column) => [column.key, true]));
+		visibleColumns = Object.fromEntries(
+			invoiceColumns.map((column) => [column.key, true]),
+		);
 	}
 
 	function formatAmount(value) {
@@ -441,15 +452,26 @@
 			</div>
 		</details>
 		<details class="column-picker">
-			<summary>Columns <span class="select-chevron" aria-hidden="true"></span></summary>
+			<summary
+				>Columns <span class="select-chevron" aria-hidden="true"
+				></span></summary
+			>
 			<div class="column-menu">
 				<label class="all-columns">
-					<input type="checkbox" checked={allColumnsVisible} onchange={toggleAllColumns} />
+					<input
+						type="checkbox"
+						checked={allColumnsVisible}
+						onchange={toggleAllColumns}
+					/>
 					<span>All</span>
 				</label>
 				{#each invoiceColumns as column}
 					<label>
-						<input type="checkbox" checked={visibleColumns[column.key]} onchange={() => toggleColumn(column.key)} />
+						<input
+							type="checkbox"
+							checked={visibleColumns[column.key]}
+							onchange={() => toggleColumn(column.key)}
+						/>
 						<span>{column.label}</span>
 					</label>
 				{/each}
@@ -487,24 +509,56 @@
 					<thead>
 						<tr>
 							{#if visibleColumns.invoiceNumber}
-								<th aria-sort={invoiceSortDirection === "asc" ? "ascending" : invoiceSortDirection === "desc" ? "descending" : "none"}>
-									<button class="sort-header" type="button" onclick={toggleInvoiceNumberSort} aria-label="Sort by invoice number">
+								<th
+									aria-sort={invoiceSortDirection === "asc"
+										? "ascending"
+										: invoiceSortDirection === "desc"
+											? "descending"
+											: "none"}
+								>
+									<button
+										class="sort-header"
+										type="button"
+										onclick={toggleInvoiceNumberSort}
+										aria-label="Sort by invoice number"
+									>
 										Invoice Number
-										<span aria-hidden="true">{invoiceSortDirection === "asc" ? "↑" : invoiceSortDirection === "desc" ? "↓" : "↕"}</span>
+										<span aria-hidden="true"
+											>{invoiceSortDirection === "asc"
+												? "↑"
+												: invoiceSortDirection ===
+													  "desc"
+													? "↓"
+													: "↕"}</span
+										>
 									</button>
 								</th>
 							{/if}
 
-							{#if visibleColumns.customer}<th> Customer </th>{/if}
+							{#if visibleColumns.customer}<th>
+									Customer
+								</th>{/if}
 
-							{#if visibleColumns.barrelCode}<th> Barrel Code </th>{/if}
+							{#if visibleColumns.barrelCode}<th>
+									Barrel Code
+								</th>{/if}
 
-							{#if visibleColumns.invoiceDate}<th> Invoice Date </th>{/if}
-							{#if visibleColumns.totalAmount}<th> Total Amount </th>{/if}
+							{#if visibleColumns.invoiceDate}<th>
+									Invoice Date
+								</th>{/if}
+							{#if visibleColumns.totalAmount}<th>
+									Total Amount
+								</th>{/if}
 
-							{#if visibleColumns.createdBy}<th> Created By </th>{/if}
+							{#if visibleColumns.createdBy}<th>
+									Created By
+								</th>{/if}
 
-							{#if visibleColumns.status}<th class="status-column"> Status </th>{/if}
+							{#if visibleColumns.status}<th
+									class="status-column"
+								>
+									Status
+								</th>{/if}
 
 							<th class="action-column"></th>
 						</tr>
@@ -513,48 +567,55 @@
 					<tbody>
 						{#each invoices as invoice (invoice.id)}
 							<tr>
-								{#if visibleColumns.invoiceNumber}<td class="invoice-number">
-									{invoice.invoice_no}
-								</td>{/if}
+								{#if visibleColumns.invoiceNumber}<td
+										class="invoice-number"
+									>
+										{invoice.invoice_no}
+									</td>{/if}
 
 								{#if visibleColumns.customer}<td>
-									{invoice.customer?.name ?? "-"}
-								</td>{/if}
+										{invoice.customer?.name ?? "-"}
+									</td>{/if}
 
-								{#if visibleColumns.barrelCode}<td class="barrel-codes">
-									{invoice.items
-										?.map((item) => item.barrel?.code)
-										.filter(Boolean)
-										.join(", ") || "—"}
-								</td>{/if}
+								{#if visibleColumns.barrelCode}<td
+										class="barrel-codes"
+									>
+										{invoice.items
+											?.map((item) => item.barrel?.code)
+											.filter(Boolean)
+											.join(", ") || "—"}
+									</td>{/if}
 
 								{#if visibleColumns.invoiceDate}<td>
-									{formatDate(invoice.issued_date)}
-								</td>{/if}
+										{formatDate(invoice.issued_date)}
+									</td>{/if}
 								{#if visibleColumns.totalAmount}<td>
-									{formatAmount(invoice.total_amount)}
-								</td>{/if}
+										{formatAmount(invoice.total_amount)}
+									</td>{/if}
 
 								{#if visibleColumns.createdBy}<td>
-									{invoice.created_by?.name ?? "—"}
-								</td>{/if}
+										{invoice.created_by?.name ?? "—"}
+									</td>{/if}
 
 								<!-- =========================
 								     STATUS
 								========================= -->
 
-								{#if visibleColumns.status}<td class="status-cell">
-									<span
-										class="status-badge"
-										class:paid={invoice.status === "paid"}
-										class:unpaid={invoice.status ===
-											"unpaid"}
+								{#if visibleColumns.status}<td
+										class="status-cell"
 									>
-										{invoice.status === "paid"
-											? "Paid"
-											: "Unpaid"}
-									</span>
-								</td>{/if}
+										<span
+											class="status-badge"
+											class:paid={invoice.status ===
+												"paid"}
+											class:unpaid={invoice.status ===
+												"unpaid"}
+										>
+											{invoice.status === "paid"
+												? "Paid"
+												: "Unpaid"}
+										</span>
+									</td>{/if}
 
 								<!-- =========================
 								     ACTION
@@ -631,12 +692,14 @@
 				<button
 					type="button"
 					disabled={menuInvoice.status === "paid"}
-					onclick={() => openPaymentDialog(menuInvoice)}>Set Paid</button
+					onclick={() => openPaymentDialog(menuInvoice)}
+					>Set Paid</button
 				>
 				<button
 					type="button"
 					disabled={menuInvoice.status === "unpaid"}
-					onclick={() => openUnpaidDialog(menuInvoice)}>Set Unpaid</button
+					onclick={() => openUnpaidDialog(menuInvoice)}
+					>Set Unpaid</button
 				>
 				<div class="menu-divider"></div>
 			{/if}
@@ -655,7 +718,7 @@
 						openMenuId = null;
 					}}
 				>
-					{menuInvoice.waste_sale_amount === null
+					{menuInvoice.waste_sell_amount === null
 						? "Sell Waste"
 						: "UpdateSell"}
 				</button>
@@ -1357,7 +1420,6 @@
 			z-index: 3;
 			background: #f8fafc;
 		}
-
 	}
 
 	@media (max-width: 900px) {
@@ -1390,7 +1452,7 @@
 		.column-picker,
 		.column-picker summary {
 			width: 100%;
-	}
+		}
 		.column-menu {
 			right: auto;
 			left: 0;

@@ -9,12 +9,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('invoices', function (Blueprint $table) {
-            $table->decimal('waste_sale_amount', 12, 2)->nullable()->after('total_amount');
-            $table->text('waste_sale_remark')->nullable()->after('waste_sale_amount');
-            $table->timestamp('waste_sale_recorded_at')->nullable()->after('waste_sale_remark');
-            $table->foreignId('waste_sale_recorded_by')
+            $table->decimal('waste_sell_amount', 12, 2)->nullable()->after('total_amount');
+            $table->text('waste_sell_remark')->nullable()->after('waste_sell_amount');
+            $table->timestamp('waste_sell_recorded_at')->nullable()->after('waste_sell_remark');
+            $table->foreignId('waste_sell_recorded_by')
                 ->nullable()
-                ->after('waste_sale_recorded_at')
+                ->after('waste_sell_recorded_at')
                 ->constrained('users')
                 ->nullOnDelete();
         });
@@ -23,11 +23,11 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('invoices', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('waste_sale_recorded_by');
+            $table->dropConstrainedForeignId('waste_sell_recorded_by');
             $table->dropColumn([
-                'waste_sale_amount',
-                'waste_sale_remark',
-                'waste_sale_recorded_at',
+                'waste_sell_amount',
+                'waste_sell_remark',
+                'waste_sell_recorded_at',
             ]);
         });
     }

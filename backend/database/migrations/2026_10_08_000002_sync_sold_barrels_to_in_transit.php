@@ -23,7 +23,7 @@ return new class extends Migration
 
             $hasRecordedSale = DB::table('invoices')
                 ->where('id', $latestInvoiceItem->invoice_id)
-                ->whereNotNull('waste_sale_amount')
+                ->whereNotNull('waste_sell_amount')
                 ->exists();
 
             if ($hasRecordedSale) {

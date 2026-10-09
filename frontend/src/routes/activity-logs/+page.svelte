@@ -41,8 +41,8 @@
 		{ value: "returned", label: "Returned" },
 		{ value: "deleted", label: "Deleted" },
 		{ value: "password_reset", label: "Password reset" },
-		{ value: "waste_sale_recorded", label: "Waste sell recorded" },
-		{ value: "waste_sale_updated", label: "Waste sell updated" },
+		{ value: "waste_sell_recorded", label: "Waste sell recorded" },
+		{ value: "waste_sell_updated", label: "Waste sell updated" },
 	];
 
 	const recordTypeOptions = [
