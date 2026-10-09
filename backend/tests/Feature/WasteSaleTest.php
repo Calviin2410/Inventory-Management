@@ -65,7 +65,8 @@ class WasteSaleTest extends TestCase
             'waste_sell_remark' => 'Sold recyclable material.',
         ])->assertJsonPath('waste_sell_recorded_by.id', $staff->id)
             ->assertJsonPath('customer.name', 'Waste Customer')
-            ->assertJsonPath('created_by.name', $staff->name);
+            ->assertJsonPath('created_by.name', $staff->name)
+            ->assertJsonMissingPath('waste_sale_recorded_by');
 
         $this->patchJson("/api/waste-sales/{$invoice->id}", [
             'amount' => 150,

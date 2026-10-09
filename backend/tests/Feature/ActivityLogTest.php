@@ -51,6 +51,34 @@ class ActivityLogTest extends TestCase
         $this->getJson('/api/activity-logs')->assertForbidden();
     }
 
+    public function test_activity_log_displays_user_names_in_recorded_by_values(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $recordingUser = User::factory()->create(['name' => 'Waste Recorder']);
+        $previousUser = User::factory()->create(['name' => 'Previous Recorder']);
+
+        ActivityLog::create([
+            'user_id' => $recordingUser->id,
+            'actor_name' => $recordingUser->name,
+            'actor_email' => $recordingUser->email,
+            'action' => 'waste_sell_recorded',
+            'subject_type' => 'Invoice',
+            'subject_id' => 10,
+            'subject_label' => 'TKS00010',
+            'description' => 'Recorded waste sell for invoice TKS00010',
+            'old_values' => ['waste_sell_recorded_by' => $previousUser->id],
+            'new_values' => ['waste_sell_recorded_by' => $recordingUser->id],
+            'created_at' => now(),
+        ]);
+
+        Sanctum::actingAs($admin);
+
+        $this->getJson('/api/activity-logs')
+            ->assertOk()
+            ->assertJsonPath('data.0.old_values.waste_sell_recorded_by', 'Previous Recorder')
+            ->assertJsonPath('data.0.new_values.waste_sell_recorded_by', 'Waste Recorder');
+    }
+
     public function test_repeated_barrel_return_does_not_create_a_duplicate_log(): void
     {
         $staff = User::factory()->create(['role' => 'normal_staff']);

@@ -32,6 +32,8 @@
 		reopened: "Reopened",
 		waste_sell_recorded: "Waste sell recorded",
 		waste_sell_updated: "Waste sell updated",
+		waste_sale_recorded: "Waste sale recorded",
+		waste_sale_updated: "Waste sale updated",
 	};
 
 	const actionOptions = [
@@ -43,6 +45,8 @@
 		{ value: "password_reset", label: "Password reset" },
 		{ value: "waste_sell_recorded", label: "Waste sell recorded" },
 		{ value: "waste_sell_updated", label: "Waste sell updated" },
+		{ value: "waste_sale_recorded", label: "Waste sale recorded (legacy logs)" },
+		{ value: "waste_sale_updated", label: "Waste sale updated (legacy logs)" },
 	];
 
 	const recordTypeOptions = [

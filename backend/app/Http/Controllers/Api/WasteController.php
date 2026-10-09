@@ -22,7 +22,7 @@ class WasteController extends Controller
         $query = Invoice::query()
             ->with([
                 'items.barrel:id,code',
-                'wasteSaleRecordedBy:id,name',
+                'wasteSellRecordedBy:id,name',
             ])
             ->whereNotNull('waste_sell_amount')
             ->latest('issued_date')
@@ -162,7 +162,7 @@ class WasteController extends Controller
                 'createdBy:id,name',
                 'vehicle:id,plate_number',
                 'items.barrel:id,code',
-                'wasteSaleRecordedBy:id,name',
+                'wasteSellRecordedBy:id,name',
             ])
         );
     }

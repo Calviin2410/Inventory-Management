@@ -70,7 +70,7 @@ class Invoice extends Model
         return $this->belongsTo(User::class, 'settled_by');
     }
 
-	public function wasteSaleRecordedBy(): BelongsTo
+	public function wasteSellRecordedBy(): BelongsTo
 	{
 		return $this->belongsTo(User::class, 'waste_sell_recorded_by');
 	}

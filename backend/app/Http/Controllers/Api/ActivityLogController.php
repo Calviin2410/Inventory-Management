@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
+use App\Models\User;
 use App\Models\Vehicle;
 use Illuminate\Http\Request;
 
@@ -47,6 +48,7 @@ class ActivityLogController extends Controller
 
         $logs = $query->paginate(30);
         $vehicleIds = collect();
+        $userIds = collect();
 
         foreach ($logs->getCollection() as $log) {
             foreach ([$log->old_values, $log->new_values] as $values) {
@@ -57,21 +59,31 @@ class ActivityLogController extends Controller
                 if (! empty($values['vehicle_id'])) {
                     $vehicleIds->push((int) $values['vehicle_id']);
                 }
+
+                foreach ($values as $key => $value) {
+                    if (str_ends_with((string) $key, '_by') && is_numeric($value) && (int) $value > 0) {
+                        $userIds->push((int) $value);
+                    }
+                }
             }
         }
 
         $vehicles = Vehicle::whereIn('id', $vehicleIds->unique())
             ->pluck('plate_number', 'id');
+        $users = User::whereIn('id', $userIds->unique())
+            ->pluck('name', 'id');
 
         $logs->setCollection(
-            $logs->getCollection()->map(function ($log) use ($vehicles) {
+            $logs->getCollection()->map(function ($log) use ($vehicles, $users) {
                 $log->old_values = $this->describeReferences(
                     $log->old_values,
-                    $vehicles
+                    $vehicles,
+                    $users
                 );
                 $log->new_values = $this->describeReferences(
                     $log->new_values,
-                    $vehicles
+                    $vehicles,
+                    $users
                 );
 
                 return $log;
@@ -83,7 +95,8 @@ class ActivityLogController extends Controller
 
     private function describeReferences(
         ?array $values,
-        $vehicles
+        $vehicles,
+        $users
     ): ?array {
         if ($values === null) {
             return null;
@@ -95,6 +108,12 @@ class ActivityLogController extends Controller
                 ? (($vehicles[$id] ?? 'Unknown vehicle').' (ID: '.$id.')')
                 : null;
             unset($values['vehicle_id']);
+        }
+
+        foreach ($values as $key => $value) {
+            if (str_ends_with((string) $key, '_by') && is_numeric($value)) {
+                $values[$key] = $users[(int) $value] ?? 'Unknown user';
+            }
         }
 
         return $values;
