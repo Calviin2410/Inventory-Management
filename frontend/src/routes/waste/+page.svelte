@@ -6,6 +6,7 @@
 	import { api } from "$lib/api.js";
 	import { formatDate } from "$lib/format.js";
 	import WasteSaleDialog from "$lib/WasteSaleDialog.svelte";
+	import { user } from "$lib/stores/auth.js";
 
 	let invoices = $state([]);
 	let loading = $state(true);
@@ -18,6 +19,10 @@
 	let totalInvoices = $state(0);
 	let totalAmountReceived = $state(0);
 	let saleInvoice = $state(null);
+	let isAdmin = $derived($user?.role === "admin");
+	function canManageInvoice(invoice) {
+		return isAdmin || Number(invoice?.user_id) === Number($user?.id);
+	}
 
 	async function loadWasteSales(page = 1) {
 		loading = true;
@@ -193,7 +198,7 @@
 									>{invoice.waste_sale_recorded_by?.name ||
 										"—"}</td
 								>
-								<td><button class="btn update-sale-button" type="button" onclick={() => saleInvoice = invoice}>UpdateSell</button></td>
+								<td>{#if canManageInvoice(invoice)}<button class="btn update-sale-button" type="button" onclick={() => saleInvoice = invoice}>UpdateSell</button>{:else}—{/if}</td>
 							</tr>
 						{/each}
 					</tbody>

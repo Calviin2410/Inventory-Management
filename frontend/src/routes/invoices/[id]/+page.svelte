@@ -8,6 +8,7 @@
 	import { formatDate } from "$lib/format.js";
 	import { openInvoicePrintWindow } from "$lib/invoicePrint.js";
 	import WasteSaleDialog from "$lib/WasteSaleDialog.svelte";
+	import { user } from "$lib/stores/auth.js";
 
 	let invoice = $state(null);
 	let loading = $state(true);
@@ -15,6 +16,9 @@
 	let exporting = $state(false);
 	let saleDialogOpen = $state(false);
 	let settlementView = $derived(page.url.searchParams.get("source") === "settlement");
+	let canManageInvoice = $derived(
+		invoice && ($user?.role === "admin" || Number(invoice.user_id) === Number($user?.id)),
+	);
 
 	function formatAmount(value) {
 		return new Intl.NumberFormat("en-MY", {
@@ -122,15 +126,17 @@
 
 		{#if invoice}
 			<div class="header-actions">
-				<button
-					type="button"
-					class="btn sale-button"
-					onclick={() => (saleDialogOpen = true)}
-				>
-					{invoice.waste_sale_amount === null
-						? "Sell Waste"
-						: "UpdateSell"}
-				</button>
+				{#if canManageInvoice}
+					<button
+						type="button"
+						class="btn sale-button"
+						onclick={() => (saleDialogOpen = true)}
+					>
+						{invoice.waste_sale_amount === null
+							? "Sell Waste"
+							: "UpdateSell"}
+					</button>
+				{/if}
 				<button
 					type="button"
 					class="btn"
@@ -140,7 +146,7 @@
 					{exporting ? "Preparing..." : "Export PDF"}
 				</button>
 
-				{#if !settlementView}
+				{#if !settlementView && canManageInvoice}
 					<a
 						class="btn btn-primary"
 						href={`/invoices/${invoice.id}/edit`}

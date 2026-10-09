@@ -41,6 +41,9 @@
 	let menuInvoice = $derived(
 		invoices.find((invoice) => invoice.id === openMenuId) ?? null,
 	);
+	function canManageInvoice(invoice) {
+		return isAdmin || Number(invoice?.user_id) === Number($user?.id);
+	}
 
 	let currentPage = $state(1);
 	let lastPage = $state(1);
@@ -624,17 +627,19 @@
 				>View Invoice</a
 			>
 			<div class="menu-divider"></div>
-			<button
-				type="button"
-				disabled={menuInvoice.status === "paid"}
-				onclick={() => openPaymentDialog(menuInvoice)}>Set Paid</button
-			>
-			<button
-				type="button"
-				disabled={menuInvoice.status === "unpaid"}
-				onclick={() => openUnpaidDialog(menuInvoice)}>Set Unpaid</button
-			>
-			<div class="menu-divider"></div>
+			{#if canManageInvoice(menuInvoice)}
+				<button
+					type="button"
+					disabled={menuInvoice.status === "paid"}
+					onclick={() => openPaymentDialog(menuInvoice)}>Set Paid</button
+				>
+				<button
+					type="button"
+					disabled={menuInvoice.status === "unpaid"}
+					onclick={() => openUnpaidDialog(menuInvoice)}>Set Unpaid</button
+				>
+				<div class="menu-divider"></div>
+			{/if}
 			<button
 				type="button"
 				disabled={exportingId === menuInvoice.id}
@@ -642,17 +647,19 @@
 			>
 				{exportingId === menuInvoice.id ? "Preparing..." : "Export PDF"}
 			</button>
-			<button
-				type="button"
-				onclick={() => {
-					saleInvoice = menuInvoice;
-					openMenuId = null;
-				}}
-			>
-				{menuInvoice.waste_sale_amount === null
-					? "Sell Waste"
-					: "UpdateSell"}
-			</button>
+			{#if canManageInvoice(menuInvoice)}
+				<button
+					type="button"
+					onclick={() => {
+						saleInvoice = menuInvoice;
+						openMenuId = null;
+					}}
+				>
+					{menuInvoice.waste_sale_amount === null
+						? "Sell Waste"
+						: "UpdateSell"}
+				</button>
+			{/if}
 			{#if isAdmin}
 				<div class="menu-divider"></div>
 				<button

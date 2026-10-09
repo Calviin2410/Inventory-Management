@@ -59,6 +59,12 @@ class WasteController extends Controller
 
     public function update(Request $request, Invoice $invoice)
     {
+        abort_unless(
+            $request->user()?->isAdmin() || (int) $invoice->user_id === (int) $request->user()?->id,
+            403,
+            'Only the invoice creator or an administrator can update its waste sale.'
+        );
+
         $data = $request->validate([
             'amount' => ['required', 'numeric', 'min:0', 'max:9999999999.99'],
             'remark' => ['nullable', 'string', 'max:1000'],

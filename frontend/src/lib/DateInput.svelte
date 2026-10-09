@@ -75,9 +75,18 @@
 	function openPicker() {
 		if (disabled || !nativePicker) return;
 
+		// Safari only dismisses its native date picker when the input that owns
+		// it has focus. The picker is visually hidden behind the calendar button
+		// on desktop, so focus it explicitly before asking the browser to open it.
+		nativePicker.focus({ preventScroll: true });
+
 		if (typeof nativePicker.showPicker === "function") {
-			nativePicker.showPicker();
-			return;
+			try {
+				nativePicker.showPicker();
+				return;
+			} catch {
+				// Fall through to click() for browsers that expose but reject showPicker.
+			}
 		}
 
 		nativePicker.click();
@@ -157,6 +166,7 @@
 	}
 	.calendar-button:hover:not(:disabled) { background: #f3f6fb; }
 	.calendar-button:focus-visible { outline: 2px solid #4771e8; outline-offset: -2px; }
+	.date-input:has(.native-picker:focus) .calendar-button { outline: 2px solid #4771e8; outline-offset: -2px; }
 	.calendar-button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 	.native-picker {
 		position: absolute;
