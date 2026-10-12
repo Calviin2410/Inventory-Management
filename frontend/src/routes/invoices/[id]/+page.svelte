@@ -477,6 +477,12 @@
 		display: grid;
 		grid-template-columns: repeat(3, minmax(0, 1fr));
 		gap: 24px 40px;
+		box-sizing: border-box;
+		margin-top: 20px;
+		padding: 16px 22px;
+		border: 1px solid #dfe5ef;
+		border-radius: 10px;
+		background: #fff;
 	}
 
 	.status-badge {

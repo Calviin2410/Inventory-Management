@@ -34,6 +34,56 @@ class InvoiceNumberingTest extends TestCase
             ->assertJsonPath('invoice_no', 'TKS00002');
     }
 
+    public function test_a_and_tks_invoice_numbers_are_generated_and_filtered_independently(): void
+    {
+        $customer = Customer::create(['name' => 'Prefix Customer']);
+        foreach (['TKS00001', 'A00001', 'A00003'] as $invoiceNo) {
+            Invoice::create([
+                'invoice_no' => $invoiceNo,
+                'customer_id' => $customer->id,
+                'issued_date' => '2026-10-09',
+            ]);
+        }
+
+        Sanctum::actingAs(User::factory()->create(['role' => 'normal_staff']));
+
+        $this->getJson('/api/invoices-next-number?prefix=A')
+            ->assertOk()
+            ->assertJsonPath('invoice_no', 'A00002');
+
+        $this->getJson('/api/invoices?prefix=A')
+            ->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('data.0.invoice_no', 'A00003')
+            ->assertJsonPath('data.1.invoice_no', 'A00001');
+
+        $this->getJson('/api/invoices?prefix=TKS')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.invoice_no', 'TKS00001');
+    }
+
+    public function test_invoice_can_be_created_with_the_a_prefix(): void
+    {
+        $customer = Customer::create(['name' => 'Prefix Customer']);
+        $barrel = Barrel::create(['code' => 'PREFIX-A-001', 'status' => 'available']);
+        Sanctum::actingAs(User::factory()->create(['role' => 'normal_staff']));
+
+        $this->postJson('/api/invoices', [
+            'invoice_prefix' => 'A',
+            'customer_id' => $customer->id,
+            'address' => '1 Test Street',
+            'items' => [[
+                'barrel_id' => $barrel->id,
+                'rental_start' => '2026-10-09',
+            ]],
+        ])->assertCreated()->assertJsonPath('invoice_no', 'A00001');
+
+        $this->getJson('/api/invoices-next-number?prefix=TKS')
+            ->assertOk()
+            ->assertJsonPath('invoice_no', 'TKS00001');
+    }
+
     public function test_invoice_creation_fills_a_gap_then_continues_after_the_maximum(): void
     {
         $customer = Customer::create(['name' => 'Numbering Customer']);

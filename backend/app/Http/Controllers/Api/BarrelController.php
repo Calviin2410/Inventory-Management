@@ -117,15 +117,21 @@ class BarrelController extends Controller
         Request $request,
         Barrel $barrel
     ) {
+        $isAdmin = $request->user()?->isAdmin() ?? false;
         $data = $request->validate([
             'status' => [
                 'required',
-                // Rented/in-transit states are assigned by invoice and waste-sale flows.
-                'in:available'
+                'in:available,rented,returning',
             ],
         ]);
 
-        if ($barrel->status === 'rented') {
+        if (! $isAdmin && $data['status'] !== 'available') {
+            throw ValidationException::withMessages([
+                'status' => ['Only administrators can manually set a barrel status.'],
+            ]);
+        }
+
+        if (! $isAdmin && $barrel->status === 'rented') {
             throw ValidationException::withMessages([
                 'status' => [
                     'A rented barrel cannot be marked available directly. Record the waste sell first.'
@@ -133,7 +139,53 @@ class BarrelController extends Controller
             ]);
         }
 
+        if ($isAdmin) {
+            return $this->updateStatusAsAdmin($request, $barrel, $data['status']);
+        }
+
         return $this->markReturned($request, $barrel);
+    }
+
+
+    private function updateStatusAsAdmin(Request $request, Barrel $barrel, string $status)
+    {
+        if ($barrel->status === $status) {
+            return response()->json($barrel->fresh()->load('currentCustomer'));
+        }
+
+        $before = $barrel->only(['status', 'current_customer_id']);
+        $updates = ['status' => $status];
+
+        if ($status === 'available') {
+            $updates['current_customer_id'] = null;
+        }
+
+        $barrel->update($updates);
+
+        if ($status === 'available') {
+            $latestOpenRental = $barrel->invoiceItems()
+                ->whereNull('rental_end')
+                ->latest()
+                ->first();
+
+            if ($latestOpenRental) {
+                $latestOpenRental->update(['rental_end' => now()->toDateString()]);
+            }
+        }
+
+        $updatedBarrel = $barrel->fresh();
+        ActivityLog::record(
+            $request,
+            'updated',
+            'Barrel',
+            $barrel->id,
+            $barrel->code,
+            'Changed barrel '.$barrel->code.' status from '.$before['status'].' to '.$status,
+            $before,
+            $updatedBarrel->only(['status', 'current_customer_id'])
+        );
+
+        return response()->json($updatedBarrel->load('currentCustomer'));
     }
 
 

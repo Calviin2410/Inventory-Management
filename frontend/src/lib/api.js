@@ -145,7 +145,7 @@ export const api = {
 	returnBarrel: (id) => request(`/barrels/${id}/return`, { method: 'POST' }),
 	deleteBarrel: (id) => request(`/barrels/${id}`, { method: 'DELETE' }),
 	// Invoices
-	getNextInvoiceNo: () => request('/invoices-next-number'),
+	getNextInvoiceNo: (prefix = 'TKS') => request(`/invoices-next-number?${new URLSearchParams({ prefix })}`),
 	getInvoices: (params = {}) => {
 		const query = new URLSearchParams(params).toString();
 		return request(`/invoices${query ? `?${query}` : ''}`);

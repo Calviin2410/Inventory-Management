@@ -7,6 +7,19 @@
 	import Toast from "$lib/Toast.svelte";
 	import DateInput from "$lib/DateInput.svelte";
 	import { openInvoicePrintWindow } from "$lib/invoicePrint.js";
+	import ColumnPicker from "$lib/ColumnPicker.svelte";
+
+	const settlementColumns = [
+		{ key: "invoiceNumber", label: "Invoice Number" },
+		{ key: "createdDate", label: "Created Date" },
+		{ key: "paymentStatus", label: "Payment Status" },
+		{ key: "settlementStatus", label: "Settlement Status" },
+		{ key: "remark", label: "Remark" },
+		{ key: "settlementDate", label: "Settlement Date" },
+	];
+	let visibleColumns = $state(
+		Object.fromEntries(settlementColumns.map((column) => [column.key, true])),
+	);
 
 	let invoices = $state([]);
 	let loading = $state(true);
@@ -87,6 +100,17 @@
 		openActionId = invoiceId;
 	}
 
+	function closeActionMenuOnOutsideClick(event) {
+		const target = event.target;
+		if (
+			target instanceof Element &&
+			target.closest(".more-button, .action-dropdown")
+		) {
+			return;
+		}
+		openActionId = null;
+	}
+
 	function closeDialog() {
 		if (submitting) return;
 		selectedInvoice = null;
@@ -159,6 +183,8 @@
 	onMount(loadSettlements);
 </script>
 
+<svelte:window onclick={closeActionMenuOnOutsideClick} />
+
 <Nav />
 
 <main class="app-page">
@@ -191,6 +217,7 @@
 		<button class="btn btn-primary" type="submit" disabled={loading || !fromDate || !toDate}>View</button>
 		<button class="btn" type="button" onclick={() => { fromDate = malaysiaToday(); toDate = malaysiaToday(); loadSettlements(); }} disabled={loading}>Today</button>
 		<button class="btn refresh-button" type="button" onclick={loadSettlements} disabled={loading}>Refresh</button>
+		<ColumnPicker columns={settlementColumns} bind:visible={visibleColumns} />
 	</form>
 
 	{#if successMessage}
@@ -212,33 +239,33 @@
 				<table class="data-table">
 					<thead>
 						<tr>
-							<th>Invoice Number</th>
-							<th>Created Date</th>
-							<th>Payment Status</th>
-							<th>Settlement Status</th>
-							<th>Remark</th>
-							<th>Settlement Date</th>
+							{#if visibleColumns.invoiceNumber}<th>Invoice Number</th>{/if}
+							{#if visibleColumns.createdDate}<th>Created Date</th>{/if}
+							{#if visibleColumns.paymentStatus}<th>Payment Status</th>{/if}
+							{#if visibleColumns.settlementStatus}<th>Settlement Status</th>{/if}
+							{#if visibleColumns.remark}<th>Remark</th>{/if}
+							{#if visibleColumns.settlementDate}<th>Settlement Date</th>{/if}
 							<th class="action-column">Action</th>
 						</tr>
 					</thead>
 					<tbody>
 						{#each invoices as invoice (invoice.id)}
 							<tr>
-								<td><a class="invoice-link" href={`/invoices/${invoice.id}`}>{invoice.invoice_no}</a></td>
-								<td>{formatDateTime(invoice.created_at)}</td>
-								<td>
+								{#if visibleColumns.invoiceNumber}<td><a class="invoice-link" href={`/invoices/${invoice.id}`}>{invoice.invoice_no}</a></td>{/if}
+								{#if visibleColumns.createdDate}<td>{formatDateTime(invoice.created_at)}</td>{/if}
+								{#if visibleColumns.paymentStatus}<td>
 									<span class:paid={invoice.status === "paid"} class="payment-badge">
 										{invoice.status === "paid" ? "Paid" : "Unpaid"}
 									</span>
-								</td>
-								<td>
+								</td>{/if}
+								{#if visibleColumns.settlementStatus}<td>
 									<span class:settled={invoice.settlement_status === "settled"} class="status-badge">
 										<span class="status-icon" aria-hidden="true">{invoice.settlement_status === "settled" ? "✓" : "×"}</span>
 										{invoice.settlement_status === "settled" ? "Settled" : "Unsettled"}
 									</span>
-								</td>
-								<td class="remark-cell">{invoice.settlement_remark || "—"}</td>
-								<td class="settlement-date">{formatDateTime(invoice.settled_at)}</td>
+								</td>{/if}
+								{#if visibleColumns.remark}<td class="remark-cell">{invoice.settlement_remark || "—"}</td>{/if}
+								{#if visibleColumns.settlementDate}<td class="settlement-date">{formatDateTime(invoice.settled_at)}</td>{/if}
 								<td class="action-cell">
 									<button class="more-button" type="button" aria-label={`Actions for ${invoice.invoice_no}`} aria-expanded={openActionId === invoice.id} onclick={(event) => toggleActionMenu(invoice.id, event)}>⋯</button>
 								</td>

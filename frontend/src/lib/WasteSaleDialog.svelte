@@ -81,7 +81,7 @@
 				disabled={saving}>Cancel</button
 			>
 			<button class="btn btn-primary" type="submit" disabled={saving}
-				>{saving ? "Saving…" : "Save Sale"}</button
+				>{saving ? "Saving…" : "Save Sell"}</button
 			>
 		</div>
 	</form>

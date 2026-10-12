@@ -129,6 +129,21 @@ class BarrelIndexTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_manually_set_each_barrel_status(): void
+    {
+        Sanctum::actingAs(User::factory()->create(['role' => 'admin']));
+        $barrel = Barrel::create([
+            'code' => 'FLOW-ADMIN-STATUS',
+            'status' => 'available',
+        ]);
+
+        foreach (['rented', 'returning', 'available'] as $status) {
+            $this->patchJson("/api/barrels/{$barrel->id}", [
+                'status' => $status,
+            ])->assertOk()->assertJsonPath('status', $status);
+        }
+    }
+
     public function test_in_transit_barrel_can_be_marked_available_but_not_rented(): void
     {
         Sanctum::actingAs(User::factory()->create(['role' => 'normal_staff']));

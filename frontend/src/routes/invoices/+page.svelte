@@ -19,6 +19,7 @@
 	let errorMessage = $state("");
 	let search = $state("");
 	let statusFilter = $state("");
+	let invoicePrefixFilter = $state("");
 	let invoiceSortDirection = $state("");
 
 	let openMenuId = $state(null);
@@ -94,9 +95,18 @@
 		statusOptions.find((option) => option.value === statusFilter)?.label ??
 			"All statuses",
 	);
+	let selectedPrefixLabel = $derived(
+		invoicePrefixFilter || "All invoices",
+	);
 
 	function selectStatusFilter(value, event) {
 		statusFilter = value;
+		event.currentTarget.closest("details")?.removeAttribute("open");
+		loadInvoices(1);
+	}
+
+	function selectInvoicePrefix(value, event) {
+		invoicePrefixFilter = value;
 		event.currentTarget.closest("details")?.removeAttribute("open");
 		loadInvoices(1);
 	}
@@ -159,6 +169,17 @@
 		openMenuId = invoiceId;
 	}
 
+	function closeActionMenuOnOutsideClick(event) {
+		const target = event.target;
+		if (
+			target instanceof Element &&
+			target.closest(".more-button, .floating-action-menu")
+		) {
+			return;
+		}
+		openMenuId = null;
+	}
+
 	// =========================
 	// Load Invoices
 	// =========================
@@ -177,6 +198,10 @@
 
 			if (statusFilter) {
 				params.status = statusFilter;
+			}
+
+			if (invoicePrefixFilter) {
+				params.prefix = invoicePrefixFilter;
 			}
 
 			if (invoiceSortDirection) {
@@ -363,6 +388,8 @@
 	onMount(loadInvoices);
 </script>
 
+<svelte:window onclick={closeActionMenuOnOutsideClick} />
+
 <Nav />
 
 <main class="app-page">
@@ -424,6 +451,7 @@
 			onclick={() => {
 				search = "";
 				statusFilter = "";
+				invoicePrefixFilter = "";
 				invoiceSortDirection = "";
 				loadInvoices(1);
 			}}
@@ -447,6 +475,23 @@
 							selectStatusFilter(option.value, event)}
 					>
 						{option.label}
+					</button>
+				{/each}
+			</div>
+		</details>
+		<details class="status-filter">
+			<summary class="control" aria-label="Filter invoices by invoice prefix">
+				<span>{selectedPrefixLabel}</span>
+				<span class="select-chevron" aria-hidden="true"></span>
+			</summary>
+			<div class="status-options">
+				{#each ["", "TKS", "A"] as prefix}
+					<button
+						type="button"
+						class:active={invoicePrefixFilter === prefix}
+						onclick={(event) => selectInvoicePrefix(prefix, event)}
+					>
+						{prefix || "All invoices"}
 					</button>
 				{/each}
 			</div>
@@ -570,7 +615,11 @@
 								{#if visibleColumns.invoiceNumber}<td
 										class="invoice-number"
 									>
-										{invoice.invoice_no}
+										<a
+											class="invoice-number-link"
+											href={`/invoices/${invoice.id}`}
+											title={`View invoice ${invoice.invoice_no}`}
+										>{invoice.invoice_no}</a>
 									</td>{/if}
 
 								{#if visibleColumns.customer}<td>
@@ -1130,6 +1179,17 @@
 
 	.invoice-number {
 		font-weight: 600;
+	}
+
+	.invoice-number-link {
+		color: inherit;
+		text-decoration: none;
+	}
+
+	.invoice-number-link:hover,
+	.invoice-number-link:focus-visible {
+		color: #2458d3;
+		text-decoration: underline;
 	}
 
 	/* =========================

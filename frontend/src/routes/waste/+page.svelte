@@ -7,6 +7,20 @@
 	import { formatDate } from "$lib/format.js";
 	import WasteSaleDialog from "$lib/WasteSaleDialog.svelte";
 	import { user } from "$lib/stores/auth.js";
+	import ColumnPicker from "$lib/ColumnPicker.svelte";
+
+	const wasteColumns = [
+		{ key: "invoiceNumber", label: "Invoice Number" },
+		{ key: "barrelCode", label: "Barrel Code" },
+		{ key: "invoiceDate", label: "Invoice Date" },
+		{ key: "totalAmount", label: "Total Amount" },
+		{ key: "sellDate", label: "Sell Date" },
+		{ key: "remark", label: "Remark" },
+		{ key: "receivedBy", label: "Received By" },
+	];
+	let visibleColumns = $state(
+		Object.fromEntries(wasteColumns.map((column) => [column.key, true])),
+	);
 
 	let invoices = $state([]);
 	let loading = $state(true);
@@ -120,6 +134,7 @@
 					}}>Refresh</button
 				>
 			</div>
+			<ColumnPicker columns={wasteColumns} bind:visible={visibleColumns} />
 		</div>
 		<div class="filter-summary">
 			{totalInvoices}
@@ -141,7 +156,7 @@
 
 	<section class="panel waste-panel">
 		{#if loading}
-			<SkeletonTable rows={6} columns={7} />
+			<SkeletonTable rows={6} columns={8} />
 		{:else if errorMessage}
 			<div class="state error">{errorMessage}</div>
 		{:else if invoices.length === 0}
@@ -154,50 +169,44 @@
 				<table class="data-table">
 					<thead
 						><tr>
-							<th>Invoice Number</th>
-							<th>Barrel Code</th>
-							<th>Invoice Date</th>
-							<th>Total Amount</th>
-							<th>Sell Date</th>
-							<th>Remark</th>
-							<th>Received By</th>
+							{#if visibleColumns.invoiceNumber}<th>Invoice Number</th>{/if}
+							{#if visibleColumns.barrelCode}<th>Barrel Code</th>{/if}
+							{#if visibleColumns.invoiceDate}<th>Invoice Date</th>{/if}
+							{#if visibleColumns.totalAmount}<th>Total Amount</th>{/if}
+							{#if visibleColumns.sellDate}<th>Sell Date</th>{/if}
+							{#if visibleColumns.remark}<th>Remark</th>{/if}
+							{#if visibleColumns.receivedBy}<th>Received By</th>{/if}
 							<th>Action</th>
 						</tr></thead
 					>
 					<tbody>
 						{#each invoices as invoice (invoice.id)}
 							<tr>
-								<td
+								{#if visibleColumns.invoiceNumber}<td
 									><a
 										class="invoice-link"
 										href={`/invoices/${invoice.id}`}
 										>{invoice.invoice_no}</a
-									></td
-								>
-								<td
+									></td>{/if}
+								{#if visibleColumns.barrelCode}<td
 									>{invoice.items
 										?.map((item) => item.barrel?.code)
 										.filter(Boolean)
-										.join(", ") || "—"}</td
-								>
-								<td>{formatDate(invoice.issued_date)}</td>
-								<td class="amount-cell"
+										.join(", ") || "—"}</td>{/if}
+								{#if visibleColumns.invoiceDate}<td>{formatDate(invoice.issued_date)}</td>{/if}
+								{#if visibleColumns.totalAmount}<td class="amount-cell"
 									>{formatAmount(
 										invoice.waste_sell_amount,
-									)}</td
-								>
-								<td
+									)}</td>{/if}
+								{#if visibleColumns.sellDate}<td
 									>{formatDate(
 										invoice.waste_sell_recorded_at,
-									)}</td
-								>
-								<td class="remark-cell"
-									>{invoice.waste_sell_remark || "—"}</td
-								>
-								<td
+									)}</td>{/if}
+								{#if visibleColumns.remark}<td class="remark-cell"
+									>{invoice.waste_sell_remark || "—"}</td>{/if}
+								{#if visibleColumns.receivedBy}<td
 									>{invoice.waste_sell_recorded_by?.name ||
-										"—"}</td
-								>
+										"—"}</td>{/if}
 								<td
 									>{#if canManageInvoice(invoice)}<button
 											class="btn update-sale-button"
@@ -260,8 +269,7 @@
 	.filter-grid {
 		display: grid;
 		grid-template-columns:
-			minmax(260px, 1fr) minmax(175px, 220px) minmax(175px, 220px)
-			auto;
+			minmax(260px, 1fr) minmax(175px, 220px) minmax(175px, 220px) auto auto;
 		align-items: end;
 		gap: 12px;
 	}
@@ -390,6 +398,10 @@
 		.filter-actions {
 			grid-column: 1 / -1;
 		}
+		:global(.column-picker) {
+			grid-column: 1 / -1;
+			justify-self: end;
+		}
 		.data-table th:first-child,
 		.data-table td:first-child {
 			position: sticky;
@@ -412,6 +424,10 @@
 		}
 		.filter-actions {
 			grid-column: auto;
+		}
+		:global(.column-picker) {
+			grid-column: auto;
+			justify-self: stretch;
 		}
 		.filter-actions .btn {
 			flex: 1;

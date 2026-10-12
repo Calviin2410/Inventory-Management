@@ -8,6 +8,7 @@
 	import { guardUnsaved } from "$lib/unsaved.js";
 
 	let invoiceId = $state("");
+	let invoicePrefix = $state("TKS");
 	let customerName = $state("");
 
 	let phones = $state([""]);
@@ -44,7 +45,7 @@
 		try {
 			const [numberResult, barrelsResult, vehiclesResult] =
 				await Promise.all([
-					api.getNextInvoiceNo(),
+					api.getNextInvoiceNo(invoicePrefix),
 					api.getAvailableBarrels(),
 					api.getVehicles(),
 				]);
@@ -65,6 +66,19 @@
 				"We could not load the invoice details. Please refresh and try again.";
 		} finally {
 			isLoading = false;
+		}
+	}
+
+	async function updateInvoicePrefix(event) {
+		invoicePrefix = event.currentTarget.value;
+		invoiceId = "Loading…";
+		try {
+			const result = await api.getNextInvoiceNo(invoicePrefix);
+			if (result?.invoice_no?.startsWith(invoicePrefix)) {
+				invoiceId = result.invoice_no;
+			}
+		} catch (error) {
+			pageError = error?.message || "Unable to load the next invoice number.";
 		}
 	}
 
@@ -129,6 +143,7 @@
 
 	async function createInvoiceForCustomer(customer) {
 		await api.createInvoice({
+			invoice_prefix: invoicePrefix,
 			customer_id: customer.id,
 			vehicle_id: Number(vehicleId),
 			address: address.trim(),
@@ -231,8 +246,14 @@
 			</p>
 		</div>
 		<div class="invoice-number">
-			<span>Invoice number</span>
-			<strong>{invoiceId || "Loading…"}</strong>
+			<span>Invoice Number</span>
+			<div class="invoice-number-value">
+				<select id="invoice-prefix" class="control" value={invoicePrefix} onchange={updateInvoicePrefix} disabled={isSubmitting} aria-label="Invoice number prefix">
+					<option value="TKS">TKS</option>
+					<option value="A">A</option>
+				</select>
+				<strong>{invoiceId.startsWith(invoicePrefix) ? invoiceId.slice(invoicePrefix.length) : invoiceId || "Loading…"}</strong>
+			</div>
 		</div>
 	</header>
 
@@ -451,6 +472,7 @@
 	}
 	.invoice-number {
 		min-width: 150px;
+		transform: translateY(10px);
 		padding: 14px 18px;
 		border: 1px solid #dfe5ef;
 		border-radius: 12px;
@@ -467,9 +489,23 @@
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
 	}
+	.invoice-number-value {
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 7px;
+	}
+	.invoice-number select {
+		width: auto;
+		min-width: 82px;
+		min-height: 38px;
+		padding: 0 10px;
+		text-align: left;
+	}
 	.invoice-number strong {
 		color: #25314d;
 		font-size: 17px;
+		white-space: nowrap;
 	}
 	.alert {
 		margin-bottom: 20px;
@@ -632,6 +668,9 @@
 		}
 		.invoice-number {
 			text-align: left;
+		}
+		.invoice-number-value {
+			justify-content: flex-start;
 		}
 		.form-grid {
 			grid-template-columns: 1fr;

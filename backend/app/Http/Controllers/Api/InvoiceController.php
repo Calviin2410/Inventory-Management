@@ -48,12 +48,16 @@ class InvoiceController extends Controller
             $query->where('status', $request->query('status'));
         }
 
+        if (in_array($request->query('prefix'), ['TKS', 'A'], true)) {
+            $query->where('invoice_no', 'like', $request->query('prefix').'%');
+        }
+
         $sortDirection = $request->query('direction') === 'desc' ? 'desc' : 'asc';
         if ($request->query('sort') === 'invoice_no') {
             $numberExpression = match (DB::connection()->getDriverName()) {
-                'mysql' => 'CAST(SUBSTRING(invoice_no, 4) AS UNSIGNED)',
-                'pgsql', 'sqlite' => 'CAST(SUBSTR(invoice_no, 4) AS INTEGER)',
-                default => 'CAST(SUBSTRING(invoice_no, 4) AS INTEGER)',
+                'mysql' => "CASE WHEN invoice_no LIKE 'TKS%' THEN CAST(SUBSTRING(invoice_no, 4) AS UNSIGNED) WHEN invoice_no LIKE 'A%' THEN CAST(SUBSTRING(invoice_no, 2) AS UNSIGNED) ELSE 0 END",
+                'pgsql', 'sqlite' => "CASE WHEN invoice_no LIKE 'TKS%' THEN CAST(SUBSTR(invoice_no, 4) AS INTEGER) WHEN invoice_no LIKE 'A%' THEN CAST(SUBSTR(invoice_no, 2) AS INTEGER) ELSE 0 END",
+                default => "CASE WHEN invoice_no LIKE 'TKS%' THEN CAST(SUBSTRING(invoice_no, 4) AS INTEGER) WHEN invoice_no LIKE 'A%' THEN CAST(SUBSTRING(invoice_no, 2) AS INTEGER) ELSE 0 END",
             };
 
             $query->orderByRaw($numberExpression.' '.$sortDirection)
@@ -374,10 +378,15 @@ class InvoiceController extends Controller
 
 
     // GET /api/invoices-next-number
-    public function nextInvoiceNo()
+    public function nextInvoiceNo(Request $request)
     {
+        $prefix = $request->query('prefix', 'TKS');
+        if (! in_array($prefix, ['TKS', 'A'], true)) {
+            $prefix = 'TKS';
+        }
+
         return response()->json([
-            'invoice_no' => $this->generateNextInvoiceNo()
+            'invoice_no' => $this->generateNextInvoiceNo($prefix)
         ]);
     }
 
@@ -386,6 +395,7 @@ class InvoiceController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
+            'invoice_prefix' => ['nullable', Rule::in(['TKS', 'A'])],
             'customer_id' => [
                 'required',
                 'exists:customers,id'
@@ -480,18 +490,14 @@ class InvoiceController extends Controller
          */
         $barrelStatusesBefore = [];
         $barrelStatusesAfter = [];
+        $invoicePrefix = $data['invoice_prefix'] ?? 'TKS';
         $invoice = DB::transaction(
-            function () use ($data, $request, $barrelIds, &$barrelStatusesBefore, &$barrelStatusesAfter) {
+            function () use ($data, $request, $barrelIds, $invoicePrefix, &$barrelStatusesBefore, &$barrelStatusesAfter) {
 
-                /*
-                 * Generate invoice number:
-                 *
-                 * TKS00001
-                 * TKS00002
-                 * TKS00003
-                 */
+                // Lock this prefix's sequence row so simultaneous requests
+                // cannot claim the same invoice number.
                 DB::table('invoice_number_sequences')
-                    ->where('prefix', 'TKS')
+                    ->where('prefix', $invoicePrefix)
                     ->lockForUpdate()
                     ->first();
 
@@ -515,7 +521,7 @@ class InvoiceController extends Controller
                 }
 
                 $invoiceNo =
-                    $this->generateNextInvoiceNo();
+                    $this->generateNextInvoiceNo($invoicePrefix);
 
 
                 $invoice = Invoice::create([
@@ -610,20 +616,20 @@ class InvoiceController extends Controller
 
 
     /**
-     * Return the smallest unused positive TKS invoice number.
+     * Return the smallest unused positive invoice number for the selected prefix.
      *
-     * Existing TKS numbers are inspected by their numeric suffix so deleted
-     * invoices leave reusable gaps (TKS00002 before TKS00011, for example).
+     * Existing numbers for this prefix are inspected by their numeric suffix
+     * so deleted invoices leave reusable gaps.
      */
-    private function generateNextInvoiceNo(): string
+    private function generateNextInvoiceNo(string $prefix = 'TKS'): string
     {
         $usedNumbers = [];
         $invoiceNumbers = Invoice::query()
-            ->where('invoice_no', 'like', 'TKS%')
+            ->where('invoice_no', 'like', $prefix.'%')
             ->pluck('invoice_no');
 
         foreach ($invoiceNumbers as $invoiceNo) {
-            if (preg_match('/^TKS(\d+)$/', $invoiceNo, $matches)) {
+            if (preg_match('/^'.preg_quote($prefix, '/').'(\d+)$/', $invoiceNo, $matches)) {
                 $number = (int) $matches[1];
                 if ($number > 0) {
                     $usedNumbers[$number] = true;
@@ -636,7 +642,7 @@ class InvoiceController extends Controller
             $nextNumber++;
         }
 
-        return 'TKS'.str_pad(
+        return $prefix.str_pad(
             (string) $nextNumber,
             5,
             '0',

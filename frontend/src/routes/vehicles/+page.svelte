@@ -81,6 +81,17 @@
         };
     }
 
+    function closeActionMenuOnOutsideClick(event) {
+        const target = event.target;
+        if (
+            target instanceof Element &&
+            target.closest(".more-button, .floating-action-menu")
+        ) {
+            return;
+        }
+        openMenuId = null;
+    }
+
     function requestVehicleDeletion(vehicle) {
         selectedVehicle = vehicle;
         deleteError = "";
@@ -135,6 +146,8 @@
 
     onMount(loadVehicles);
 </script>
+
+<svelte:window onclick={closeActionMenuOnOutsideClick} />
 
 <Nav />
 
