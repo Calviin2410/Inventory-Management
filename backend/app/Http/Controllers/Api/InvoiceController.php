@@ -48,16 +48,16 @@ class InvoiceController extends Controller
             $query->where('status', $request->query('status'));
         }
 
-        if (in_array($request->query('prefix'), ['TKS', 'A'], true)) {
+        if (in_array($request->query('prefix'), ['TKS', 'C'], true)) {
             $query->where('invoice_no', 'like', $request->query('prefix').'%');
         }
 
         $sortDirection = $request->query('direction') === 'desc' ? 'desc' : 'asc';
         if ($request->query('sort') === 'invoice_no') {
             $numberExpression = match (DB::connection()->getDriverName()) {
-                'mysql' => "CASE WHEN invoice_no LIKE 'TKS%' THEN CAST(SUBSTRING(invoice_no, 4) AS UNSIGNED) WHEN invoice_no LIKE 'A%' THEN CAST(SUBSTRING(invoice_no, 2) AS UNSIGNED) ELSE 0 END",
-                'pgsql', 'sqlite' => "CASE WHEN invoice_no LIKE 'TKS%' THEN CAST(SUBSTR(invoice_no, 4) AS INTEGER) WHEN invoice_no LIKE 'A%' THEN CAST(SUBSTR(invoice_no, 2) AS INTEGER) ELSE 0 END",
-                default => "CASE WHEN invoice_no LIKE 'TKS%' THEN CAST(SUBSTRING(invoice_no, 4) AS INTEGER) WHEN invoice_no LIKE 'A%' THEN CAST(SUBSTRING(invoice_no, 2) AS INTEGER) ELSE 0 END",
+                'mysql' => "CASE WHEN invoice_no LIKE 'TKS%' THEN CAST(SUBSTRING(invoice_no, 4) AS UNSIGNED) WHEN invoice_no LIKE 'A%' OR invoice_no LIKE 'C%' THEN CAST(SUBSTRING(invoice_no, 2) AS UNSIGNED) ELSE 0 END",
+                'pgsql', 'sqlite' => "CASE WHEN invoice_no LIKE 'TKS%' THEN CAST(SUBSTR(invoice_no, 4) AS INTEGER) WHEN invoice_no LIKE 'A%' OR invoice_no LIKE 'C%' THEN CAST(SUBSTR(invoice_no, 2) AS INTEGER) ELSE 0 END",
+                default => "CASE WHEN invoice_no LIKE 'TKS%' THEN CAST(SUBSTRING(invoice_no, 4) AS INTEGER) WHEN invoice_no LIKE 'A%' OR invoice_no LIKE 'C%' THEN CAST(SUBSTRING(invoice_no, 2) AS INTEGER) ELSE 0 END",
             };
 
             $query->orderByRaw($numberExpression.' '.$sortDirection)
@@ -381,7 +381,7 @@ class InvoiceController extends Controller
     public function nextInvoiceNo(Request $request)
     {
         $prefix = $request->query('prefix', 'TKS');
-        if (! in_array($prefix, ['TKS', 'A'], true)) {
+        if (! in_array($prefix, ['TKS', 'C'], true)) {
             $prefix = 'TKS';
         }
 
@@ -395,7 +395,7 @@ class InvoiceController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'invoice_prefix' => ['nullable', Rule::in(['TKS', 'A'])],
+            'invoice_prefix' => ['nullable', Rule::in(['TKS', 'C'])],
             'customer_id' => [
                 'required',
                 'exists:customers,id'

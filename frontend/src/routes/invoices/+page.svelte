@@ -485,7 +485,7 @@
 				<span class="select-chevron" aria-hidden="true"></span>
 			</summary>
 			<div class="status-options">
-				{#each ["", "TKS", "A"] as prefix}
+				{#each ["", "TKS", "C"] as prefix}
 					<button
 						type="button"
 						class:active={invoicePrefixFilter === prefix}

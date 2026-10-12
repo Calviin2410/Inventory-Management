@@ -250,7 +250,7 @@
 			<div class="invoice-number-value">
 				<select id="invoice-prefix" class="control" value={invoicePrefix} onchange={updateInvoicePrefix} disabled={isSubmitting} aria-label="Invoice number prefix">
 					<option value="TKS">TKS</option>
-					<option value="A">A</option>
+					<option value="C">C</option>
 				</select>
 				<strong>{invoiceId.startsWith(invoicePrefix) ? invoiceId.slice(invoicePrefix.length) : invoiceId || "Loading…"}</strong>
 			</div>

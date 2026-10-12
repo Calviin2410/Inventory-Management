@@ -34,10 +34,10 @@ class InvoiceNumberingTest extends TestCase
             ->assertJsonPath('invoice_no', 'TKS00002');
     }
 
-    public function test_a_and_tks_invoice_numbers_are_generated_and_filtered_independently(): void
+    public function test_c_and_tks_invoice_numbers_are_generated_and_filtered_independently(): void
     {
         $customer = Customer::create(['name' => 'Prefix Customer']);
-        foreach (['TKS00001', 'A00001', 'A00003'] as $invoiceNo) {
+        foreach (['TKS00001', 'C00001', 'C00003'] as $invoiceNo) {
             Invoice::create([
                 'invoice_no' => $invoiceNo,
                 'customer_id' => $customer->id,
@@ -47,15 +47,15 @@ class InvoiceNumberingTest extends TestCase
 
         Sanctum::actingAs(User::factory()->create(['role' => 'normal_staff']));
 
-        $this->getJson('/api/invoices-next-number?prefix=A')
+        $this->getJson('/api/invoices-next-number?prefix=C')
             ->assertOk()
-            ->assertJsonPath('invoice_no', 'A00002');
+            ->assertJsonPath('invoice_no', 'C00002');
 
-        $this->getJson('/api/invoices?prefix=A')
+        $this->getJson('/api/invoices?prefix=C')
             ->assertOk()
             ->assertJsonCount(2, 'data')
-            ->assertJsonPath('data.0.invoice_no', 'A00003')
-            ->assertJsonPath('data.1.invoice_no', 'A00001');
+            ->assertJsonPath('data.0.invoice_no', 'C00003')
+            ->assertJsonPath('data.1.invoice_no', 'C00001');
 
         $this->getJson('/api/invoices?prefix=TKS')
             ->assertOk()
@@ -63,21 +63,21 @@ class InvoiceNumberingTest extends TestCase
             ->assertJsonPath('data.0.invoice_no', 'TKS00001');
     }
 
-    public function test_invoice_can_be_created_with_the_a_prefix(): void
+    public function test_invoice_can_be_created_with_the_c_prefix(): void
     {
         $customer = Customer::create(['name' => 'Prefix Customer']);
         $barrel = Barrel::create(['code' => 'PREFIX-A-001', 'status' => 'available']);
         Sanctum::actingAs(User::factory()->create(['role' => 'normal_staff']));
 
         $this->postJson('/api/invoices', [
-            'invoice_prefix' => 'A',
+            'invoice_prefix' => 'C',
             'customer_id' => $customer->id,
             'address' => '1 Test Street',
             'items' => [[
                 'barrel_id' => $barrel->id,
                 'rental_start' => '2026-10-09',
             ]],
-        ])->assertCreated()->assertJsonPath('invoice_no', 'A00001');
+        ])->assertCreated()->assertJsonPath('invoice_no', 'C00001');
 
         $this->getJson('/api/invoices-next-number?prefix=TKS')
             ->assertOk()
