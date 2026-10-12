@@ -82,6 +82,29 @@
 	function formatChangeValue(key, value, actorName = "") {
 		if (value === null || value === undefined || value === "") return "—";
 
+		if (key === "items" && Array.isArray(value)) {
+			return value
+				.map((item, index) => {
+					if (!item || typeof item !== "object") {
+						return `Item ${index + 1}: ${String(item)}`;
+					}
+
+					const barrel = item.barrel ?? item.barrel_code ?? item.barrel_id ?? "Unknown";
+					const rentalDate = (date) => {
+						if (!date) return "—";
+						const dateOnly = String(date).match(/^\d{4}-\d{2}-\d{2}/)?.[0];
+						return formatDate(dateOnly || date);
+					};
+
+					return [
+						`Barrel ${barrel}`,
+						`Rental start: ${rentalDate(item.rental_start)}`,
+						`Rental end: ${rentalDate(item.rental_end)}`,
+					].join("\n");
+				})
+				.join("\n\n");
+		}
+
 		if (["issued_date", "payment_date"].includes(key)) {
 			const dateOnly = String(value).match(/^\d{4}-\d{2}-\d{2}/)?.[0];
 			return formatDate(dateOnly || value);

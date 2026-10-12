@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
+use App\Models\InvoiceItem;
 use App\Models\User;
 use App\Models\Vehicle;
 use Illuminate\Http\Request;
@@ -49,6 +50,7 @@ class ActivityLogController extends Controller
         $logs = $query->paginate(30);
         $vehicleIds = collect();
         $userIds = collect();
+        $invoiceItemIds = collect();
 
         foreach ($logs->getCollection() as $log) {
             foreach ([$log->old_values, $log->new_values] as $values) {
@@ -61,6 +63,14 @@ class ActivityLogController extends Controller
                 }
 
                 foreach ($values as $key => $value) {
+                    if ($key === 'items' && is_array($value)) {
+                        foreach ($value as $item) {
+                            if (is_array($item) && ! empty($item['id'])) {
+                                $invoiceItemIds->push((int) $item['id']);
+                            }
+                        }
+                    }
+
                     if (str_ends_with((string) $key, '_by') && is_numeric($value) && (int) $value > 0) {
                         $userIds->push((int) $value);
                     }
@@ -72,18 +82,26 @@ class ActivityLogController extends Controller
             ->pluck('plate_number', 'id');
         $users = User::whereIn('id', $userIds->unique())
             ->pluck('name', 'id');
+        $barrelsByInvoiceItem = InvoiceItem::query()
+            ->with('barrel:id,code')
+            ->whereIn('id', $invoiceItemIds->unique())
+            ->get(['id', 'barrel_id'])
+            ->mapWithKeys(fn ($item) => [$item->id => $item->barrel?->code])
+            ->all();
 
         $logs->setCollection(
-            $logs->getCollection()->map(function ($log) use ($vehicles, $users) {
+            $logs->getCollection()->map(function ($log) use ($vehicles, $users, $barrelsByInvoiceItem) {
                 $log->old_values = $this->describeReferences(
                     $log->old_values,
                     $vehicles,
-                    $users
+                    $users,
+                    $barrelsByInvoiceItem
                 );
                 $log->new_values = $this->describeReferences(
                     $log->new_values,
                     $vehicles,
-                    $users
+                    $users,
+                    $barrelsByInvoiceItem
                 );
 
                 return $log;
@@ -96,7 +114,8 @@ class ActivityLogController extends Controller
     private function describeReferences(
         ?array $values,
         $vehicles,
-        $users
+        $users,
+        array $barrelsByInvoiceItem
     ): ?array {
         if ($values === null) {
             return null;
@@ -108,6 +127,22 @@ class ActivityLogController extends Controller
                 ? (($vehicles[$id] ?? 'Unknown vehicle').' (ID: '.$id.')')
                 : null;
             unset($values['vehicle_id']);
+        }
+
+        if (isset($values['items']) && is_array($values['items'])) {
+            $values['items'] = array_map(function ($item) use ($barrelsByInvoiceItem) {
+                if (! is_array($item)) {
+                    return $item;
+                }
+
+                if (empty($item['barrel']) && ! empty($item['id'])) {
+                    $item['barrel'] = $barrelsByInvoiceItem[(int) $item['id']] ?? 'Unknown';
+                }
+
+                unset($item['id']);
+
+                return $item;
+            }, $values['items']);
         }
 
         foreach ($values as $key => $value) {

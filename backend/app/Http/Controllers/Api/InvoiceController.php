@@ -229,11 +229,32 @@ class InvoiceController extends Controller
             'payment_method',
             'payment_date',
         ];
-        $before = $invoice->only($trackedFields);
-        $beforeItems = $invoice->items()
-            ->orderBy('id')
-            ->get(['id', 'rental_start', 'rental_end'])
-            ->toArray();
+		$normalizeTrackedValues = static function (array $values): array {
+			foreach ($values as $key => $value) {
+				if ($value instanceof \DateTimeInterface) {
+					$values[$key] = $value->format('Y-m-d');
+				}
+			}
+
+			return $values;
+		};
+		$loadRentalItemSnapshots = static fn (): array => $invoice->items()
+			->with('barrel:id,code')
+			->orderBy('id')
+			->get(['id', 'barrel_id', 'rental_start', 'rental_end'])
+			->map(fn ($item) => [
+				'barrel' => $item->barrel?->code ?? (string) $item->barrel_id,
+				'rental_start' => $item->rental_start
+					? substr((string) $item->rental_start, 0, 10)
+					: null,
+				'rental_end' => $item->rental_end
+					? substr((string) $item->rental_end, 0, 10)
+					: null,
+			])
+			->all();
+
+		$before = $normalizeTrackedValues($invoice->only($trackedFields));
+		$beforeItems = $loadRentalItemSnapshots();
 
         DB::transaction(function () use ($invoice, $data) {
             $invoiceFields = collect($data)->except(['items', 'customer_name', 'customer_phone'])->all();
@@ -268,7 +289,7 @@ class InvoiceController extends Controller
             }
         });
 
-        $after = $invoice->fresh()->only($trackedFields);
+		$after = $normalizeTrackedValues($invoice->fresh()->only($trackedFields));
         $changedBefore = [];
         $changedAfter = [];
 
@@ -279,10 +300,7 @@ class InvoiceController extends Controller
             }
         }
 
-        $afterItems = $invoice->items()
-            ->orderBy('id')
-            ->get(['id', 'rental_start', 'rental_end'])
-            ->toArray();
+		$afterItems = $loadRentalItemSnapshots();
 
         if ($beforeItems !== $afterItems) {
             $changedBefore['items'] = $beforeItems;
@@ -294,11 +312,15 @@ class InvoiceController extends Controller
         }
 
         if ($changedAfter !== []) {
-            $description = array_key_exists('status', $changedAfter)
-                ? 'Changed invoice '.$invoice->invoice_no.' status from '
-                    .($changedBefore['status'] ?? 'unknown').' to '
-                    .$changedAfter['status']
-                : 'Updated invoice '.$invoice->invoice_no;
+			if (array_key_exists('status', $changedAfter)) {
+				$description = 'Changed invoice '.$invoice->invoice_no.' status from '
+					.($changedBefore['status'] ?? 'unknown').' to '
+					.$changedAfter['status'];
+			} elseif (array_keys($changedAfter) === ['items']) {
+				$description = 'Updated rental dates for invoice '.$invoice->invoice_no;
+			} else {
+				$description = 'Updated invoice '.$invoice->invoice_no;
+			}
 
             ActivityLog::record(
                 $request,

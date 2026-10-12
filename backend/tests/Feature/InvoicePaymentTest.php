@@ -175,6 +175,17 @@ class InvoicePaymentTest extends TestCase
             'rental_start' => '2026-09-26',
             'rental_end' => '2026-10-12',
         ]);
+
+		$log = \App\Models\ActivityLog::query()
+			->where('subject_type', 'Invoice')
+			->where('subject_id', $invoice->id)
+			->where('action', 'updated')
+			->latest('id')
+			->firstOrFail();
+		$this->assertArrayNotHasKey('issued_date', $log->old_values);
+		$this->assertSame('DATE-001', $log->old_values['items'][0]['barrel']);
+		$this->assertSame('2026-10-09', $log->old_values['items'][0]['rental_end']);
+		$this->assertSame('2026-10-12', $log->new_values['items'][0]['rental_end']);
     }
 
     public function test_admin_can_update_invoice_total_amount(): void
