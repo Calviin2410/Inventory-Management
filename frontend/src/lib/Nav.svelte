@@ -344,7 +344,7 @@
 			overflow-y: auto;
 			overscroll-behavior: contain;
 			-webkit-overflow-scrolling: touch;
-			touch-action: pan-y;
+			touch-action: pan-y pinch-zoom;
 			padding-top: max(14px, env(safe-area-inset-top));
 			padding-bottom: max(16px, env(safe-area-inset-bottom));
 			transform: translateX(-105%);
