@@ -9,6 +9,16 @@
 	import DateInput from "$lib/DateInput.svelte";
 	import FilterSelect from "$lib/FilterSelect.svelte";
 	import { formatDate } from "$lib/format.js";
+	import ColumnPicker from "$lib/ColumnPicker.svelte";
+
+	const activityColumns = [
+		{ key: "dateTime", label: "Date & Time" },
+		{ key: "user", label: "User" },
+		{ key: "action", label: "Action" },
+		{ key: "record", label: "Record" },
+		{ key: "activity", label: "Activity" },
+	];
+	let visibleColumns = $state(Object.fromEntries(activityColumns.map((column) => [column.key, true])));
 
 	let logs = $state([]);
 	let loading = $state(true);
@@ -257,6 +267,7 @@
 		>
 		<button class="btn" type="button" onclick={clearFilters}>Refresh</button
 		>
+		<ColumnPicker columns={activityColumns} bind:visible={visibleColumns} />
 	</section>
 
 	<div class="count">
@@ -279,37 +290,37 @@
 				<table class="data-table">
 					<thead>
 						<tr>
-							<th>Date & Time</th>
-							<th>User</th>
-							<th>Action</th>
-							<th>Record</th>
-							<th>Activity</th>
+							{#if visibleColumns.dateTime}<th>Date & Time</th>{/if}
+							{#if visibleColumns.user}<th>User</th>{/if}
+							{#if visibleColumns.action}<th>Action</th>{/if}
+							{#if visibleColumns.record}<th>Record</th>{/if}
+							{#if visibleColumns.activity}<th>Activity</th>{/if}
 						</tr>
 					</thead>
 					<tbody>
 						{#each logs as log (log.id)}
 							<tr>
-								<td class="date-cell"
+								{#if visibleColumns.dateTime}<td class="date-cell"
 									>{formatDateTime(log.created_at)}</td
-								>
-								<td>
+								>{/if}
+								{#if visibleColumns.user}<td>
 									<strong
 										>{log.actor_name ||
 											"Deleted user"}</strong
 									>
 									<small>{log.actor_email || "—"}</small>
-								</td>
-								<td
+								</td>{/if}
+								{#if visibleColumns.action}<td
 									><span class="action-badge {log.action}"
 										>{actionLabels[log.action] ||
 											log.action}</span
 									></td
-								>
-								<td>
+								>{/if}
+								{#if visibleColumns.record}<td>
 									<strong>{log.subject_type}</strong>
 									<small>{formatRecordLabel(log)}</small>
-								</td>
-								<td class="activity-cell">
+								</td>{/if}
+								{#if visibleColumns.activity}<td class="activity-cell">
 									<span>{log.description}</span>
 									{#if log.old_values || log.new_values}
 										<details>
@@ -332,7 +343,7 @@
 											</div>
 										</details>
 									{/if}
-								</td>
+								</td>{/if}
 							</tr>
 						{/each}
 					</tbody>

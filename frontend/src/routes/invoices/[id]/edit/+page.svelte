@@ -10,6 +10,15 @@
 	import SkeletonTable from "$lib/SkeletonTable.svelte";
 	import DateInput from "$lib/DateInput.svelte";
 	import { formatDate } from "$lib/format.js";
+	import ColumnPicker from "$lib/ColumnPicker.svelte";
+
+	const editableItemColumns = [
+		{ key: "barrel", label: "Barrel" },
+		{ key: "description", label: "Description" },
+		{ key: "rentalStart", label: "Rental Start" },
+		{ key: "rentalEnd", label: "Rental End" },
+	];
+	let visibleColumns = $state(Object.fromEntries(editableItemColumns.map((column) => [column.key, true])));
 
 	let invoice = $state(null);
 
@@ -295,46 +304,47 @@
 
 						<p>Rental start dates cannot be changed. {isAdmin ? "Administrators can update other invoice details." : "You can update payment details and rental end dates."}</p>
 					</div>
+					<ColumnPicker columns={editableItemColumns} bind:visible={visibleColumns} />
 				</div>
 
 				<div class="table-wrapper">
 					<table>
 						<thead>
 							<tr>
-								<th> Barrel </th>
+								{#if visibleColumns.barrel}<th> Barrel </th>{/if}
 
-								<th> Description </th>
+								{#if visibleColumns.description}<th> Description </th>{/if}
 
-								<th> Rental Start </th>
+								{#if visibleColumns.rentalStart}<th> Rental Start </th>{/if}
 
-								<th> Rental End </th>
+								{#if visibleColumns.rentalEnd}<th> Rental End </th>{/if}
 							</tr>
 						</thead>
 
 						<tbody>
 							{#each invoiceItems as item}
 								<tr>
-									<td>
+									{#if visibleColumns.barrel}<td>
 										<strong>
 											{item.barrel?.code ?? "-"}
 										</strong>
-									</td>
+									</td>{/if}
 
-									<td>
+									{#if visibleColumns.description}<td>
 										{item.description ?? "-"}
-									</td>
+									</td>{/if}
 
-									<td>
+									{#if visibleColumns.rentalStart}<td>
 						{formatDate(item.rental_start)}
-									</td>
+									</td>{/if}
 
-									<td>
+									{#if visibleColumns.rentalEnd}<td>
 						<DateInput compact min={item.rental_start} bind:value={item.rental_end} ariaLabel="Select rental end date" />
-									</td>
+									</td>{/if}
 								</tr>
 							{:else}
 								<tr>
-									<td colspan="4" class="empty-row">
+									<td colspan={Object.values(visibleColumns).filter(Boolean).length} class="empty-row">
 										No invoice items.
 									</td>
 								</tr>

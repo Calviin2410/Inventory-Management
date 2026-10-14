@@ -9,6 +9,16 @@
 	import { openInvoicePrintWindow } from "$lib/invoicePrint.js";
 	import WasteSaleDialog from "$lib/WasteSaleDialog.svelte";
 	import { user } from "$lib/stores/auth.js";
+	import ColumnPicker from "$lib/ColumnPicker.svelte";
+
+	const itemColumns = [
+		{ key: "barrel", label: "Barrel" },
+		{ key: "description", label: "Description" },
+		{ key: "rentalStart", label: "Rental Start" },
+		{ key: "rentalEnd", label: "Rental End" },
+		{ key: "totalAmount", label: "Total Amount" },
+	];
+	let visibleColumns = $state(Object.fromEntries(itemColumns.map((column) => [column.key, true])));
 
 	let invoice = $state(null);
 	let loading = $state(true);
@@ -251,50 +261,53 @@
 			========================= -->
 
 			<div class="section">
-				<h2>Invoice Items</h2>
+				<div class="section-heading">
+					<h2>Invoice Items</h2>
+					<ColumnPicker columns={itemColumns} bind:visible={visibleColumns} />
+				</div>
 
 				<div class="table-wrapper">
 					<table>
 						<thead>
 							<tr>
-								<th> Barrel </th>
+								{#if visibleColumns.barrel}<th> Barrel </th>{/if}
 
-								<th> Description </th>
+								{#if visibleColumns.description}<th> Description </th>{/if}
 
-								<th> Rental Start </th>
+								{#if visibleColumns.rentalStart}<th> Rental Start </th>{/if}
 
-								<th> Rental End </th>
+								{#if visibleColumns.rentalEnd}<th> Rental End </th>{/if}
 
-								<th> Total Amount </th>
+								{#if visibleColumns.totalAmount}<th> Total Amount </th>{/if}
 							</tr>
 						</thead>
 
 						<tbody>
 							{#each invoice.items ?? [] as item}
 								<tr>
-									<td class="barrel-code">
+									{#if visibleColumns.barrel}<td class="barrel-code">
 										{item.barrel?.code ?? "-"}
-									</td>
+									</td>{/if}
 
-									<td>
+									{#if visibleColumns.description}<td>
 										{item.description ?? "-"}
-									</td>
+									</td>{/if}
 
-									<td>
+									{#if visibleColumns.rentalStart}<td>
 										{formatDate(item.rental_start)}
-									</td>
+									</td>{/if}
 
-									<td>
+									{#if visibleColumns.rentalEnd}<td>
 										{formatDate(item.rental_end)}
-									</td>
+									</td>{/if}
 
-									<td class="amount-cell">
+									{#if visibleColumns.totalAmount}<td class="amount-cell">
 										{formatAmount(invoice.total_amount)}
-									</td>
+									</td>{/if}
 								</tr>
 							{:else}
 								<tr>
-									<td colspan="5" class="empty">
+									<td colspan={Object.values(visibleColumns).filter(Boolean).length} class="empty">
 										No invoice items.
 									</td>
 								</tr>

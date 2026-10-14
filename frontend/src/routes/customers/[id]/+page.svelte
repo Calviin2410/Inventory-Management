@@ -8,6 +8,15 @@
     import { api } from "$lib/api.js";
     import { formatDate } from "$lib/format.js";
     import { user } from "$lib/stores/auth.js";
+    import ColumnPicker from "$lib/ColumnPicker.svelte";
+
+    const customerInvoiceColumns = [
+        { key: "invoice", label: "Invoice Number" },
+        { key: "barrels", label: "Barrel Code" },
+        { key: "date", label: "Invoice Date" },
+        { key: "status", label: "Status" },
+    ];
+    let visibleColumns = $state(Object.fromEntries(customerInvoiceColumns.map((column) => [column.key, true])));
 
     let customer = $state(null);
     let invoices = $state([]);
@@ -109,6 +118,7 @@
         <span class="result-count">
             {totalInvoices} {totalInvoices === 1 ? "invoice" : "invoices"}
         </span>
+        <ColumnPicker columns={customerInvoiceColumns} bind:visible={visibleColumns} />
     </section>
 
     <section class="panel">
@@ -127,10 +137,10 @@
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>Invoice Number</th>
-                            <th>Barrel Code</th>
-                            <th>Invoice Date</th>
-                            <th>Status</th>
+                            {#if visibleColumns.invoice}<th>Invoice Number</th>{/if}
+                            {#if visibleColumns.barrels}<th>Barrel Code</th>{/if}
+                            {#if visibleColumns.date}<th>Invoice Date</th>{/if}
+                            {#if visibleColumns.status}<th>Status</th>{/if}
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -138,22 +148,22 @@
                     <tbody>
                         {#each invoices as invoice (invoice.id)}
                             <tr>
-                                <td class="strong">
+                                {#if visibleColumns.invoice}<td class="strong">
                                     {invoice.invoice_no}
-                                </td>
+                                </td>{/if}
 
-                                <td>
+                                {#if visibleColumns.barrels}<td>
                                     {invoice.items
                                         ?.map((item) => item.barrel?.code)
                                         .filter(Boolean)
                                         .join(", ") || "—"}
-                                </td>
+                                </td>{/if}
 
-                                <td>
+                                {#if visibleColumns.date}<td>
                                     {formatDate(invoice.issued_date)}
-                                </td>
+                                </td>{/if}
 
-                                <td>
+                                {#if visibleColumns.status}<td>
                                     <span
                                         class="status-badge"
                                         class:paid={invoice.status === "paid"}
@@ -163,7 +173,7 @@
                                             ? "Paid"
                                             : "Unpaid"}
                                     </span>
-                                </td>
+                                </td>{/if}
 
                                 <td>
                                     {#if isAdmin}

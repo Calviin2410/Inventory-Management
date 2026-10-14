@@ -3,6 +3,14 @@
 	import { api } from "$lib/api.js";
 	import Nav from "$lib/Nav.svelte";
 	import SkeletonTable from "$lib/SkeletonTable.svelte";
+	import ColumnPicker from "$lib/ColumnPicker.svelte";
+
+	const customerColumns = [
+		{ key: "customer", label: "Customer" },
+		{ key: "phone", label: "Phone" },
+		{ key: "recordId", label: "Record ID" },
+	];
+	let visibleColumns = $state(Object.fromEntries(customerColumns.map((column) => [column.key, true])));
 
 	let customers = $state([]);
 
@@ -124,6 +132,7 @@
 		>
 			Refresh
 		</button>
+		<ColumnPicker columns={customerColumns} bind:visible={visibleColumns} />
 		<span class="result-count">{totalCustomers} {totalCustomers === 1 ? "result" : "results"}</span>
 	</div>
 
@@ -155,18 +164,18 @@
 				<table class="data-table">
 					<thead>
 						<tr>
-							<th> Customer </th>
+							{#if visibleColumns.customer}<th> Customer </th>{/if}
 
-							<th> Phone </th>
+							{#if visibleColumns.phone}<th> Phone </th>{/if}
 
-							<th> Record ID </th>
+							{#if visibleColumns.recordId}<th> Record ID </th>{/if}
 						</tr>
 					</thead>
 
 					<tbody>
 						{#each customers as customer (customer.id)}
 							<tr>
-								<td class="strong">
+								{#if visibleColumns.customer}<td class="strong">
 									<span class="avatar">
 										{customer.name?.[0]?.toUpperCase() || "W"}
 									</span>
@@ -177,15 +186,15 @@
 									>
 										{customer.name || "-"}
 									</a>
-								</td>
+								</td>{/if}
 
-								<td>
+								{#if visibleColumns.phone}<td>
 					<span class="customer-phones">{getCustomerPhones(customer)}</span>
-								</td>
+								</td>{/if}
 
-								<td>
+								{#if visibleColumns.recordId}<td>
 									#{customer.id}
-								</td>
+								</td>{/if}
 							</tr>
 						{/each}
 					</tbody>

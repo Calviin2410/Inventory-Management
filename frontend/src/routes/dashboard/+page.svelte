@@ -4,6 +4,15 @@
 	import Nav from "$lib/Nav.svelte";
 	import SkeletonTable from "$lib/SkeletonTable.svelte";
 	import { formatDate } from "$lib/format.js";
+	import ColumnPicker from "$lib/ColumnPicker.svelte";
+
+	const recentInvoiceColumns = [
+		{ key: "invoice", label: "Invoice" },
+		{ key: "customer", label: "Customer" },
+		{ key: "invoiceDate", label: "Invoice Date" },
+		{ key: "status", label: "Status" },
+	];
+	let visibleColumns = $state(Object.fromEntries(recentInvoiceColumns.map((column) => [column.key, true])));
 
 	let recentInvoices = $state([]);
 
@@ -128,6 +137,7 @@
 				</div>
 
 				<a href="/invoices">View all invoices <span>→</span></a>
+				<ColumnPicker columns={recentInvoiceColumns} bind:visible={visibleColumns} />
 			</div>
 
 			{#if recentInvoices.length === 0}
@@ -141,37 +151,37 @@
 					<table class="data-table">
 						<thead>
 							<tr>
-								<th> Invoice </th>
+								{#if visibleColumns.invoice}<th> Invoice </th>{/if}
 
-								<th> Customer </th>
+								{#if visibleColumns.customer}<th> Customer </th>{/if}
 
-								<th> Invoice Date </th>
+								{#if visibleColumns.invoiceDate}<th> Invoice Date </th>{/if}
 
-								<th> Status </th>
+								{#if visibleColumns.status}<th> Status </th>{/if}
 							</tr>
 						</thead>
 
 						<tbody>
 							{#each recentInvoices as invoice (invoice.id)}
 								<tr>
-									<td class="strong">
+									{#if visibleColumns.invoice}<td class="strong">
 										<a
 											class="invoice-link"
 											href={`/invoices/${invoice.id}`}
 										>
 											{invoice.invoice_no}
 										</a>
-									</td>
+									</td>{/if}
 
-									<td>
+									{#if visibleColumns.customer}<td>
 										{invoice.customer?.name ?? "-"}
-									</td>
+									</td>{/if}
 
-									<td>
+									{#if visibleColumns.invoiceDate}<td>
 										{formatDate(invoice.issued_date)}
-									</td>
+									</td>{/if}
 
-									<td>
+									{#if visibleColumns.status}<td>
 										<span
 											class="badge"
 											class:paid={invoice.status ===
@@ -183,7 +193,7 @@
 												? "Paid"
 												: "Unpaid"}
 										</span>
-									</td>
+									</td>{/if}
 								</tr>
 							{/each}
 						</tbody>

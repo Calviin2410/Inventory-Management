@@ -6,6 +6,13 @@
     import ConfirmDialog from "$lib/ConfirmDialog.svelte";
     import Toast from "$lib/Toast.svelte";
     import SkeletonTable from "$lib/SkeletonTable.svelte";
+    import ColumnPicker from "$lib/ColumnPicker.svelte";
+
+    const vehicleColumns = [
+        { key: "plate", label: "Plate Number" },
+        { key: "status", label: "Status" },
+    ];
+    let visibleColumns = $state(Object.fromEntries(vehicleColumns.map((column) => [column.key, true])));
     import { user } from "$lib/stores/auth.js";
 
     let vehicles = $state([]);
@@ -196,6 +203,7 @@
         >
             Refresh
         </button>
+		<ColumnPicker columns={vehicleColumns} bind:visible={visibleColumns} />
 		<span class="result-count">{filteredVehicles.length} {filteredVehicles.length === 1 ? "result" : "results"}</span>
     </div>
 
@@ -217,8 +225,8 @@
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>Plate Number</th>
-                            <th>Status</th>
+                            {#if visibleColumns.plate}<th>Plate Number</th>{/if}
+                            {#if visibleColumns.status}<th>Status</th>{/if}
                             <th class="action-column"> Action </th>
                         </tr>
                     </thead>
@@ -226,7 +234,7 @@
                     <tbody>
                         {#each filteredVehicles as vehicle}
                             <tr>
-                                <td>
+                                {#if visibleColumns.plate}<td>
                                     <div class="plate-cell">
                                         <span class="vehicle-icon"> 🚚 </span>
 
@@ -236,9 +244,9 @@
                                                 vehicle.number_plate}
                                         </span>
                                     </div>
-                                </td>
+                                </td>{/if}
 
-                                <td>
+                                {#if visibleColumns.status}<td>
                                     <span
                                         class:status-available={vehicle.status ===
                                             "available"}
@@ -250,7 +258,7 @@
                                             ? "Maintenance"
                                             : "Available"}
                                     </span>
-                                </td>
+                                </td>{/if}
 
                                 <td class="action-cell">
                                     <div class="action-menu">

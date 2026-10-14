@@ -6,6 +6,15 @@
 	import SkeletonTable from "$lib/SkeletonTable.svelte";
 	import Toast from "$lib/Toast.svelte";
 	import { user } from "$lib/stores/auth.js";
+	import ColumnPicker from "$lib/ColumnPicker.svelte";
+
+	const barrelColumns = [
+		{ key: "code", label: "Barrel Code" },
+		{ key: "status", label: "Status" },
+		{ key: "invoice", label: "Invoice" },
+		{ key: "customer", label: "Customer" },
+	];
+	let visibleColumns = $state(Object.fromEntries(barrelColumns.map((column) => [column.key, true])));
 
 	// =========================
 	// State
@@ -303,6 +312,7 @@
 				◉ Visual
 			</button>
 		</div>
+		{#if view === "table"}<ColumnPicker columns={barrelColumns} bind:visible={visibleColumns} />{/if}
 		<span class="result-count">{totalBarrels} {totalBarrels === 1 ? "result" : "results"}</span>
 	</div>
 
@@ -418,13 +428,13 @@
 					<table class="data-table">
 						<thead>
 							<tr>
-								<th> Barrel Code </th>
+								{#if visibleColumns.code}<th> Barrel Code </th>{/if}
 
-								<th> Status </th>
+								{#if visibleColumns.status}<th> Status </th>{/if}
 
-								<th> Invoice </th>
+								{#if visibleColumns.invoice}<th> Invoice </th>{/if}
 
-								<th> Customer </th>
+								{#if visibleColumns.customer}<th> Customer </th>{/if}
 
 								<th class="action-column"></th>
 							</tr>
@@ -433,31 +443,31 @@
 						<tbody>
 							{#each barrels as barrel (barrel.id)}
 								<tr>
-									<td>
+									{#if visibleColumns.code}<td>
 										<span
 											class="barrel-code-badge {barrel.status}"
 										>
 											{barrel.code}
 										</span>
-									</td>
+									</td>{/if}
 
-									<td>
+									{#if visibleColumns.status}<td>
 										<span class="badge {barrel.status}">
 											{displayStatus(barrel.status)}
 										</span>
-									</td>
+									</td>{/if}
 
-									<td>
+									{#if visibleColumns.invoice}<td>
 										{#if barrel.invoice_id}
 											<a class="invoice-link" href={`/invoices/${barrel.invoice_id}`}>{barrel.invoice_no}</a>
 										{:else}
 											—
 										{/if}
-									</td>
+									</td>{/if}
 
-									<td>
+									{#if visibleColumns.customer}<td>
 										{barrel.current_customer?.name || "—"}
-									</td>
+									</td>{/if}
 
 									<td class="action-cell">
 										<div class="action-menu">

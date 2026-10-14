@@ -9,6 +9,14 @@
 	import ResetPasswordDialog from "$lib/ResetPasswordDialog.svelte";
 	import SkeletonTable from "$lib/SkeletonTable.svelte";
 	import Toast from "$lib/Toast.svelte";
+	import ColumnPicker from "$lib/ColumnPicker.svelte";
+
+	const staffColumns = [
+		{ key: "name", label: "Staff Name" },
+		{ key: "email", label: "Email" },
+		{ key: "type", label: "Account Type" },
+	];
+	let visibleColumns = $state(Object.fromEntries(staffColumns.map((column) => [column.key, true])));
 
 	let staff = $state([]);
 	let loading = $state(true);
@@ -142,6 +150,7 @@
 
 		<button type="submit" class="btn">Search</button>
 		<button type="button" class="btn" onclick={() => { search = ""; loadStaff(); }}>Refresh</button>
+		<ColumnPicker columns={staffColumns} bind:visible={visibleColumns} />
 
 		<span class="result-count">
 			{filteredStaff.length} {filteredStaff.length === 1 ? "staff member" : "staff members"}
@@ -163,23 +172,23 @@
 				<table class="data-table">
 					<thead>
 						<tr>
-							<th>Staff Name</th>
-							<th>Email</th>
-							<th>Account Type</th>
+							{#if visibleColumns.name}<th>Staff Name</th>{/if}
+							{#if visibleColumns.email}<th>Email</th>{/if}
+							{#if visibleColumns.type}<th>Account Type</th>{/if}
 							<th class="action-column">Action</th>
 						</tr>
 					</thead>
 					<tbody>
 						{#each filteredStaff as member (member.id)}
 							<tr>
-								<td>
+								{#if visibleColumns.name}<td>
 									<div class="staff-name">
 										<span class="staff-avatar">{member.name.slice(0, 2).toUpperCase()}</span>
 										<strong>{member.name}</strong>
 									</div>
-								</td>
-								<td>{member.email}</td>
-								<td><span class="role-badge">Staff</span></td>
+								</td>{/if}
+								{#if visibleColumns.email}<td>{member.email}</td>{/if}
+								{#if visibleColumns.type}<td><span class="role-badge">Staff</span></td>{/if}
 								<td class="action-cell">
 									<button class="btn reset-button" type="button" onclick={() => requestPasswordReset(member)}>
 										Reset Password

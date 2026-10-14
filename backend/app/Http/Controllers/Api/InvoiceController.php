@@ -48,6 +48,14 @@ class InvoiceController extends Controller
             $query->where('status', $request->query('status'));
         }
 
+        if ($request->filled('from_date')) {
+            $query->whereDate('issued_date', '>=', $request->query('from_date'));
+        }
+
+        if ($request->filled('to_date')) {
+            $query->whereDate('issued_date', '<=', $request->query('to_date'));
+        }
+
         if (in_array($request->query('prefix'), ['TKS', 'C'], true)) {
             $query->where('invoice_no', 'like', $request->query('prefix').'%');
         }
@@ -61,6 +69,9 @@ class InvoiceController extends Controller
             };
 
             $query->orderByRaw($numberExpression.' '.$sortDirection)
+                ->orderBy('id', $sortDirection);
+        } elseif ($request->query('sort') === 'issued_date') {
+            $query->orderBy('issued_date', $sortDirection)
                 ->orderBy('id', $sortDirection);
         } else {
             $query->latest('issued_date')->latest('id');

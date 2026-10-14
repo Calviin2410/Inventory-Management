@@ -4,6 +4,16 @@
 	import Nav from "$lib/Nav.svelte";
 	import SkeletonTable from "$lib/SkeletonTable.svelte";
 	import { formatCurrency } from "$lib/format.js";
+	import ColumnPicker from "$lib/ColumnPicker.svelte";
+	const productColumns = [
+		{ key: "product", label: "Product" },
+		{ key: "sku", label: "SKU" },
+		{ key: "category", label: "Category" },
+		{ key: "stock", label: "Stock" },
+		{ key: "cost", label: "Cost" },
+		{ key: "sellingPrice", label: "Selling price" },
+	];
+	let visibleColumns = $state(Object.fromEntries(productColumns.map((column) => [column.key, true])));
 	let products = $state([]), loading = $state(true), errorMessage = $state(""), search = $state("");
 	async function loadProducts() {
 		loading = true; errorMessage = "";
@@ -21,13 +31,14 @@
 		<div class="search-field"><input class="control search" placeholder="Search name, SKU or barcode…" bind:value={search} />{#if search}<button type="button" class="search-clear" aria-label="Clear search" onclick={() => { search = ""; loadProducts(); }}>×</button>{/if}</div>
 		<button class="btn" type="submit">Search</button>
 		<button class="btn" type="button" onclick={() => { search = ""; loadProducts(); }}>Refresh</button>
+		<ColumnPicker columns={productColumns} bind:visible={visibleColumns} />
 		<span class="result-count">{products.length} {products.length === 1 ? "result" : "results"}</span>
 	</form>
 	<section class="panel">
 		{#if loading}<SkeletonTable rows={5} columns={6} />
 		{:else if errorMessage}<div class="state error">{errorMessage}</div>
 		{:else if products.length === 0}<div class="state"><h3>No products found</h3><p>Add your first product to begin tracking inventory.</p></div>
-		{:else}<table class="data-table"><thead><tr><th>Product</th><th>SKU</th><th>Category</th><th>Stock</th><th>Cost</th><th>Selling price</th></tr></thead><tbody>{#each products as product (product.id)}<tr><td class="strong">{product.name}</td><td>{product.sku}</td><td>{product.category?.name || "Uncategorised"}</td><td><span class="stock" class:low={product.is_low_stock}>{product.quantity}{product.is_low_stock ? " · Low" : ""}</span></td><td>{formatCurrency(product.cost_price)}</td><td>{formatCurrency(product.sell_price)}</td></tr>{/each}</tbody></table>{/if}
+		{:else}<table class="data-table"><thead><tr>{#if visibleColumns.product}<th>Product</th>{/if}{#if visibleColumns.sku}<th>SKU</th>{/if}{#if visibleColumns.category}<th>Category</th>{/if}{#if visibleColumns.stock}<th>Stock</th>{/if}{#if visibleColumns.cost}<th>Cost</th>{/if}{#if visibleColumns.sellingPrice}<th>Selling price</th>{/if}</tr></thead><tbody>{#each products as product (product.id)}<tr>{#if visibleColumns.product}<td class="strong">{product.name}</td>{/if}{#if visibleColumns.sku}<td>{product.sku}</td>{/if}{#if visibleColumns.category}<td>{product.category?.name || "Uncategorised"}</td>{/if}{#if visibleColumns.stock}<td><span class="stock" class:low={product.is_low_stock}>{product.quantity}{product.is_low_stock ? " · Low" : ""}</span></td>{/if}{#if visibleColumns.cost}<td>{formatCurrency(product.cost_price)}</td>{/if}{#if visibleColumns.sellingPrice}<td>{formatCurrency(product.sell_price)}</td>{/if}</tr>{/each}</tbody></table>{/if}
 	</section>
 </main>
 <style>

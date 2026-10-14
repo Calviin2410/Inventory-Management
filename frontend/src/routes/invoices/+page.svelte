@@ -21,6 +21,9 @@
 	let statusFilter = $state("");
 	let invoicePrefixFilter = $state("");
 	let invoiceSortDirection = $state("");
+	let invoiceDateSortDirection = $state("desc");
+	let invoiceFromDate = $state("");
+	let invoiceToDate = $state("");
 
 	let openMenuId = $state(null);
 	let actionMenuPosition = $state({ top: 0, left: 0 });
@@ -113,6 +116,13 @@
 
 	function toggleInvoiceNumberSort() {
 		invoiceSortDirection = invoiceSortDirection === "asc" ? "desc" : "asc";
+		invoiceDateSortDirection = "";
+		loadInvoices(1);
+	}
+
+	function toggleInvoiceDateSort() {
+		invoiceDateSortDirection = invoiceDateSortDirection === "asc" ? "desc" : "asc";
+		invoiceSortDirection = "";
 		loadInvoices(1);
 	}
 
@@ -204,9 +214,15 @@
 				params.prefix = invoicePrefixFilter;
 			}
 
+			if (invoiceFromDate) params.from_date = invoiceFromDate;
+			if (invoiceToDate) params.to_date = invoiceToDate;
+
 			if (invoiceSortDirection) {
 				params.sort = "invoice_no";
 				params.direction = invoiceSortDirection;
+			} else if (invoiceDateSortDirection) {
+				params.sort = "issued_date";
+				params.direction = invoiceDateSortDirection;
 			}
 
 			const result = await api.getInvoices(params);
@@ -453,6 +469,9 @@
 				statusFilter = "";
 				invoicePrefixFilter = "";
 				invoiceSortDirection = "";
+				invoiceDateSortDirection = "desc";
+				invoiceFromDate = "";
+				invoiceToDate = "";
 				loadInvoices(1);
 			}}
 		>
@@ -532,6 +551,16 @@
 	========================= -->
 
 	<section class="panel invoice-panel">
+		<div class="invoice-date-range" aria-label="Filter invoices by date range">
+			<label class="invoice-date-filter">
+				<span>From date</span>
+				<DateInput bind:value={invoiceFromDate} max={invoiceToDate} onchange={() => loadInvoices(1)} ariaLabel="Filter invoices from date" />
+			</label>
+			<label class="invoice-date-filter">
+				<span>To date</span>
+				<DateInput bind:value={invoiceToDate} min={invoiceFromDate} onchange={() => loadInvoices(1)} ariaLabel="Filter invoices to date" />
+			</label>
+		</div>
 		{#if loading}
 			<SkeletonTable rows={6} columns={7} />
 		{:else if errorMessage}
@@ -540,7 +569,7 @@
 			</p>
 		{:else if invoices.length === 0}
 			<div class="empty-state">
-				{#if search.trim() || statusFilter}
+				{#if search.trim() || statusFilter || invoicePrefixFilter || invoiceFromDate || invoiceToDate}
 					<h3>No matching invoices found</h3>
 					<p>Try another invoice number or status.</p>
 				{:else}
@@ -588,9 +617,14 @@
 									Barrel Code
 								</th>{/if}
 
-							{#if visibleColumns.invoiceDate}<th>
-									Invoice Date
-								</th>{/if}
+			{#if visibleColumns.invoiceDate}
+								<th aria-sort={invoiceDateSortDirection === "asc" ? "ascending" : invoiceDateSortDirection === "desc" ? "descending" : "none"}>
+									<button class="sort-header" type="button" onclick={toggleInvoiceDateSort} aria-label="Sort by invoice date">
+										Invoice Date
+										<span aria-hidden="true">{invoiceDateSortDirection === "asc" ? "↑" : invoiceDateSortDirection === "desc" ? "↓" : "↕"}</span>
+									</button>
+								</th>
+							{/if}
 							{#if visibleColumns.totalAmount}<th>
 									Total Amount
 								</th>{/if}
@@ -636,7 +670,9 @@
 									</td>{/if}
 
 								{#if visibleColumns.invoiceDate}<td>
-										{formatDate(invoice.issued_date)}
+										<a class="invoice-date-link" href={`/invoices/${invoice.id}`} title={`View invoice ${invoice.invoice_no}`}>
+											{formatDate(invoice.issued_date)}
+										</a>
 									</td>{/if}
 								{#if visibleColumns.totalAmount}<td>
 										{formatAmount(invoice.total_amount)}
@@ -1192,6 +1228,35 @@
 		text-decoration: underline;
 	}
 
+	.invoice-date-link {
+		color: inherit;
+		text-decoration: none;
+	}
+
+	.invoice-date-link:hover,
+	.invoice-date-link:focus-visible {
+		color: #2458d3;
+		text-decoration: underline;
+	}
+
+	.invoice-date-range {
+		display: flex;
+		justify-content: flex-end;
+		gap: 12px;
+		padding: 10px 16px;
+		border-bottom: 1px solid #e5e7eb;
+		background: #f8fafc;
+	}
+
+	.invoice-date-filter {
+		display: grid;
+		width: 190px;
+		gap: 4px;
+		color: #596579;
+		font-size: 11px;
+		font-weight: 700;
+	}
+
 	/* =========================
 	   STATUS
 	========================= */
@@ -1507,6 +1572,15 @@
 
 		.status-filter {
 			width: 100%;
+		}
+
+		.invoice-date-range {
+			flex-wrap: wrap;
+			justify-content: flex-start;
+		}
+
+		.invoice-date-filter {
+			width: min(100%, 260px);
 		}
 
 		.column-picker,
