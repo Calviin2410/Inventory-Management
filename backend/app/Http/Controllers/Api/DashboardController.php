@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Barrel;
-use App\Models\Customer;
 use App\Models\Invoice;
 
 class DashboardController extends Controller
@@ -24,7 +23,10 @@ class DashboardController extends Controller
                 'unpaid'
             )->count(),
 
-            'total_customers' => Customer::count(),
+            'settled_invoices' => Invoice::where(
+                'settlement_status',
+                'settled'
+            )->count(),
 
             'available_barrels' => Barrel::where(
                 'status',

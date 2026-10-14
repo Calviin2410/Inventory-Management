@@ -131,4 +131,83 @@ class WasteSaleTest extends TestCase
             ->assertJsonFragment(['id' => $included->id])
             ->assertJsonMissing(['id' => $excluded->id]);
     }
+
+    public function test_waste_page_can_filter_by_received_by_user(): void
+    {
+        $receiver = User::factory()->create(['name' => 'Receiver A']);
+        $otherReceiver = User::factory()->create(['name' => 'Receiver B']);
+        $included = $this->invoice();
+        $included->update([
+            'waste_sell_amount' => 88,
+            'waste_sell_recorded_at' => '2026-10-08',
+            'waste_sell_recorded_by' => $receiver->id,
+        ]);
+        $excluded = $this->invoice();
+        $excluded->update([
+            'waste_sell_amount' => 30,
+            'waste_sell_recorded_at' => '2026-10-08',
+            'waste_sell_recorded_by' => $otherReceiver->id,
+        ]);
+
+        Sanctum::actingAs(User::factory()->create(['role' => 'normal_staff']));
+
+        $this->getJson('/api/waste-sales?received_by='.$receiver->id)
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $included->id)
+            ->assertJsonPath(
+                'total_amount_received',
+                fn ($amount) => (float) $amount === 88.0
+            )
+            ->assertJsonCount(2, 'received_by_options');
+    }
+
+    public function test_waste_page_can_filter_invoices_by_waste_sale_status(): void
+    {
+        Sanctum::actingAs(User::factory()->create(['role' => 'normal_staff']));
+
+        $unsold = $this->invoice();
+        $sold = $this->invoice();
+        $sold->update(['waste_sell_amount' => 0]);
+
+        $this->getJson('/api/waste-sales?waste_status=unsold')
+            ->assertOk()
+            ->assertJsonFragment(['id' => $unsold->id])
+            ->assertJsonMissing(['id' => $sold->id]);
+
+        $this->getJson('/api/waste-sales?waste_status=sold')
+            ->assertOk()
+            ->assertJsonFragment(['id' => $sold->id])
+            ->assertJsonMissing(['id' => $unsold->id]);
+    }
+
+    public function test_waste_page_includes_invoices_without_a_recorded_sale(): void
+    {
+        $unrecorded = $this->invoice();
+        $recorded = $this->invoice();
+        $recorded->update([
+            'waste_sell_amount' => 42.50,
+            'waste_sell_recorded_at' => '2026-10-08',
+        ]);
+        Sanctum::actingAs(User::factory()->create(['role' => 'normal_staff']));
+
+        $this->getJson('/api/waste-sales')
+            ->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonFragment(['id' => $unrecorded->id])
+            ->assertJsonPath(
+                'total_amount_received',
+                fn ($amount) => (float) $amount === 42.5
+            );
+    }
+
+    public function test_staff_cannot_record_a_waste_sale_for_an_invoice_they_did_not_create(): void
+    {
+        $invoice = $this->invoice();
+        Sanctum::actingAs(User::factory()->create(['role' => 'normal_staff']));
+
+        $this->patchJson("/api/waste-sales/{$invoice->id}", [
+            'amount' => 25,
+        ])->assertForbidden();
+    }
 }

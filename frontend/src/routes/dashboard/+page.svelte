@@ -10,16 +10,38 @@
 		{ key: "invoice", label: "Invoice" },
 		{ key: "customer", label: "Customer" },
 		{ key: "invoiceDate", label: "Invoice Date" },
-		{ key: "status", label: "Status" },
+		{ key: "status", label: "Payment Status" },
+		{ key: "settlementStatus", label: "Settlement Status" },
 	];
 	let visibleColumns = $state(Object.fromEntries(recentInvoiceColumns.map((column) => [column.key, true])));
 
 	let recentInvoices = $state([]);
+	let invoiceSortDirection = $state("");
+	let invoiceDateSortDirection = $state("desc");
+	let sortedRecentInvoices = $derived([...recentInvoices].sort((a, b) => {
+		const direction = invoiceSortDirection ? invoiceSortDirection : invoiceDateSortDirection;
+		const sign = direction === "asc" ? 1 : -1;
+		if (invoiceSortDirection) {
+			const number = (value) => Number(String(value ?? "").replace(/^TKS|^[A-Z]/, "")) || 0;
+			return (number(a.invoice_no) - number(b.invoice_no)) * sign;
+		}
+		return (new Date(a.issued_date).getTime() - new Date(b.issued_date).getTime()) * sign;
+	}));
+
+	function toggleRecentSort(column) {
+		if (column === "invoice_no") {
+			invoiceSortDirection = invoiceSortDirection === "asc" ? "desc" : "asc";
+			invoiceDateSortDirection = "";
+		} else {
+			invoiceDateSortDirection = invoiceDateSortDirection === "asc" ? "desc" : "asc";
+			invoiceSortDirection = "";
+		}
+	}
 
 	let totalInvoices = $state(0);
 	let paidInvoices = $state(0);
 	let unpaidInvoices = $state(0);
-	let totalCustomers = $state(0);
+	let settledInvoices = $state(0);
 	let availableBarrels = $state(0);
 	let rentedBarrels = $state(0);
 
@@ -46,7 +68,7 @@
 
 			unpaidInvoices = result?.unpaid_invoices ?? 0;
 
-			totalCustomers = result?.total_customers ?? 0;
+			settledInvoices = result?.settled_invoices ?? 0;
 
 			availableBarrels = result?.available_barrels ?? 0;
 
@@ -110,9 +132,9 @@
 				<small>Awaiting payment</small>
 			</div>
 			<div class="stat-card">
-				<div class="stat-top"><span>Total customers</span><i>♙</i></div>
-				<strong>{totalCustomers}</strong>
-				<small>Active customer records</small>
+				<div class="stat-top"><span>Settled invoices</span><i>✓</i></div>
+				<strong>{settledInvoices}</strong>
+				<small>Invoices settled</small>
 			</div>
 			<div class="stat-card">
 				<div class="stat-top">
@@ -136,8 +158,9 @@
 					<p>The latest rental invoices created.</p>
 				</div>
 
-				<a href="/invoices">View all invoices <span>→</span></a>
-				<ColumnPicker columns={recentInvoiceColumns} bind:visible={visibleColumns} />
+				<div class="panel-controls">
+					<ColumnPicker columns={recentInvoiceColumns} bind:visible={visibleColumns} />
+				</div>
 			</div>
 
 			{#if recentInvoices.length === 0}
@@ -151,18 +174,19 @@
 					<table class="data-table">
 						<thead>
 							<tr>
-								{#if visibleColumns.invoice}<th> Invoice </th>{/if}
+								{#if visibleColumns.invoice}<th aria-sort={invoiceSortDirection === "asc" ? "ascending" : invoiceSortDirection === "desc" ? "descending" : "none"}><button class="sort-header" type="button" onclick={() => toggleRecentSort("invoice_no")}>Invoice <span aria-hidden="true">{invoiceSortDirection === "asc" ? "↑" : invoiceSortDirection === "desc" ? "↓" : "↕"}</span></button></th>{/if}
 
 								{#if visibleColumns.customer}<th> Customer </th>{/if}
 
-								{#if visibleColumns.invoiceDate}<th> Invoice Date </th>{/if}
+								{#if visibleColumns.invoiceDate}<th aria-sort={invoiceDateSortDirection === "asc" ? "ascending" : invoiceDateSortDirection === "desc" ? "descending" : "none"}><button class="sort-header" type="button" onclick={() => toggleRecentSort("issued_date")}>Invoice Date <span aria-hidden="true">{invoiceDateSortDirection === "asc" ? "↑" : invoiceDateSortDirection === "desc" ? "↓" : "↕"}</span></button></th>{/if}
 
-								{#if visibleColumns.status}<th> Status </th>{/if}
+								{#if visibleColumns.status}<th> Payment Status </th>{/if}
+								{#if visibleColumns.settlementStatus}<th> Settlement Status </th>{/if}
 							</tr>
 						</thead>
 
 						<tbody>
-							{#each recentInvoices as invoice (invoice.id)}
+							{#each sortedRecentInvoices as invoice (invoice.id)}
 								<tr>
 									{#if visibleColumns.invoice}<td class="strong">
 										<a
@@ -192,6 +216,15 @@
 											{invoice.status === "paid"
 												? "Paid"
 												: "Unpaid"}
+										</span>
+									</td>{/if}
+									{#if visibleColumns.settlementStatus}<td>
+										<span
+											class="badge"
+											class:paid={invoice.settlement_status === "settled"}
+											class:unpaid={invoice.settlement_status !== "settled"}
+										>
+											{invoice.settlement_status === "settled" ? "Settled" : "Unsettled"}
 										</span>
 									</td>{/if}
 								</tr>
@@ -338,18 +371,6 @@
 		font-size: 13px;
 	}
 
-	.panel-title a {
-		color: #3158b8;
-		font-size: 11px;
-		font-weight: 600;
-
-		text-decoration: none;
-	}
-
-	.panel-title a:hover {
-		text-decoration: underline;
-	}
-
 	/* =========================
 	   TABLE
 	========================= */
@@ -469,7 +490,52 @@
 
 	@media (max-width: 600px) {
 		.stat-grid {
-			grid-template-columns: 1fr;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 10px;
+		}
+		.stat-card {
+			min-height: 116px;
+			padding: 13px 14px 12px;
+			border-radius: 12px;
+		}
+		.stat-card strong {
+			margin: 10px 0 5px;
+			font-size: 23px;
+		}
+		.stat-top {
+			font-size: 10px;
+		}
+		.stat-top i {
+			width: 23px;
+			height: 23px;
+			font-size: 11px;
+		}
+		.stat-card small {
+			font-size: 9px;
+		}
+		.panel-title {
+			flex-wrap: wrap;
+			gap: 12px;
+			padding: 16px;
+		}
+		.panel-title > div:first-child {
+			flex: 1 1 100%;
+			min-width: 0;
+		}
+		.panel-controls {
+			display: flex;
+			width: 100%;
+			align-items: center;
+			justify-content: space-between;
+			gap: 12px;
+		}
+		.panel-controls :global(.column-picker) {
+			flex: none;
+			width: auto;
+		}
+		.panel-controls :global(.column-picker summary) {
+			width: auto;
+			min-width: 132px;
 		}
 		.header-actions {
 			width: 100%;

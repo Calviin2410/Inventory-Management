@@ -263,4 +263,31 @@ class InvoicePaymentTest extends TestCase
 
         $this->assertDatabaseHas('invoices', ['id' => $invoice->id]);
     }
+
+    public function test_invoice_list_can_be_filtered_by_creator_and_returns_creator_options(): void
+    {
+        $firstCreator = User::factory()->create([
+            'name' => 'Creator A',
+            'role' => 'normal_staff',
+        ]);
+        $secondCreator = User::factory()->create([
+            'name' => 'Creator B',
+            'role' => 'normal_staff',
+        ]);
+        $firstInvoice = $this->invoice();
+        $firstInvoice->update(['user_id' => $firstCreator->id]);
+        $secondInvoice = $this->invoice();
+        $secondInvoice->update([
+            'invoice_no' => 'KT09998',
+            'user_id' => $secondCreator->id,
+        ]);
+
+        Sanctum::actingAs(User::factory()->create(['role' => 'normal_staff']));
+
+        $this->getJson('/api/invoices?created_by='.$firstCreator->id)
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $firstInvoice->id)
+            ->assertJsonCount(2, 'creator_options');
+    }
 }

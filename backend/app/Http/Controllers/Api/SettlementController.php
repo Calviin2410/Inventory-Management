@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Invoice;
+use App\Support\InvoiceOrdering;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -20,6 +21,8 @@ class SettlementController extends Controller
         $data = $request->validate([
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],
+            'sort' => ['nullable', 'in:invoice_no,issued_date'],
+            'direction' => ['nullable', 'in:asc,desc'],
         ]);
 
         $today = now('Asia/Kuala_Lumpur')->toDateString();
@@ -28,15 +31,15 @@ class SettlementController extends Controller
         $start = CarbonImmutable::parse($from, 'Asia/Kuala_Lumpur')->startOfDay()->utc();
         $end = CarbonImmutable::parse($to, 'Asia/Kuala_Lumpur')->addDay()->startOfDay()->utc();
 
-        return response()->json(
-            Invoice::query()
+        $query = Invoice::query()
                 ->with('settledByUser:id,name')
                 ->where('created_at', '>=', $start)
                 ->where('created_at', '<', $end)
                 ->latest('created_at')
-                ->latest('id')
-                ->get()
-        );
+                ->latest('id');
+        InvoiceOrdering::apply($query, $request->query('sort'), $request->query('direction'), 'created_at');
+
+        return response()->json($query->get());
     }
 
     public function update(Request $request, Invoice $invoice)

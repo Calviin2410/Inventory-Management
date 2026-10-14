@@ -38,6 +38,8 @@
 	let toDate = $state(malaysiaToday());
 	let paidCount = $derived(invoices.filter((invoice) => invoice.status === "paid").length);
 	let unpaidCount = $derived(invoices.filter((invoice) => invoice.status === "unpaid").length);
+	let invoiceSortDirection = $state("");
+	let dateSortDirection = $state("");
 
 	function malaysiaToday() {
 		const parts = new Intl.DateTimeFormat("en-GB", {
@@ -65,13 +67,27 @@
 		errorMessage = "";
 
 		try {
-			const result = await api.getSettlements({ from: fromDate, to: toDate });
+			const params = { from: fromDate, to: toDate };
+			if (invoiceSortDirection) { params.sort = "invoice_no"; params.direction = invoiceSortDirection; }
+			else if (dateSortDirection) { params.sort = "issued_date"; params.direction = dateSortDirection; }
+			const result = await api.getSettlements(params);
 			invoices = Array.isArray(result) ? result : [];
 		} catch (error) {
 			errorMessage = error?.message || "Unable to load today's invoices.";
 		} finally {
 			loading = false;
 		}
+	}
+
+	function toggleSort(column) {
+		if (column === "invoice_no") {
+			invoiceSortDirection = invoiceSortDirection === "asc" ? "desc" : "asc";
+			dateSortDirection = "";
+		} else {
+			dateSortDirection = dateSortDirection === "asc" ? "desc" : "asc";
+			invoiceSortDirection = "";
+		}
+		loadSettlements();
 	}
 
 	function openDialog(invoice, action) {
@@ -239,8 +255,8 @@
 				<table class="data-table">
 					<thead>
 						<tr>
-							{#if visibleColumns.invoiceNumber}<th>Invoice Number</th>{/if}
-							{#if visibleColumns.createdDate}<th>Created Date</th>{/if}
+							{#if visibleColumns.invoiceNumber}<th aria-sort={invoiceSortDirection === "asc" ? "ascending" : invoiceSortDirection === "desc" ? "descending" : "none"}><button class="sort-header" type="button" onclick={() => toggleSort("invoice_no")}>Invoice Number <span aria-hidden="true">{invoiceSortDirection === "asc" ? "↑" : invoiceSortDirection === "desc" ? "↓" : "↕"}</span></button></th>{/if}
+							{#if visibleColumns.createdDate}<th aria-sort={dateSortDirection === "asc" ? "ascending" : dateSortDirection === "desc" ? "descending" : "none"}><button class="sort-header" type="button" onclick={() => toggleSort("issued_date")}>Created Date <span aria-hidden="true">{dateSortDirection === "asc" ? "↑" : dateSortDirection === "desc" ? "↓" : "↕"}</span></button></th>{/if}
 							{#if visibleColumns.paymentStatus}<th>Payment Status</th>{/if}
 							{#if visibleColumns.settlementStatus}<th>Settlement Status</th>{/if}
 							{#if visibleColumns.remark}<th>Remark</th>{/if}

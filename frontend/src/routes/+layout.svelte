@@ -8,6 +8,32 @@
 	import { user } from '$lib/stores/auth.js';
 	let { children } = $props();
 
+	onMount(() => {
+		function closeDetailsOnOutsideClick(event) {
+			const target = event.target;
+			if (!(target instanceof Element)) return;
+
+			document.querySelectorAll("details[open]").forEach((details) => {
+				if (!details.contains(target)) details.removeAttribute("open");
+			});
+		}
+
+		function closeDetailsOnEscape(event) {
+			if (event.key !== "Escape") return;
+			document.querySelectorAll("details[open]").forEach((details) => {
+				details.removeAttribute("open");
+			});
+		}
+
+		document.addEventListener("click", closeDetailsOnOutsideClick);
+		document.addEventListener("keydown", closeDetailsOnEscape);
+
+		return () => {
+			document.removeEventListener("click", closeDetailsOnOutsideClick);
+			document.removeEventListener("keydown", closeDetailsOnEscape);
+		};
+	});
+
 	onMount(async () => {
 		if (!browser) {
 			return;

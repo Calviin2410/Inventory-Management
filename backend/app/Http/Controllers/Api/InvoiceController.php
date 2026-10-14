@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Barrel;
 use App\Models\Invoice;
 use App\Models\Customer;
+use App\Models\User;
 use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -48,6 +49,10 @@ class InvoiceController extends Controller
             $query->where('status', $request->query('status'));
         }
 
+        if ($request->filled('created_by')) {
+            $query->where('user_id', $request->query('created_by'));
+        }
+
         if ($request->filled('from_date')) {
             $query->whereDate('issued_date', '>=', $request->query('from_date'));
         }
@@ -77,9 +82,19 @@ class InvoiceController extends Controller
             $query->latest('issued_date')->latest('id');
         }
 
-        return response()->json(
-            $query->paginate(20)
-        );
+        $paginator = $query->paginate(20);
+        $creatorOptions = User::query()
+            ->whereIn('id', Invoice::query()
+                ->whereNotNull('user_id')
+                ->select('user_id')
+                ->distinct())
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        return response()->json(array_merge(
+            $paginator->toArray(),
+            ['creator_options' => $creatorOptions]
+        ));
     }
 
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\ActivityLog;
+use App\Support\InvoiceOrdering;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 
@@ -164,6 +165,8 @@ class CustomerController extends Controller
         ) {
             $query->where('status', $request->query('status'));
         }
+
+        InvoiceOrdering::apply($query, $request->query('sort'), $request->query('direction'));
 
         $invoices = $query->paginate(20);
 

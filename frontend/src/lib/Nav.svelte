@@ -15,7 +15,7 @@
 		{ href: "/waste", label: "Waste", icon: "♻" },
 		{ href: "/settlement", label: "Settlement", icon: "✓", adminOnly: true },
 		{ href: "/activity-logs", label: "Activity log", icon: "≡", adminOnly: true },
-		{ href: "/reports", label: "Reports", icon: "⌁", adminOnly: true },
+		{ href: "/reports", label: "Reports", icon: "⌁" },
 	];
 	let visibleLinks = $derived(
 		links.filter((link) => !link.adminOnly || $user?.role === "admin"),

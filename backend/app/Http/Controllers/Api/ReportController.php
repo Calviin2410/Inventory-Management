@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
+use App\Support\InvoiceOrdering;
 use Illuminate\Http\Request;
 
 class ReportController extends Controller
@@ -11,9 +12,9 @@ class ReportController extends Controller
     public function rentalReport(Request $request)
     {
         abort_unless(
-            $request->user()->isAdmin(),
+            in_array($request->user()?->role, ['admin', 'staff'], true),
             403,
-            'Only administrators can access reports.'
+            'Only administrators and staff can access reports.'
         );
 
         $query = Invoice::with([
@@ -22,6 +23,8 @@ class ReportController extends Controller
         ])
             ->latest('issued_date')
             ->latest('id');
+
+        InvoiceOrdering::apply($query, $request->query('sort'), $request->query('direction'));
 
         if ($fromDate = $request->query('from_date')) {
             $query->whereDate(

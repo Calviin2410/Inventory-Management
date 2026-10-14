@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Barrel;
 use App\Models\Invoice;
+use App\Models\User;
+use App\Support\InvoiceOrdering;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -17,6 +19,10 @@ class WasteController extends Controller
             'search' => ['nullable', 'string', 'max:100'],
             'from_date' => ['nullable', 'date'],
             'to_date' => ['nullable', 'date', 'after_or_equal:from_date'],
+            'received_by' => ['nullable', 'integer'],
+            'waste_status' => ['nullable', 'in:unsold,sold'],
+            'sort' => ['nullable', 'in:invoice_no,issued_date'],
+            'direction' => ['nullable', 'in:asc,desc'],
         ]);
 
         $query = Invoice::query()
@@ -24,7 +30,6 @@ class WasteController extends Controller
                 'items.barrel:id,code',
                 'wasteSellRecordedBy:id,name',
             ])
-            ->whereNotNull('waste_sell_amount')
             ->latest('issued_date')
             ->latest('id');
 
@@ -46,23 +51,47 @@ class WasteController extends Controller
             $query->whereDate('waste_sell_recorded_at', '<=', $data['to_date']);
         }
 
+        if (! empty($data['received_by'])) {
+            $query->where('waste_sell_recorded_by', $data['received_by']);
+        }
+
+        if (($data['waste_status'] ?? null) === 'unsold') {
+            $query->whereNull('waste_sell_amount');
+        } elseif (($data['waste_status'] ?? null) === 'sold') {
+            $query->whereNotNull('waste_sell_amount');
+        }
+
+        InvoiceOrdering::apply($query, $request->query('sort'), $request->query('direction'));
+
         $totalAmountReceived = (clone $query)
             ->reorder()
             ->sum('waste_sell_amount');
         $sales = $query->paginate(20);
+        $receiverOptions = User::query()
+            ->whereIn('id', Invoice::query()
+                ->whereNotNull('waste_sell_amount')
+                ->whereNotNull('waste_sell_recorded_by')
+                ->select('waste_sell_recorded_by')
+                ->distinct())
+            ->orderBy('name')
+            ->get(['id', 'name']);
 
         return response()->json(array_merge(
             $sales->toArray(),
-            ['total_amount_received' => $totalAmountReceived]
+            [
+                'total_amount_received' => $totalAmountReceived,
+                'received_by_options' => $receiverOptions,
+            ]
         ));
     }
 
     public function update(Request $request, Invoice $invoice)
     {
         abort_unless(
-            $request->user()?->isAdmin() || (int) $invoice->user_id === (int) $request->user()?->id,
+            $request->user()?->isAdmin()
+                || (int) $invoice->user_id === (int) $request->user()?->id,
             403,
-            'Only the invoice creator or an administrator can update its waste sell.'
+            'Only the invoice creator or an administrator can record or update a waste sell.'
         );
 
         $data = $request->validate([

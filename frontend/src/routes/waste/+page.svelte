@@ -8,6 +8,7 @@
 	import WasteSaleDialog from "$lib/WasteSaleDialog.svelte";
 	import { user } from "$lib/stores/auth.js";
 	import ColumnPicker from "$lib/ColumnPicker.svelte";
+	import FilterSelect from "$lib/FilterSelect.svelte";
 
 	const wasteColumns = [
 		{ key: "invoiceNumber", label: "Invoice Number" },
@@ -28,10 +29,17 @@
 	let search = $state("");
 	let fromDate = $state("");
 	let toDate = $state("");
+	let receivedByFilter = $state("");
+	let wasteStatusFilter = $state("");
+	let receivedByOptions = $state([
+		{ value: "", label: "All received by" },
+	]);
 	let currentPage = $state(1);
 	let lastPage = $state(1);
 	let totalInvoices = $state(0);
 	let totalAmountReceived = $state(0);
+	let invoiceSortDirection = $state("");
+	let invoiceDateSortDirection = $state("desc");
 	let saleInvoice = $state(null);
 	let isAdmin = $derived($user?.role === "admin");
 	function canManageInvoice(invoice) {
@@ -43,11 +51,22 @@
 		errorMessage = "";
 		try {
 			const params = { page };
+			if (invoiceSortDirection) { params.sort = "invoice_no"; params.direction = invoiceSortDirection; }
+			else if (invoiceDateSortDirection) { params.sort = "issued_date"; params.direction = invoiceDateSortDirection; }
 			if (search.trim()) params.search = search.trim();
 			if (fromDate) params.from_date = fromDate;
 			if (toDate) params.to_date = toDate;
+			if (receivedByFilter) params.received_by = receivedByFilter;
+			if (wasteStatusFilter) params.waste_status = wasteStatusFilter;
 			const result = await api.getWasteSales(params);
 			invoices = result?.data ?? [];
+			receivedByOptions = [
+				{ value: "", label: "All received by" },
+				...(result?.received_by_options ?? []).map((receiver) => ({
+					value: String(receiver.id),
+					label: receiver.name,
+				})),
+			];
 			currentPage = result?.current_page ?? 1;
 			lastPage = result?.last_page ?? 1;
 			totalInvoices = result?.total ?? 0;
@@ -57,6 +76,17 @@
 		} finally {
 			loading = false;
 		}
+	}
+
+	function toggleSort(column) {
+		if (column === "invoice_no") {
+			invoiceSortDirection = invoiceSortDirection === "asc" ? "desc" : "asc";
+			invoiceDateSortDirection = "";
+		} else {
+			invoiceDateSortDirection = invoiceDateSortDirection === "asc" ? "desc" : "asc";
+			invoiceSortDirection = "";
+		}
+		loadWasteSales(1);
 	}
 
 	function formatAmount(value) {
@@ -105,18 +135,22 @@
 						>{/if}
 				</div>
 			</label>
-			<div class="date-filter">
-				<span>Received From</span><DateInput
-					bind:value={fromDate}
-					ariaLabel="Received from date"
-				/>
-			</div>
-			<div class="date-filter">
-				<span>Received To</span><DateInput
-					bind:value={toDate}
-					ariaLabel="Received to date"
-				/>
-			</div>
+			<FilterSelect
+				bind:value={receivedByFilter}
+				options={receivedByOptions}
+				ariaLabel="Filter waste sales by receiver"
+				onchange={() => loadWasteSales(1)}
+			/>
+			<FilterSelect
+				bind:value={wasteStatusFilter}
+				options={[
+					{ value: "", label: "All waste sales" },
+					{ value: "unsold", label: "Not sold" },
+					{ value: "sold", label: "Sold" },
+				]}
+				ariaLabel="Filter invoices by waste sale status"
+				onchange={() => loadWasteSales(1)}
+			/>
 			<div class="filter-actions">
 				<button
 					class="btn btn-primary"
@@ -130,6 +164,8 @@
 						search = "";
 						fromDate = "";
 						toDate = "";
+						receivedByFilter = "";
+						wasteStatusFilter = "";
 						loadWasteSales(1);
 					}}>Refresh</button
 				>
@@ -142,17 +178,33 @@
 		</div>
 	</div>
 
-	<section
-		class="amount-summary"
-		aria-label="Total waste sell amount received"
-	>
-		<div class="amount-icon">RM</div>
-		<div>
-			<span>Total Amount Sell</span><strong
-				>{formatAmount(totalAmountReceived)}</strong
-			>
+	<div class="waste-overview-row">
+		<section
+			class="amount-summary"
+			aria-label="Total waste sell amount received"
+		>
+			<div class="amount-icon">RM</div>
+			<div>
+				<span>Total Amount Sell</span><strong
+					>{formatAmount(totalAmountReceived)}</strong
+				>
+			</div>
+		</section>
+		<div class="date-range-filters" aria-label="Filter waste sales by date range">
+			<label class="date-filter">
+				<span>Received From</span><DateInput
+					bind:value={fromDate}
+					ariaLabel="Received from date"
+				/>
+			</label>
+			<label class="date-filter">
+				<span>Received To</span><DateInput
+					bind:value={toDate}
+					ariaLabel="Received to date"
+				/>
+			</label>
 		</div>
-	</section>
+	</div>
 
 	<section class="panel waste-panel">
 		{#if loading}
@@ -169,9 +221,9 @@
 				<table class="data-table">
 					<thead
 						><tr>
-							{#if visibleColumns.invoiceNumber}<th>Invoice Number</th>{/if}
+							{#if visibleColumns.invoiceNumber}<th aria-sort={invoiceSortDirection === "asc" ? "ascending" : invoiceSortDirection === "desc" ? "descending" : "none"}><button class="sort-header" type="button" onclick={() => toggleSort("invoice_no")}>Invoice Number <span aria-hidden="true">{invoiceSortDirection === "asc" ? "↑" : invoiceSortDirection === "desc" ? "↓" : "↕"}</span></button></th>{/if}
 							{#if visibleColumns.barrelCode}<th>Barrel Code</th>{/if}
-							{#if visibleColumns.invoiceDate}<th>Invoice Date</th>{/if}
+							{#if visibleColumns.invoiceDate}<th aria-sort={invoiceDateSortDirection === "asc" ? "ascending" : invoiceDateSortDirection === "desc" ? "descending" : "none"}><button class="sort-header" type="button" onclick={() => toggleSort("issued_date")}>Invoice Date <span aria-hidden="true">{invoiceDateSortDirection === "asc" ? "↑" : invoiceDateSortDirection === "desc" ? "↓" : "↕"}</span></button></th>{/if}
 							{#if visibleColumns.totalAmount}<th>Total Amount</th>{/if}
 							{#if visibleColumns.sellDate}<th>Sell Date</th>{/if}
 							{#if visibleColumns.remark}<th>Remark</th>{/if}
@@ -196,7 +248,7 @@
 								{#if visibleColumns.invoiceDate}<td>{formatDate(invoice.issued_date)}</td>{/if}
 								{#if visibleColumns.totalAmount}<td class="amount-cell"
 									>{formatAmount(
-										invoice.waste_sell_amount,
+						invoice.waste_sell_amount ?? 0,
 									)}</td>{/if}
 								{#if visibleColumns.sellDate}<td
 									>{formatDate(
@@ -207,13 +259,13 @@
 								{#if visibleColumns.receivedBy}<td
 									>{invoice.waste_sell_recorded_by?.name ||
 										"—"}</td>{/if}
-								<td
-									>{#if canManageInvoice(invoice)}<button
+				<td
+					>{#if canManageInvoice(invoice)}<button
 											class="btn update-sale-button"
 											type="button"
 											onclick={() =>
 												(saleInvoice = invoice)}
-											>UpdateSell</button
+							>{invoice.waste_sell_amount === null ? "Sell Waste" : "UpdateSell"}</button
 										>{:else}—{/if}</td
 								>
 							</tr>
@@ -268,8 +320,7 @@
 	}
 	.filter-grid {
 		display: grid;
-		grid-template-columns:
-			minmax(260px, 1fr) minmax(175px, 220px) minmax(175px, 220px) auto auto;
+		grid-template-columns: minmax(220px, 1.3fr) minmax(175px, 210px) minmax(170px, 205px) auto auto;
 		align-items: end;
 		gap: 12px;
 	}
@@ -278,6 +329,12 @@
 		display: grid;
 		gap: 6px;
 		min-width: 0;
+	}
+	.date-range-filters {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(175px, 220px));
+		align-items: end;
+		gap: 12px;
 	}
 	.search-filter span,
 	.date-filter span {
@@ -304,11 +361,18 @@
 		align-items: center;
 		gap: 14px;
 		width: min(100%, 360px);
-		margin: 0 0 20px auto;
+		margin: 0;
 		padding: 16px 18px;
 		border: 1px solid #b9ead9;
 		border-radius: 11px;
 		background: #f2fcf8;
+	}
+	.waste-overview-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 20px;
+		margin: 24px 0 20px;
 	}
 	.amount-icon {
 		display: grid;
@@ -390,16 +454,16 @@
 	}
 	@media (max-width: 1280px) {
 		.filter-grid {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
+			grid-template-columns: repeat(3, minmax(0, 1fr));
 		}
 		.search-filter {
-			grid-column: 1 / -1;
+			grid-column: span 2;
 		}
 		.filter-actions {
-			grid-column: 1 / -1;
+			grid-column: auto;
 		}
 		:global(.column-picker) {
-			grid-column: 1 / -1;
+			grid-column: auto;
 			justify-self: end;
 		}
 		.data-table th:first-child,
@@ -434,7 +498,14 @@
 		}
 		.amount-summary {
 			width: 100%;
-			margin-left: 0;
+		}
+		.waste-overview-row {
+			flex-direction: column;
+			align-items: stretch;
+		}
+		.date-range-filters {
+			width: 100%;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
 		}
 	}
 </style>

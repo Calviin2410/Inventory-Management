@@ -27,6 +27,8 @@
     let currentPage = $state(1);
     let lastPage = $state(1);
     let totalInvoices = $state(0);
+    let invoiceSortDirection = $state("");
+    let invoiceDateSortDirection = $state("desc");
 
     let isAdmin = $derived($user?.role === "admin");
 
@@ -53,6 +55,8 @@
             if (statusFilter) {
                 params.status = statusFilter;
             }
+            if (invoiceSortDirection) { params.sort = "invoice_no"; params.direction = invoiceSortDirection; }
+            else if (invoiceDateSortDirection) { params.sort = "issued_date"; params.direction = invoiceDateSortDirection; }
 
             const result = await api.getCustomer(
                 page.params.id,
@@ -70,6 +74,17 @@
         } finally {
             loading = false;
         }
+    }
+
+    function toggleSort(column) {
+        if (column === "invoice_no") {
+            invoiceSortDirection = invoiceSortDirection === "asc" ? "desc" : "asc";
+            invoiceDateSortDirection = "";
+        } else {
+            invoiceDateSortDirection = invoiceDateSortDirection === "asc" ? "desc" : "asc";
+            invoiceSortDirection = "";
+        }
+        loadCustomer(1);
     }
 
     async function previousPage() {
@@ -137,9 +152,9 @@
                 <table class="data-table">
                     <thead>
                         <tr>
-                            {#if visibleColumns.invoice}<th>Invoice Number</th>{/if}
+                            {#if visibleColumns.invoice}<th aria-sort={invoiceSortDirection === "asc" ? "ascending" : invoiceSortDirection === "desc" ? "descending" : "none"}><button class="sort-header" type="button" onclick={() => toggleSort("invoice_no")}>Invoice Number <span aria-hidden="true">{invoiceSortDirection === "asc" ? "↑" : invoiceSortDirection === "desc" ? "↓" : "↕"}</span></button></th>{/if}
                             {#if visibleColumns.barrels}<th>Barrel Code</th>{/if}
-                            {#if visibleColumns.date}<th>Invoice Date</th>{/if}
+                            {#if visibleColumns.date}<th aria-sort={invoiceDateSortDirection === "asc" ? "ascending" : invoiceDateSortDirection === "desc" ? "descending" : "none"}><button class="sort-header" type="button" onclick={() => toggleSort("issued_date")}>Invoice Date <span aria-hidden="true">{invoiceDateSortDirection === "asc" ? "↑" : invoiceDateSortDirection === "desc" ? "↓" : "↕"}</span></button></th>{/if}
                             {#if visibleColumns.status}<th>Status</th>{/if}
                             <th>Action</th>
                         </tr>
@@ -149,7 +164,7 @@
                         {#each invoices as invoice (invoice.id)}
                             <tr>
                                 {#if visibleColumns.invoice}<td class="strong">
-                                    {invoice.invoice_no}
+                                    <a class="invoice-link" href={`/invoices/${invoice.id}`}>{invoice.invoice_no}</a>
                                 </td>{/if}
 
                                 {#if visibleColumns.barrels}<td>

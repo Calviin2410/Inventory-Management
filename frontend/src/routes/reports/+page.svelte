@@ -22,6 +22,8 @@
 	let currentPage = $state(1);
 	let lastPage = $state(1);
 	let totalInvoices = $state(0);
+	let invoiceSortDirection = $state("");
+	let invoiceDateSortDirection = $state("desc");
 	let paidInvoices = $state(0);
 	let unpaidInvoices = $state(0);
 	let settledInvoices = $state(0);
@@ -33,10 +35,12 @@
 		{ key: "barrel", label: "Barrel" },
 		{ key: "rentalStart", label: "Rental Start" },
 		{ key: "rentalEnd", label: "Rental End" },
+		{ key: "invoiceAmount", label: "Invoice Amount" },
+		{ key: "wasteSellAmount", label: "Sell Waste Amount" },
 		{ key: "settlementStatus", label: "Settlement Status" },
 		{ key: "paymentStatus", label: "Payment Status" },
 	];
-	let visibleColumns = $state(Object.fromEntries(reportColumns.map((column) => [column.key, true])));
+	let visibleColumns = $state(Object.fromEntries(reportColumns.map((column) => [column.key, !["rentalStart", "rentalEnd"].includes(column.key)])));
 	let allColumnsVisible = $derived(reportColumns.every((column) => visibleColumns[column.key]));
 
 	function toggleColumn(key) {
@@ -50,9 +54,26 @@
 
     function reportParams(page = 1) {
 		const params = { page };
+		if (invoiceSortDirection) { params.sort = "invoice_no"; params.direction = invoiceSortDirection; }
+		else if (invoiceDateSortDirection) { params.sort = "issued_date"; params.direction = invoiceDateSortDirection; }
 		if (fromDate) params.from_date = fromDate;
 		if (toDate) params.to_date = toDate;
 		return params;
+	}
+
+	function toggleSort(column) {
+		if (column === "invoice_no") {
+			invoiceSortDirection = invoiceSortDirection === "asc" ? "desc" : "asc";
+			invoiceDateSortDirection = "";
+		} else {
+			invoiceDateSortDirection = invoiceDateSortDirection === "asc" ? "desc" : "asc";
+			invoiceSortDirection = "";
+		}
+		loadReports(1);
+	}
+
+	function settledInvoiceHref(invoice) {
+		return `/invoices/${invoice.id}${invoice.settlement_status === "settled" ? "?source=settlement" : ""}`;
 	}
 
     async function loadReports(page = 1) {
@@ -119,13 +140,15 @@
         return sourceInvoices.flatMap((invoice) => {
             const items = invoice.items?.length ? invoice.items : [null];
 
-            return items.map((item) => ({
+            return items.map((item, itemIndex) => ({
                 invoice: invoice.invoice_no ?? "",
 				invoiceDate: excelDate(invoice.issued_date),
                 customer: invoice.customer?.name ?? "",
                 barrel: item?.barrel?.code ?? "",
                 rentalStart: excelDate(item?.rental_start),
                 rentalEnd: excelDate(item?.rental_end),
+				invoiceAmount: itemIndex === 0 ? Number(invoice.total_amount ?? 0) : null,
+				wasteSellAmount: itemIndex === 0 ? Number(invoice.waste_sell_amount ?? 0) : null,
 				settlementStatus: invoice.settlement_status === "settled" ? "Settled" : "Unsettled",
 				paymentStatus: invoice.status === "paid" ? "Paid" : "Unpaid",
             }));
@@ -161,11 +184,13 @@
                 { key: "barrel", width: 16 },
                 { key: "rentalStart", width: 18 },
                 { key: "rentalEnd", width: 18 },
+				{ key: "invoiceAmount", width: 20 },
+				{ key: "wasteSellAmount", width: 22 },
 				{ key: "settlementStatus", width: 20 },
 				{ key: "paymentStatus", width: 16 },
             ];
 
-            worksheet.mergeCells("A1:H1");
+			worksheet.mergeCells("A1:J1");
             worksheet.getCell("A1").value = "Rental Report";
             worksheet.getCell("A1").font = {
                 bold: true,
@@ -180,11 +205,11 @@
             worksheet.getCell("A1").alignment = { vertical: "middle" };
             worksheet.getRow(1).height = 32;
 
-            worksheet.mergeCells("A2:H2");
+			worksheet.mergeCells("A2:J2");
             worksheet.getCell("A2").value = `Invoice Date Period: ${fromDate || "All dates"} to ${toDate || "All dates"}`;
             worksheet.getCell("A2").font = { color: { argb: "FF475569" } };
 
-            worksheet.mergeCells("A3:H3");
+			worksheet.mergeCells("A3:J3");
 			const exportPaid = exportInvoices.filter((invoice) => invoice.status === "paid").length;
 			const exportUnpaid = exportInvoices.filter((invoice) => invoice.status === "unpaid").length;
 			const exportSettled = exportInvoices.filter((invoice) => invoice.settlement_status === "settled").length;
@@ -201,6 +226,8 @@
                 "Barrel",
                 "Rental Start",
                 "Rental End",
+				"Invoice Amount",
+				"Sell Waste Amount",
 				"Settlement Status",
 				"Payment Status",
             ];
@@ -220,6 +247,8 @@
 				row.getCell("invoiceDate").numFmt = "dd mmm yyyy";
                 row.getCell("rentalStart").numFmt = "dd mmm yyyy";
                 row.getCell("rentalEnd").numFmt = "dd mmm yyyy";
+				row.getCell("invoiceAmount").numFmt = '"RM "#,##0.00';
+				row.getCell("wasteSellAmount").numFmt = '"RM "#,##0.00';
 
 				const statusCell = row.getCell("paymentStatus");
                 statusCell.font = {
@@ -233,7 +262,7 @@
                 };
             }
 
-            worksheet.autoFilter = "A5:H5";
+			worksheet.autoFilter = "A5:J5";
 
             const buffer = await workbook.xlsx.writeBuffer();
             const blob = new Blob([buffer], {
@@ -266,7 +295,7 @@
 
             user.set(currentUser);
 
-            if (currentUser?.role !== "admin") {
+			if (!["admin", "staff"].includes(currentUser?.role)) {
                 goto("/dashboard");
                 return;
             }
@@ -432,9 +461,9 @@
                     <table>
                         <thead>
                             <tr>
-                                {#if visibleColumns.invoice}<th> Invoice </th>{/if}
+                                {#if visibleColumns.invoice}<th aria-sort={invoiceSortDirection === "asc" ? "ascending" : invoiceSortDirection === "desc" ? "descending" : "none"}><button class="sort-header" type="button" onclick={() => toggleSort("invoice_no")}>Invoice <span aria-hidden="true">{invoiceSortDirection === "asc" ? "↑" : invoiceSortDirection === "desc" ? "↓" : "↕"}</span></button></th>{/if}
 
-								{#if visibleColumns.invoiceDate}<th> Invoice Date </th>{/if}
+								{#if visibleColumns.invoiceDate}<th aria-sort={invoiceDateSortDirection === "asc" ? "ascending" : invoiceDateSortDirection === "desc" ? "descending" : "none"}><button class="sort-header" type="button" onclick={() => toggleSort("issued_date")}>Invoice Date <span aria-hidden="true">{invoiceDateSortDirection === "asc" ? "↑" : invoiceDateSortDirection === "desc" ? "↓" : "↕"}</span></button></th>{/if}
 
 								{#if visibleColumns.customer}<th> Customer </th>{/if}
 
@@ -444,6 +473,8 @@
 
 								{#if visibleColumns.rentalEnd}<th> Rental End </th>{/if}
 
+								{#if visibleColumns.invoiceAmount}<th>Invoice Amount</th>{/if}
+								{#if visibleColumns.wasteSellAmount}<th>Sell Waste Amount</th>{/if}
 								{#if visibleColumns.settlementStatus}<th> Settlement Status </th>{/if}
 
 								{#if visibleColumns.paymentStatus}<th> Payment Status </th>{/if}
@@ -453,10 +484,10 @@
                         <tbody>
                             {#each filteredInvoices as invoice (invoice.id)}
                                 {#if invoice.items?.length}
-                                    {#each invoice.items as item}
+                                    {#each invoice.items as item, itemIndex}
                                         <tr>
 											{#if visibleColumns.invoice}
-												<td><a class="invoice-link" href={`/invoices/${invoice.id}`}>{invoice.invoice_no}</a></td>
+											<td><a class="invoice-link" href={settledInvoiceHref(invoice)}>{invoice.invoice_no}</a></td>
 											{/if}
 
 											{#if visibleColumns.invoiceDate}<td>{formatDate(invoice.issued_date)}</td>{/if}
@@ -476,6 +507,8 @@
 											{#if visibleColumns.rentalEnd}<td>
                                                 {formatDate(item.rental_end)}
                                             </td>{/if}
+											{#if visibleColumns.invoiceAmount}<td>{itemIndex === 0 ? new Intl.NumberFormat("en-MY", { style: "currency", currency: "MYR" }).format(Number(invoice.total_amount ?? 0)) : "—"}</td>{/if}
+											{#if visibleColumns.wasteSellAmount}<td>{itemIndex === 0 ? new Intl.NumberFormat("en-MY", { style: "currency", currency: "MYR" }).format(Number(invoice.waste_sell_amount ?? 0)) : "—"}</td>{/if}
 
 											{#if visibleColumns.settlementStatus}<td>
 												<span class="settlement-badge" class:settled={invoice.settlement_status === "settled"}>
@@ -501,7 +534,7 @@
                                 {:else}
                                     <tr>
 										{#if visibleColumns.invoice}
-											<td><a class="invoice-link" href={`/invoices/${invoice.id}`}>{invoice.invoice_no}</a></td>
+											<td><a class="invoice-link" href={settledInvoiceHref(invoice)}>{invoice.invoice_no}</a></td>
 										{/if}
 
 									{#if visibleColumns.invoiceDate}<td>{formatDate(invoice.issued_date)}</td>{/if}
@@ -515,6 +548,8 @@
 									{#if visibleColumns.rentalStart}<td> - </td>{/if}
 
 									{#if visibleColumns.rentalEnd}<td> - </td>{/if}
+					{#if visibleColumns.invoiceAmount}<td>{new Intl.NumberFormat("en-MY", { style: "currency", currency: "MYR" }).format(Number(invoice.total_amount ?? 0))}</td>{/if}
+					{#if visibleColumns.wasteSellAmount}<td>{new Intl.NumberFormat("en-MY", { style: "currency", currency: "MYR" }).format(Number(invoice.waste_sell_amount ?? 0))}</td>{/if}
 
 									{#if visibleColumns.settlementStatus}<td>
 										<span class="settlement-badge" class:settled={invoice.settlement_status === "settled"}>
@@ -881,11 +916,24 @@
         }
 
         .filter-actions {
-            flex-direction: column;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            gap: 8px;
+        }
+
+        .filter-actions .btn {
+            min-width: 0;
+            min-height: 42px;
+            flex: 1 1 0;
+            padding: 8px 5px;
+            border-radius: 8px;
+            font-size: 12px;
+            line-height: 1.2;
+            white-space: nowrap;
         }
 
         .summary-grid {
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
         }
     }
 </style>

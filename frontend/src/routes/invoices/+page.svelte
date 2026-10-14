@@ -20,6 +20,8 @@
 	let search = $state("");
 	let statusFilter = $state("");
 	let invoicePrefixFilter = $state("");
+	let creatorFilter = $state("");
+	let creatorOptions = $state([]);
 	let invoiceSortDirection = $state("");
 	let invoiceDateSortDirection = $state("desc");
 	let invoiceFromDate = $state("");
@@ -101,6 +103,11 @@
 	let selectedPrefixLabel = $derived(
 		invoicePrefixFilter || "All invoices",
 	);
+	let selectedCreatorLabel = $derived(
+		creatorFilter
+			? creatorOptions.find((creator) => String(creator.id) === creatorFilter)?.name ?? "All invoices created by"
+			: "All invoices created by",
+	);
 
 	function selectStatusFilter(value, event) {
 		statusFilter = value;
@@ -110,6 +117,12 @@
 
 	function selectInvoicePrefix(value, event) {
 		invoicePrefixFilter = value;
+		event.currentTarget.closest("details")?.removeAttribute("open");
+		loadInvoices(1);
+	}
+
+	function selectCreator(value, event) {
+		creatorFilter = value;
 		event.currentTarget.closest("details")?.removeAttribute("open");
 		loadInvoices(1);
 	}
@@ -214,6 +227,10 @@
 				params.prefix = invoicePrefixFilter;
 			}
 
+			if (creatorFilter) {
+				params.created_by = creatorFilter;
+			}
+
 			if (invoiceFromDate) params.from_date = invoiceFromDate;
 			if (invoiceToDate) params.to_date = invoiceToDate;
 
@@ -228,6 +245,7 @@
 			const result = await api.getInvoices(params);
 
 			invoices = result?.data ?? [];
+			creatorOptions = result?.creator_options ?? creatorOptions;
 
 			currentPage = result?.current_page ?? 1;
 
@@ -468,6 +486,7 @@
 				search = "";
 				statusFilter = "";
 				invoicePrefixFilter = "";
+				creatorFilter = "";
 				invoiceSortDirection = "";
 				invoiceDateSortDirection = "desc";
 				invoiceFromDate = "";
@@ -477,6 +496,47 @@
 		>
 			Refresh
 		</button>
+		<details class="status-filter">
+			<summary class="control" aria-label="Filter invoices by invoice prefix">
+				<span>{selectedPrefixLabel}</span>
+				<span class="select-chevron" aria-hidden="true"></span>
+			</summary>
+			<div class="status-options">
+				{#each ["", "TKS", "C"] as prefix}
+					<button
+						type="button"
+						class:active={invoicePrefixFilter === prefix}
+						onclick={(event) => selectInvoicePrefix(prefix, event)}
+					>
+						{prefix || "All invoices"}
+					</button>
+				{/each}
+			</div>
+		</details>
+		<details class="status-filter creator-filter">
+			<summary class="control" aria-label="Filter invoices by creator">
+				<span>{selectedCreatorLabel}</span>
+				<span class="select-chevron" aria-hidden="true"></span>
+			</summary>
+			<div class="status-options">
+				<button
+					type="button"
+					class:active={!creatorFilter}
+					onclick={(event) => selectCreator("", event)}
+				>
+					All invoices created by
+				</button>
+				{#each creatorOptions as creator (creator.id)}
+					<button
+						type="button"
+						class:active={creatorFilter === String(creator.id)}
+						onclick={(event) => selectCreator(String(creator.id), event)}
+					>
+						{creator.name}
+					</button>
+				{/each}
+			</div>
+		</details>
 		<details class="status-filter">
 			<summary
 				class="control"
@@ -494,23 +554,6 @@
 							selectStatusFilter(option.value, event)}
 					>
 						{option.label}
-					</button>
-				{/each}
-			</div>
-		</details>
-		<details class="status-filter">
-			<summary class="control" aria-label="Filter invoices by invoice prefix">
-				<span>{selectedPrefixLabel}</span>
-				<span class="select-chevron" aria-hidden="true"></span>
-			</summary>
-			<div class="status-options">
-				{#each ["", "TKS", "C"] as prefix}
-					<button
-						type="button"
-						class:active={invoicePrefixFilter === prefix}
-						onclick={(event) => selectInvoicePrefix(prefix, event)}
-					>
-						{prefix || "All invoices"}
 					</button>
 				{/each}
 			</div>
@@ -569,7 +612,7 @@
 			</p>
 		{:else if invoices.length === 0}
 			<div class="empty-state">
-				{#if search.trim() || statusFilter || invoicePrefixFilter || invoiceFromDate || invoiceToDate}
+				{#if search.trim() || statusFilter || invoicePrefixFilter || creatorFilter || invoiceFromDate || invoiceToDate}
 					<h3>No matching invoices found</h3>
 					<p>Try another invoice number or status.</p>
 				{:else}
@@ -670,7 +713,7 @@
 									</td>{/if}
 
 								{#if visibleColumns.invoiceDate}<td>
-										<a class="invoice-date-link" href={`/invoices/${invoice.id}`} title={`View invoice ${invoice.invoice_no}`}>
+									<a class="invoice-date-link" href={`/invoices/${invoice.id}`} title={`View invoice ${invoice.invoice_no}`}>
 											{formatDate(invoice.issued_date)}
 										</a>
 									</td>{/if}
@@ -959,7 +1002,12 @@
 
 	.search {
 		flex: 1;
-		max-width: 500px;
+		max-width: none;
+	}
+
+	.search-field {
+		flex: 1 1 260px;
+		max-width: 360px;
 	}
 
 	.refresh-btn {
@@ -970,6 +1018,10 @@
 		position: relative;
 		width: 160px;
 		flex: none;
+	}
+
+	.creator-filter {
+		width: 205px;
 	}
 
 	.status-filter summary {

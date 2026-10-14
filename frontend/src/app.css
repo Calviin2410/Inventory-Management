@@ -586,3 +586,18 @@
 				13px 14px;
 		}
 	}
+.sort-header {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	cursor: pointer;
+}
+
+.sort-header:hover { color: #2554c7; }
+.sort-header span { color: #2554c7; font-size: 15px; }

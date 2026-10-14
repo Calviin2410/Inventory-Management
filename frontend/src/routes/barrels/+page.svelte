@@ -413,7 +413,7 @@
 
 									<dd>
 										{#if barrel.invoice_id}
-											<a class="invoice-link" href={`/invoices/${barrel.invoice_id}`}>{barrel.invoice_no}</a>
+							<a class="invoice-link" href={`/invoices/${barrel.invoice_id}`}>{barrel.invoice_no}</a>
 										{:else}
 											—
 										{/if}
@@ -459,7 +459,7 @@
 
 									{#if visibleColumns.invoice}<td>
 										{#if barrel.invoice_id}
-											<a class="invoice-link" href={`/invoices/${barrel.invoice_id}`}>{barrel.invoice_no}</a>
+							<a class="invoice-link" href={`/invoices/${barrel.invoice_id}`}>{barrel.invoice_no}</a>
 										{:else}
 											—
 										{/if}
