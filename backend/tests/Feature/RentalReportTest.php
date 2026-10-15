@@ -40,4 +40,13 @@ class RentalReportTest extends TestCase
             ->assertJsonPath('summary.unsettled_invoices', 1)
             ->assertJsonMissingPath('summary.total_customers');
     }
+
+    public function test_normal_staff_can_access_rental_reports(): void
+    {
+        Sanctum::actingAs(User::factory()->create(['role' => 'normal_staff']));
+
+        $this->getJson('/api/reports/rentals')
+            ->assertOk()
+            ->assertJsonPath('summary.total_invoices', 0);
+    }
 }

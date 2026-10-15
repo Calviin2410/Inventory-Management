@@ -295,7 +295,7 @@
 
             user.set(currentUser);
 
-			if (!["admin", "staff"].includes(currentUser?.role)) {
+			if (!["admin", "staff", "normal_staff"].includes(currentUser?.role)) {
                 goto("/dashboard");
                 return;
             }

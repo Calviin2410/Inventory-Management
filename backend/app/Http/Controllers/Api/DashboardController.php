@@ -5,11 +5,20 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Barrel;
 use App\Models\Invoice;
+use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
-    public function summary()
+    public function summary(Request $request)
     {
+        $recentInvoicesQuery = Invoice::with(['customer', 'createdBy:id,name'])
+            ->latest('issued_date')
+            ->latest('id');
+
+        if (! $request->user()->isAdmin()) {
+            $recentInvoicesQuery->where('user_id', $request->user()->id);
+        }
+
         return response()->json([
             'total_invoices' => Invoice::count(),
 
@@ -38,9 +47,7 @@ class DashboardController extends Controller
                 'rented'
             )->count(),
 
-            'recent_invoices' => Invoice::with('customer')
-                ->latest('issued_date')
-                ->latest('id')
+            'recent_invoices' => $recentInvoicesQuery
                 ->limit(20)
                 ->get(),
         ]);

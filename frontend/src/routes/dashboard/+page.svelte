@@ -10,6 +10,7 @@
 		{ key: "invoice", label: "Invoice" },
 		{ key: "customer", label: "Customer" },
 		{ key: "invoiceDate", label: "Invoice Date" },
+		{ key: "createdBy", label: "Created By" },
 		{ key: "status", label: "Payment Status" },
 		{ key: "settlementStatus", label: "Settlement Status" },
 	];
@@ -179,6 +180,7 @@
 								{#if visibleColumns.customer}<th> Customer </th>{/if}
 
 								{#if visibleColumns.invoiceDate}<th aria-sort={invoiceDateSortDirection === "asc" ? "ascending" : invoiceDateSortDirection === "desc" ? "descending" : "none"}><button class="sort-header" type="button" onclick={() => toggleRecentSort("issued_date")}>Invoice Date <span aria-hidden="true">{invoiceDateSortDirection === "asc" ? "↑" : invoiceDateSortDirection === "desc" ? "↓" : "↕"}</span></button></th>{/if}
+								{#if visibleColumns.createdBy}<th>Created By</th>{/if}
 
 								{#if visibleColumns.status}<th> Payment Status </th>{/if}
 								{#if visibleColumns.settlementStatus}<th> Settlement Status </th>{/if}
@@ -204,6 +206,7 @@
 									{#if visibleColumns.invoiceDate}<td>
 										{formatDate(invoice.issued_date)}
 									</td>{/if}
+									{#if visibleColumns.createdBy}<td>{invoice.created_by?.name ?? "—"}</td>{/if}
 
 									{#if visibleColumns.status}<td>
 										<span

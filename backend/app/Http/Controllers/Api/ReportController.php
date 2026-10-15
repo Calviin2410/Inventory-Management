@@ -12,7 +12,7 @@ class ReportController extends Controller
     public function rentalReport(Request $request)
     {
         abort_unless(
-            in_array($request->user()?->role, ['admin', 'staff'], true),
+            in_array($request->user()?->role, ['admin', 'staff', 'normal_staff'], true),
             403,
             'Only administrators and staff can access reports.'
         );
