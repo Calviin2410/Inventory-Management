@@ -15,6 +15,10 @@
 
 	async function submit() {
 		if (!invoice || saving) return;
+		if (!Number.isFinite(Number(amount)) || Number(amount) <= 0) {
+			errorMessage = "Amount must be greater than 0.";
+			return;
+		}
 		saving = true;
 		errorMessage = "";
 		try {
@@ -59,7 +63,7 @@
 		<label
 			>Amount (RM)<input
 				type="number"
-				min="0"
+				min="0.01"
 				max="9999999999.99"
 				step="0.01"
 				bind:value={amount}

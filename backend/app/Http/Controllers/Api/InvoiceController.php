@@ -114,9 +114,10 @@ class InvoiceController extends Controller
     public function update(Request $request, Invoice $invoice)
     {
         abort_unless(
-            $request->user()?->isAdmin() || (int) $invoice->user_id === (int) $request->user()?->id,
+            $request->user()?->isAdmin()
+                || in_array($request->user()?->role, ['staff', 'normal_staff'], true),
             403,
-            'Only the invoice creator or an administrator can edit this invoice.'
+            'Only administrators and staff can edit invoices.'
         );
 
         $managementFields = [

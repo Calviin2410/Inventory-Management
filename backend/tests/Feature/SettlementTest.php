@@ -52,15 +52,19 @@ class SettlementTest extends TestCase
             ->assertJsonFragment(['invoice_no' => 'KT06666']);
     }
 
-    public function test_non_admin_cannot_view_or_update_settlements(): void
+    public function test_staff_cannot_view_settlements_page_or_update_settlement_status(): void
     {
-        Sanctum::actingAs(User::factory()->create(['role' => 'normal_staff']));
-        $invoice = $this->invoice();
+        $staff = User::factory()->create(['role' => 'normal_staff']);
+        $otherStaff = User::factory()->create(['role' => 'staff']);
+        Sanctum::actingAs($staff);
+        $otherInvoice = $this->invoice(['invoice_no' => 'KT07777', 'user_id' => $otherStaff->id]);
 
-        $this->getJson('/api/settlements')->assertForbidden();
-        $this->patchJson("/api/settlements/{$invoice->id}", [
+        $this->getJson('/api/settlements')
+            ->assertForbidden();
+
+        $this->patchJson("/api/settlements/{$otherInvoice->id}", [
             'action' => 'settle',
-            'remark' => 'Not allowed.',
+            'remark' => 'Reviewed by staff.',
         ])->assertForbidden();
     }
 

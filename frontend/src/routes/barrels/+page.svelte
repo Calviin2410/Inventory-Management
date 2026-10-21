@@ -168,7 +168,13 @@
 			barrels = barrels.map((item) =>
 				item.id === barrel.id
 					? newStatus === "available"
-						? { ...item, ...updated, invoice_id: null, invoice_no: null }
+						? {
+							...item,
+							...updated,
+							invoice_id: null,
+							invoice_no: null,
+							current_customer: null,
+						}
 						: { ...item, ...updated }
 					: item,
 			);
@@ -532,15 +538,15 @@
 			style:--menu-top={`${actionMenuPosition.top}px`}
 			style:--menu-left={`${actionMenuPosition.left}px`}
 		>
-			{#if isAdmin}
-				<button type="button" disabled={updatingBarrelId === menuBarrel.id || menuBarrel.status === "available"} onclick={() => handleStatusUpdate(menuBarrel, "available")}>Set as Available</button>
-				<button type="button" disabled={updatingBarrelId === menuBarrel.id || menuBarrel.status === "rented"} onclick={() => handleStatusUpdate(menuBarrel, "rented")}>Set as Rented</button>
-				<button type="button" disabled={updatingBarrelId === menuBarrel.id || menuBarrel.status === "returning"} onclick={() => handleStatusUpdate(menuBarrel, "returning")}>Set as In Transit</button>
-				<div class="menu-divider"></div>
-				<button type="button" class="delete-action" disabled={menuBarrel.status === "rented"} onclick={() => requestBarrelDeletion(menuBarrel)}>Delete Barrel</button>
-			{:else if menuBarrel.status === "returning"}
+			{#if menuBarrel.status === "returning"}
 				<button type="button" disabled={updatingBarrelId === menuBarrel.id} onclick={() => handleStatusUpdate(menuBarrel, "available")}>Set Available</button>
-			{:else if !isAdmin}
+				{#if isAdmin}
+					<div class="menu-divider"></div>
+					<button type="button" class="delete-action" onclick={() => requestBarrelDeletion(menuBarrel)}>Delete Barrel</button>
+				{/if}
+			{:else if isAdmin}
+				<button type="button" class="delete-action" disabled={menuBarrel.status === "rented"} onclick={() => requestBarrelDeletion(menuBarrel)}>Delete Barrel</button>
+			{:else}
 				<span class="menu-empty">No actions available</span>
 			{/if}
 		</div>

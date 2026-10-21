@@ -8,6 +8,7 @@
     import Nav from "$lib/Nav.svelte";
     import SkeletonTable from "$lib/SkeletonTable.svelte";
     import DateInput from "$lib/DateInput.svelte";
+    import Toast from "$lib/Toast.svelte";
     import { formatDate } from "$lib/format.js";
 
     let invoices = $state([]);
@@ -16,9 +17,28 @@
     let loading = $state(true);
     let exporting = $state(false);
     let errorMessage = $state("");
+    let successMessage = $state("");
+	let statusMenu = $state({ invoiceId: null, kind: null, top: 0, left: 0 });
+    let statusMenuInvoice = $derived(invoices.find((invoice) => invoice.id === statusMenu.invoiceId) ?? null);
+    let paymentInvoice = $state(null);
+    let paymentMethod = $state("cash");
+    let paymentDate = $state("");
+    let paymentError = $state("");
+    let paymentSaving = $state(false);
+    let unpaidInvoice = $state(null);
+    let unpaidRemark = $state("");
+    let unpaidError = $state("");
+    let unpaidSaving = $state(false);
+    let settlementInvoice = $state(null);
+    let settlementAction = $state("");
+    let settlementRemark = $state("");
+    let settlementError = $state("");
+    let settlementSaving = $state(false);
 
     let fromDate = $state("");
     let toDate = $state("");
+	let searchInput = $state("");
+	let appliedSearch = $state("");
 	let currentPage = $state(1);
 	let lastPage = $state(1);
 	let totalInvoices = $state(0);
@@ -58,7 +78,18 @@
 		else if (invoiceDateSortDirection) { params.sort = "issued_date"; params.direction = invoiceDateSortDirection; }
 		if (fromDate) params.from_date = fromDate;
 		if (toDate) params.to_date = toDate;
+		if (appliedSearch) params.search = appliedSearch;
 		return params;
+	}
+
+	function runSearch() {
+		appliedSearch = searchInput.trim();
+		loadReports(1);
+	}
+
+	function submitSearch(event) {
+		event.preventDefault();
+		runSearch();
 	}
 
 	function toggleSort(column) {
@@ -75,6 +106,123 @@
 	function settledInvoiceHref(invoice) {
 		return `/invoices/${invoice.id}${invoice.settlement_status === "settled" ? "?source=settlement" : ""}`;
 	}
+
+    function malaysiaToday() {
+        const parts = new Intl.DateTimeFormat("en-GB", {
+            timeZone: "Asia/Kuala_Lumpur",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+        }).formatToParts(new Date());
+        const value = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+        return `${value.year}-${value.month}-${value.day}`;
+    }
+
+    function togglePaymentMenu(invoice, kind, event) {
+        if (statusMenu.invoiceId === invoice.id && statusMenu.kind === kind) {
+            statusMenu = { invoiceId: null, kind: null, top: 0, left: 0 };
+            return;
+        }
+        const rect = event.currentTarget.getBoundingClientRect();
+        const width = 150;
+        const height = 100;
+        const padding = 10;
+        statusMenu = {
+            invoiceId: invoice.id,
+            kind,
+            top: Math.max(padding, Math.min(rect.bottom + 5, window.innerHeight - height - padding)),
+            left: Math.max(padding, Math.min(rect.left, window.innerWidth - width - padding)),
+        };
+    }
+
+    function closeStatusMenuOnOutsideClick(event) {
+        const target = event.target;
+        if (target instanceof Element && target.closest(".report-status-control, .payment-dropdown")) return;
+        statusMenu = { invoiceId: null, kind: null, top: 0, left: 0 };
+    }
+
+    function openPaymentDialog(invoice) {
+        statusMenu = { invoiceId: null, kind: null, top: 0, left: 0 };
+        paymentInvoice = invoice;
+        paymentMethod = "cash";
+        paymentDate = malaysiaToday();
+        paymentError = "";
+    }
+
+    function openUnpaidDialog(invoice) {
+        statusMenu = { invoiceId: null, kind: null, top: 0, left: 0 };
+        unpaidInvoice = invoice;
+        unpaidRemark = "";
+        unpaidError = "";
+    }
+
+    async function markInvoicePaid() {
+        if (!paymentInvoice || paymentSaving || !paymentDate) return;
+        paymentSaving = true;
+        paymentError = "";
+        try {
+            await api.updateInvoice(paymentInvoice.id, {
+                status: "paid",
+                payment_method: paymentMethod,
+                payment_date: paymentDate,
+            });
+            successMessage = `${paymentInvoice.invoice_no} marked as paid.`;
+            paymentInvoice = null;
+            await loadReports(currentPage);
+        } catch (error) {
+            paymentError = error?.message || "Unable to record payment.";
+        } finally {
+            paymentSaving = false;
+        }
+    }
+
+    async function markInvoiceUnpaid() {
+        if (!unpaidInvoice || unpaidSaving || !unpaidRemark.trim()) return;
+        unpaidSaving = true;
+        unpaidError = "";
+        try {
+            await api.updateInvoice(unpaidInvoice.id, {
+                status: "unpaid",
+                unpaid_remark: unpaidRemark.trim(),
+            });
+            successMessage = `${unpaidInvoice.invoice_no} marked as unpaid.`;
+            unpaidInvoice = null;
+            await loadReports(currentPage);
+        } catch (error) {
+            unpaidError = error?.errors?.unpaid_remark?.[0] || error?.message || "Unable to set invoice as unpaid.";
+        } finally {
+            unpaidSaving = false;
+        }
+    }
+
+    function openSettlementDialog(invoice, action) {
+        statusMenu = { invoiceId: null, kind: null, top: 0, left: 0 };
+        settlementInvoice = invoice;
+        settlementAction = action;
+        settlementRemark = "";
+        settlementError = "";
+    }
+
+    async function submitSettlementUpdate() {
+        if (!settlementInvoice || settlementSaving || !settlementRemark.trim()) return;
+        settlementSaving = true;
+        settlementError = "";
+        try {
+            await api.updateSettlement(settlementInvoice.id, {
+                action: settlementAction,
+                remark: settlementRemark.trim(),
+            });
+            successMessage = settlementAction === "settle"
+                ? settlementInvoice.invoice_no + " settled."
+                : settlementInvoice.invoice_no + " settlement reopened.";
+            settlementInvoice = null;
+            await loadReports(currentPage);
+        } catch (error) {
+            settlementError = error?.errors?.remark?.[0] || error?.message || "Unable to update settlement status.";
+        } finally {
+            settlementSaving = false;
+        }
+    }
 
     async function loadReports(page = 1) {
         loading = true;
@@ -118,6 +266,8 @@
     async function clearFilter() {
         fromDate = "";
         toDate = "";
+		searchInput = "";
+		appliedSearch = "";
 
         await loadReports(1);
     }
@@ -312,6 +462,7 @@
 </script>
 
 <Nav />
+<svelte:window onclick={closeStatusMenuOnOutsideClick} />
 
 <main class="app-page">
     <header class="page-heading">
@@ -326,7 +477,7 @@
         </div>
     </header>
 
-    <!-- 日期筛选 -->
+    <!-- Search and report actions -->
     <section class="filter-card">
         <div class="filter-grid">
             <div class="field">
@@ -340,6 +491,19 @@
 
                 <DateInput id="toDate" bind:value={toDate} min={fromDate} onchange={generateReport} ariaLabel="Select report to date" />
             </div>
+            <form class="report-search" onsubmit={submitSearch}>
+				<label for="reportSearch">Search invoices</label>
+				<div class="search-control">
+					<input
+						id="reportSearch"
+						class="control"
+						type="search"
+						placeholder="Invoice, customer or barrel..."
+						bind:value={searchInput}
+					/>
+					<button class="btn btn-primary" type="submit" disabled={loading}>Search</button>
+				</div>
+			</form>
 
             <div class="filter-actions">
                 <button
@@ -437,21 +601,34 @@
                     </p>
                 </div>
 
-				<details class="column-picker">
-					<summary>Columns <span class="select-chevron" aria-hidden="true"></span></summary>
-					<div class="column-menu">
-						<label class="all-columns">
-							<input type="checkbox" checked={allColumnsVisible} onchange={toggleAllColumns} />
-							<span>All</span>
-						</label>
-						{#each reportColumns as column}
-							<label>
-								<input type="checkbox" checked={visibleColumns[column.key]} onchange={() => toggleColumn(column.key)} />
-								<span>{column.label}</span>
-							</label>
-						{/each}
+				<div class="report-controls">
+					<div class="report-date-range">
+						<div class="field">
+							<label for="fromDate">From Invoice Date</label>
+							<DateInput id="fromDate" bind:value={fromDate} max={toDate} ariaLabel="Select report from date" />
+						</div>
+						<div class="field">
+							<label for="toDate">To Invoice Date</label>
+							<DateInput id="toDate" bind:value={toDate} min={fromDate} ariaLabel="Select report to date" />
+						</div>
 					</div>
-				</details>
+
+					<details class="column-picker">
+						<summary>Columns <span class="select-chevron" aria-hidden="true"></span></summary>
+						<div class="column-menu">
+							<label class="all-columns">
+								<input type="checkbox" checked={allColumnsVisible} onchange={toggleAllColumns} />
+								<span>All</span>
+							</label>
+							{#each reportColumns as column}
+								<label>
+									<input type="checkbox" checked={visibleColumns[column.key]} onchange={() => toggleColumn(column.key)} />
+									<span>{column.label}</span>
+								</label>
+							{/each}
+						</div>
+					</details>
+				</div>
             </div>
 
             {#if filteredInvoices.length === 0}
@@ -511,23 +688,23 @@
 											{#if visibleColumns.wasteSellAmount}<td>{itemIndex === 0 ? new Intl.NumberFormat("en-MY", { style: "currency", currency: "MYR" }).format(Number(invoice.waste_sell_amount ?? 0)) : "—"}</td>{/if}
 
 											{#if visibleColumns.settlementStatus}<td>
-												<span class="settlement-badge" class:settled={invoice.settlement_status === "settled"}>
-													{invoice.settlement_status === "settled" ? "Settled" : "Unsettled"}
-												</span>
+								{#if $user?.role === "admin"}
+													<button class="settlement-badge status-action report-status-control" class:settled={invoice.settlement_status === "settled"} type="button" aria-expanded={statusMenu.invoiceId === invoice.id && statusMenu.kind === "settlement"} title="Choose settlement status" onclick={(event) => togglePaymentMenu(invoice, "settlement", event)}>
+														<span class="status-icon" aria-hidden="true">{invoice.settlement_status === "settled" ? "✓" : "×"}</span>
+														{invoice.settlement_status === "settled" ? "Settled" : "Unsettled"}
+														<span class="status-chevron" aria-hidden="true"></span>
+													</button>
+								{:else}
+									<span class="settlement-badge" class:settled={invoice.settlement_status === "settled"}>{invoice.settlement_status === "settled" ? "Settled" : "Unsettled"}</span>
+								{/if}
 											</td>{/if}
 
 											{#if visibleColumns.paymentStatus}<td>
-                                                <span
-                                                    class="status-badge"
-                                                    class:paid={invoice.status ===
-                                                        "paid"}
-                                                    class:unpaid={invoice.status ===
-                                                        "unpaid"}
-                                                >
-                                                    {invoice.status === "paid"
-                                                        ? "Paid"
-                                                        : "Unpaid"}
-                                                </span>
+												{#if invoice.status !== "cancelled"}
+													<button class="payment-status-control status-action report-status-control" class:paid={invoice.status === "paid"} class:unpaid={invoice.status === "unpaid"} type="button" aria-expanded={statusMenu.invoiceId === invoice.id && statusMenu.kind === "payment"} title="Choose payment status" onclick={(event) => togglePaymentMenu(invoice, "payment", event)}>
+														{invoice.status === "paid" ? "Paid" : "Unpaid"}<span class="status-chevron" aria-hidden="true"></span>
+													</button>
+												{:else}<span class="status-badge">Cancelled</span>{/if}
 											</td>{/if}
                                         </tr>
                                     {/each}
@@ -552,23 +729,23 @@
 					{#if visibleColumns.wasteSellAmount}<td>{new Intl.NumberFormat("en-MY", { style: "currency", currency: "MYR" }).format(Number(invoice.waste_sell_amount ?? 0))}</td>{/if}
 
 									{#if visibleColumns.settlementStatus}<td>
-										<span class="settlement-badge" class:settled={invoice.settlement_status === "settled"}>
+						{#if $user?.role === "admin"}
+										<button class="settlement-badge status-action report-status-control" class:settled={invoice.settlement_status === "settled"} type="button" aria-expanded={statusMenu.invoiceId === invoice.id && statusMenu.kind === "settlement"} title="Choose settlement status" onclick={(event) => togglePaymentMenu(invoice, "settlement", event)}>
+											<span class="status-icon" aria-hidden="true">{invoice.settlement_status === "settled" ? "✓" : "×"}</span>
 											{invoice.settlement_status === "settled" ? "Settled" : "Unsettled"}
-										</span>
+											<span class="status-chevron" aria-hidden="true"></span>
+										</button>
+						{:else}
+							<span class="settlement-badge" class:settled={invoice.settlement_status === "settled"}>{invoice.settlement_status === "settled" ? "Settled" : "Unsettled"}</span>
+						{/if}
 									</td>{/if}
 
 									{#if visibleColumns.paymentStatus}<td>
-                                            <span
-                                                class="status-badge"
-                                                class:paid={invoice.status ===
-                                                    "paid"}
-                                                class:unpaid={invoice.status ===
-                                                    "unpaid"}
-                                            >
-                                                {invoice.status === "paid"
-                                                    ? "Paid"
-                                                    : "Unpaid"}
-                                            </span>
+										{#if invoice.status !== "cancelled"}
+											<button class="payment-status-control status-action report-status-control" class:paid={invoice.status === "paid"} class:unpaid={invoice.status === "unpaid"} type="button" aria-expanded={statusMenu.invoiceId === invoice.id && statusMenu.kind === "payment"} title="Choose payment status" onclick={(event) => togglePaymentMenu(invoice, "payment", event)}>
+												{invoice.status === "paid" ? "Paid" : "Unpaid"}<span class="status-chevron" aria-hidden="true"></span>
+											</button>
+										{:else}<span class="status-badge">Cancelled</span>{/if}
 									</td>{/if}
                                     </tr>
                                 {/if}
@@ -591,6 +768,75 @@
     {/if}
 </main>
 
+{#if statusMenuInvoice}
+	<div class="payment-dropdown" style:--menu-top={`${statusMenu.top}px`} style:--menu-left={`${statusMenu.left}px`}>
+		{#if statusMenu.kind === "payment"}
+			<button type="button" disabled={statusMenuInvoice.status === "paid"} onclick={() => openPaymentDialog(statusMenuInvoice)}>Paid</button>
+			<button type="button" class="unpaid-option" disabled={statusMenuInvoice.status !== "paid"} onclick={() => openUnpaidDialog(statusMenuInvoice)}>Unpaid</button>
+		{:else if $user?.role === "admin"}
+			<button type="button" disabled={statusMenuInvoice.settlement_status === "settled"} onclick={() => openSettlementDialog(statusMenuInvoice, "settle")}>Settle</button>
+			<button type="button" class="unpaid-option" disabled={statusMenuInvoice.settlement_status !== "settled"} onclick={() => openSettlementDialog(statusMenuInvoice, "reopen")}>Reopen</button>
+		{/if}
+	</div>
+{/if}
+
+{#if paymentInvoice}
+	<div class="report-dialog-layer" role="presentation" onclick={(event) => event.currentTarget === event.target && !paymentSaving && (paymentInvoice = null)}>
+		<form class="report-dialog" onsubmit={(event) => { event.preventDefault(); markInvoicePaid(); }}>
+			<h2>Record Payment</h2>
+			<p>Mark {paymentInvoice.invoice_no} as paid.</p>
+			{#if paymentError}<div class="dialog-error" role="alert">{paymentError}</div>{/if}
+			<label>Payment Method
+				<select bind:value={paymentMethod} required>
+					<option value="cash">Cash</option>
+					<option value="bank_in">Bank In</option>
+				</select>
+			</label>
+			<label>Payment Date
+				<DateInput bind:value={paymentDate} required ariaLabel="Select payment date" />
+			</label>
+			<div class="dialog-actions">
+				<button type="button" class="btn" onclick={() => !paymentSaving && (paymentInvoice = null)}>Cancel</button>
+				<button type="submit" class="btn btn-primary" disabled={paymentSaving || !paymentDate}>{paymentSaving ? "Saving…" : "Confirm Paid"}</button>
+			</div>
+		</form>
+	</div>
+{/if}
+
+{#if unpaidInvoice}
+	<div class="report-dialog-layer" role="presentation" onclick={(event) => event.currentTarget === event.target && !unpaidSaving && (unpaidInvoice = null)}>
+		<form class="report-dialog" onsubmit={(event) => { event.preventDefault(); markInvoiceUnpaid(); }}>
+			<h2>Set Invoice Unpaid</h2>
+			<p>Explain why {unpaidInvoice.invoice_no} is being changed to unpaid.</p>
+			{#if unpaidError}<div class="dialog-error" role="alert">{unpaidError}</div>{/if}
+			<label>Remark
+				<textarea rows="4" maxlength="1000" bind:value={unpaidRemark} required placeholder="Enter the reason..."></textarea>
+			</label>
+			<div class="dialog-actions">
+				<button type="button" class="btn" onclick={() => !unpaidSaving && (unpaidInvoice = null)}>Cancel</button>
+				<button type="submit" class="btn btn-primary" disabled={unpaidSaving || !unpaidRemark.trim()}>{unpaidSaving ? "Saving…" : "Confirm Unpaid"}</button>
+			</div>
+		</form>
+	</div>
+{/if}
+{#if settlementInvoice}
+	<div class="report-dialog-layer" role="presentation" onclick={(event) => event.currentTarget === event.target && !settlementSaving && (settlementInvoice = null)}>
+		<form class="report-dialog" onsubmit={(event) => { event.preventDefault(); submitSettlementUpdate(); }}>
+			<h2>{settlementAction === "settle" ? "Settle Invoice" : "Reopen"}</h2>
+			<p>{settlementInvoice.invoice_no}</p>
+			{#if settlementError}<div class="dialog-error" role="alert">{settlementError}</div>{/if}
+			<label>Remark
+				<textarea rows="4" maxlength="1000" bind:value={settlementRemark} required placeholder="Enter the reason or settlement note"></textarea>
+			</label>
+			<div class="dialog-actions">
+				<button type="button" class="btn" onclick={() => !settlementSaving && (settlementInvoice = null)}>Cancel</button>
+				<button type="submit" class="btn btn-primary" disabled={settlementSaving || !settlementRemark.trim()}>{settlementSaving ? "Saving…" : settlementAction === "settle" ? "Settle" : "Reopen"}</button>
+			</div>
+		</form>
+	</div>
+{/if}
+{#if successMessage}<Toast message={successMessage} onclose={() => (successMessage = "")} />{/if}
+
 <style>
     /* =========================
 	   REPORT FILTER
@@ -611,8 +857,7 @@
         display: grid;
 
         grid-template-columns:
-            minmax(170px, 1fr)
-            minmax(170px, 1fr)
+            minmax(280px, 1fr)
             minmax(0, auto);
 
         align-items: end;
@@ -627,6 +872,12 @@
 
         gap: 7px;
     }
+
+	.report-search { display: flex; flex-direction: column; min-width: 0; gap: 7px; }
+	.report-search > label { color: #374151; font-size: 13px; font-weight: 600; }
+	.search-control { display: flex; min-width: 0; gap: 10px; }
+	.search-control input { min-width: 0; width: 100%; }
+	.search-control .btn { flex: none; }
 
     .field label {
         color: #374151;
@@ -649,7 +900,7 @@
 
 	@media (max-width: 1280px) {
 		.filter-grid {
-			grid-template-columns: repeat(2, minmax(170px, 1fr));
+			grid-template-columns: minmax(0, 1fr);
 		}
 
 		.filter-actions {
@@ -748,6 +999,9 @@
         font-size: 13px;
     }
 
+	.report-controls { display: flex; align-items: flex-end; gap: 12px; flex: none; }
+	.report-date-range { display: grid; grid-template-columns: repeat(2, minmax(170px, 1fr)); gap: 10px; }
+
 	.column-picker { position: relative; flex: none; }
 	.column-picker summary { display: flex; min-width: 120px; min-height: 42px; align-items: center; justify-content: space-between; gap: 18px; padding: 0 13px; border: 1px solid #ccd4e0; border-radius: 8px; background: white; color: #172033; font-size: 13px; font-weight: 700; cursor: pointer; list-style: none; }
 	.column-picker summary::-webkit-details-marker { display: none; }
@@ -832,17 +1086,86 @@
         font-weight: 600;
     }
 
-    .status-badge.paid {
-        background: #ccfbf1;
-
-        color: #0f766e;
-    }
-
-    .status-badge.unpaid {
-        background: #fee2e2;
-
-        color: #dc2626;
-    }
+	.payment-status-control {
+		display: inline-flex;
+		min-width: 66px;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		padding: 5px 10px;
+		border: 0;
+		border-radius: 999px;
+		background: #fee2e2;
+		color: #c81e3a;
+		font: inherit;
+		font-size: 12px;
+		font-weight: 700;
+	}
+	.payment-status-control.status-action,
+	.settlement-badge.status-action {
+		min-width: 122px;
+		box-sizing: border-box;
+		justify-content: space-between;
+		padding: 9px 12px;
+		border: 1px solid #ccd4e0;
+		border-radius: 9px;
+		background: white;
+		font: inherit;
+		font-size: 12px;
+		font-weight: 700;
+		text-align: left;
+		cursor: pointer;
+		box-shadow: 0 1px 2px rgb(15 23 42 / 3%);
+		transition: border-color .15s ease, box-shadow .15s ease;
+	}
+	.status-action:hover { border-color: #aebbd0; box-shadow: 0 2px 5px rgb(15 23 42 / 7%); }
+	.status-action:focus-visible { outline: 3px solid rgb(49 94 231 / 28%); outline-offset: 2px; }
+	.payment-status-control.status-action { min-width: 122px; color: #c81e3a; }
+	.payment-status-control.status-action.paid { background: white; color: #0f766e; }
+	.settlement-badge.status-action { min-width: 146px; background: white; }
+	.settlement-badge.status-action.settled { color: #087a55; }
+	.status-icon { display: grid; width: 17px; height: 17px; flex: none; place-items: center; border-radius: 50%; background: #be123c; color: white; font-size: 12px; line-height: 1; }
+	.status-action.settled .status-icon { background: #087a55; }
+	.status-chevron { width: 6px; height: 6px; flex: none; margin: -3px 1px 0 0; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; opacity: .72; transform: rotate(45deg); transition: transform .15s ease; }
+	.status-action[aria-expanded="true"] .status-chevron { margin-top: 3px; transform: rotate(225deg); }
+	.payment-dropdown {
+		position: fixed;
+		top: var(--menu-top);
+		left: var(--menu-left);
+		z-index: 2000;
+		display: grid;
+		min-width: 150px;
+		overflow: hidden;
+		border: 1px solid #e5e7eb;
+		border-radius: 9px;
+		background: white;
+		box-shadow: 0 10px 30px rgb(15 23 42 / 16%);
+	}
+	.payment-dropdown button {
+		width: 100%;
+		padding: 10px 13px;
+		border: 0;
+		background: white;
+		color: #202939;
+		font: inherit;
+		font-size: 13px;
+		font-weight: 650;
+		text-align: left;
+		cursor: pointer;
+	}
+	.payment-dropdown button:hover:not(:disabled) { background: #f3f6fb; }
+	.payment-dropdown button.unpaid-option { color: #be123c; }
+	.payment-dropdown button:disabled { color: #98a2b3; cursor: default; }
+	.report-dialog-layer { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 20px; background: rgb(15 23 42 / 45%); }
+	.report-dialog { width: min(100%, 440px); display: grid; gap: 16px; padding: 25px; border-radius: 12px; background: white; box-shadow: 0 24px 70px rgb(15 23 42 / 24%); }
+	.report-dialog h2 { margin: 0; color: #172033; font-size: 21px; }
+	.report-dialog > p { margin: -10px 0 2px; color: #64748b; }
+	.report-dialog label { display: grid; gap: 8px; color: #344054; font-size: 13px; font-weight: 700; }
+	.report-dialog select, .report-dialog textarea { box-sizing: border-box; width: 100%; min-height: 42px; padding: 10px 12px; border: 1px solid #ccd4e0; border-radius: 9px; outline: none; background: white; color: #172033; font: inherit; font-weight: 400; }
+	.report-dialog textarea { resize: vertical; line-height: 1.5; }
+	.report-dialog select:focus, .report-dialog textarea:focus { border-color: #315ee7; box-shadow: 0 0 0 3px rgb(49 94 231 / 12%); }
+	.dialog-error { padding: 10px 12px; border-radius: 8px; background: #fef2f2; color: #b42318; font-size: 12px; }
+	.dialog-actions { display: flex; justify-content: flex-end; gap: 9px; }
 
 	.settlement-badge { display: inline-flex; min-width: 82px; align-items: center; justify-content: center; padding: 5px 10px; border-radius: 6px; background: #fff1f2; color: #be123c; font-size: 12px; font-weight: 700; }
 	.settlement-badge.settled { background: #dff8ee; color: #087a55; }
@@ -886,6 +1209,8 @@
             grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 		.section-heading { align-items: stretch; flex-direction: column; }
+		.report-controls { align-items: stretch; flex-direction: column; }
+		.report-date-range { grid-template-columns: minmax(0, 1fr); }
 		.column-picker summary { width: 100%; }
 		.column-menu { right: auto; left: 0; width: min(100%, 280px); }
     }
@@ -914,6 +1239,8 @@
         .filter-grid {
             grid-template-columns: 1fr;
         }
+		.search-control { gap: 8px; }
+		.search-control .btn { min-width: 76px; }
 
         .filter-actions {
             flex-direction: row;

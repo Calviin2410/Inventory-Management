@@ -16,7 +16,7 @@ class SettlementController extends Controller
 {
     public function index(Request $request)
     {
-        $this->ensureAdmin($request);
+        abort_unless($request->user()?->isAdmin(), 403, 'Only administrators can access the settlements page.');
 
         $data = $request->validate([
             'from' => ['nullable', 'date'],
@@ -37,6 +37,7 @@ class SettlementController extends Controller
                 ->where('created_at', '<', $end)
                 ->latest('created_at')
                 ->latest('id');
+
         InvoiceOrdering::apply($query, $request->query('sort'), $request->query('direction'), 'created_at');
 
         return response()->json($query->get());
@@ -121,7 +122,7 @@ class SettlementController extends Controller
         abort_unless(
             $request->user()?->isAdmin(),
             403,
-            'Only administrators can manage settlements.'
+            'Only administrators can update settlement status.'
         );
     }
 }

@@ -42,6 +42,19 @@ class ReportController extends Controller
             );
         }
 
+        if ($search = trim((string) $request->query('search', ''))) {
+            $query->where(function ($searchQuery) use ($search) {
+                $searchQuery
+                    ->where('invoice_no', 'like', "%{$search}%")
+                    ->orWhereHas('customer', function ($customerQuery) use ($search) {
+                        $customerQuery->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('items.barrel', function ($barrelQuery) use ($search) {
+                        $barrelQuery->where('code', 'like', "%{$search}%");
+                    });
+            });
+        }
+
         if ($request->boolean('export')) {
             return response()->json($query->get());
         }

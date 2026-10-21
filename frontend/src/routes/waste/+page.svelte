@@ -20,7 +20,9 @@
 		{ key: "receivedBy", label: "Received By" },
 	];
 	let visibleColumns = $state(
-		Object.fromEntries(wasteColumns.map((column) => [column.key, true])),
+		Object.fromEntries(
+			wasteColumns.map((column) => [column.key, column.key !== "remark"]),
+		),
 	);
 
 	let invoices = $state([]);
@@ -43,7 +45,7 @@
 	let saleInvoice = $state(null);
 	let isAdmin = $derived($user?.role === "admin");
 	function canManageInvoice(invoice) {
-		return isAdmin || Number(invoice?.user_id) === Number($user?.id);
+		return isAdmin || ["staff", "normal_staff"].includes($user?.role);
 	}
 
 	async function loadWasteSales(page = 1) {

@@ -9,16 +9,6 @@
 	import { openInvoicePrintWindow } from "$lib/invoicePrint.js";
 	import WasteSaleDialog from "$lib/WasteSaleDialog.svelte";
 	import { user } from "$lib/stores/auth.js";
-	import ColumnPicker from "$lib/ColumnPicker.svelte";
-
-	const itemColumns = [
-		{ key: "barrel", label: "Barrel" },
-		{ key: "description", label: "Description" },
-		{ key: "rentalStart", label: "Rental Start" },
-		{ key: "rentalEnd", label: "Rental End" },
-		{ key: "totalAmount", label: "Total Amount" },
-	];
-	let visibleColumns = $state(Object.fromEntries(itemColumns.map((column) => [column.key, true])));
 
 	let invoice = $state(null);
 	let loading = $state(true);
@@ -29,9 +19,11 @@
 		page.url.searchParams.get("source") === "settlement",
 	);
 	let canManageInvoice = $derived(
+		invoice && ["admin", "staff", "normal_staff"].includes($user?.role),
+	);
+	let canSellWaste = $derived(
 		invoice &&
-			($user?.role === "admin" ||
-				Number(invoice.user_id) === Number($user?.id)),
+			["admin", "staff", "normal_staff"].includes($user?.role),
 	);
 
 	function formatAmount(value) {
@@ -144,7 +136,7 @@
 
 		{#if invoice}
 			<div class="header-actions">
-				{#if canManageInvoice}
+				{#if canSellWaste}
 					<button
 						type="button"
 						class="btn sale-button"
@@ -263,51 +255,46 @@
 			<div class="section">
 				<div class="section-heading">
 					<h2>Invoice Items</h2>
-					<ColumnPicker columns={itemColumns} bind:visible={visibleColumns} />
 				</div>
 
 				<div class="table-wrapper">
 					<table>
 						<thead>
 							<tr>
-								{#if visibleColumns.barrel}<th> Barrel </th>{/if}
-
-								{#if visibleColumns.description}<th> Description </th>{/if}
-
-								{#if visibleColumns.rentalStart}<th> Rental Start </th>{/if}
-
-								{#if visibleColumns.rentalEnd}<th> Rental End </th>{/if}
-
-								{#if visibleColumns.totalAmount}<th> Total Amount </th>{/if}
+								<th>Barrel</th>
+								<th>Description</th>
+								<th>Rental Start</th>
+								<th>Rental End</th>
+								<th>Total Amount</th>
 							</tr>
 						</thead>
 
 						<tbody>
 							{#each invoice.items ?? [] as item}
 								<tr>
-									{#if visibleColumns.barrel}<td class="barrel-code">
+									<td class="barrel-code">
 										{item.barrel?.code ?? "-"}
-									</td>{/if}
+									</td>
 
-									{#if visibleColumns.description}<td>
+									<td>
 										{item.description ?? "-"}
-									</td>{/if}
+									</td>
 
-									{#if visibleColumns.rentalStart}<td>
+									<td>
 										{formatDate(item.rental_start)}
-									</td>{/if}
+									</td>
 
-									{#if visibleColumns.rentalEnd}<td>
+									<td>
 										{formatDate(item.rental_end)}
-									</td>{/if}
+									</td>
 
-									{#if visibleColumns.totalAmount}<td class="amount-cell">
+									<td class="amount-cell">
 										{formatAmount(invoice.total_amount)}
-									</td>{/if}
+									</td>
 								</tr>
 							{:else}
 								<tr>
-									<td colspan={Object.values(visibleColumns).filter(Boolean).length} class="empty">
+									<td colspan="5" class="empty">
 										No invoice items.
 									</td>
 								</tr>

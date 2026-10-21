@@ -97,7 +97,7 @@ class WasteSaleTest extends TestCase
         ]);
     }
 
-    public function test_amount_is_required_and_cannot_be_negative(): void
+    public function test_amount_is_required_and_must_be_greater_than_zero(): void
     {
         Sanctum::actingAs(User::factory()->create(['role' => 'normal_staff']));
         $invoice = $this->invoice();
@@ -108,6 +108,10 @@ class WasteSaleTest extends TestCase
 
         $this->patchJson("/api/waste-sales/{$invoice->id}", [
             'amount' => -1,
+        ])->assertUnprocessable()->assertJsonValidationErrors('amount');
+
+        $this->patchJson("/api/waste-sales/{$invoice->id}", [
+            'amount' => 0,
         ])->assertUnprocessable()->assertJsonValidationErrors('amount');
     }
 
@@ -212,13 +216,16 @@ class WasteSaleTest extends TestCase
             );
     }
 
-    public function test_staff_cannot_record_a_waste_sale_for_an_invoice_they_did_not_create(): void
+    public function test_staff_can_record_a_waste_sale_for_an_invoice_created_by_another_staff_member(): void
     {
+        $creator = User::factory()->create(['role' => 'staff']);
+        $staff = User::factory()->create(['role' => 'normal_staff']);
         $invoice = $this->invoice();
-        Sanctum::actingAs(User::factory()->create(['role' => 'normal_staff']));
+        $invoice->update(['user_id' => $creator->id]);
+        Sanctum::actingAs($staff);
 
         $this->patchJson("/api/waste-sales/{$invoice->id}", [
             'amount' => 25,
-        ])->assertForbidden();
+        ])->assertOk()->assertJsonPath('waste_sell_amount', '25.00');
     }
 }

@@ -89,13 +89,13 @@ class WasteController extends Controller
     {
         abort_unless(
             $request->user()?->isAdmin()
-                || (int) $invoice->user_id === (int) $request->user()?->id,
+                || in_array($request->user()?->role, ['staff', 'normal_staff'], true),
             403,
-            'Only the invoice creator or an administrator can record or update a waste sell.'
+            'Only administrators and staff can record or update a waste sell.'
         );
 
         $data = $request->validate([
-            'amount' => ['required', 'numeric', 'min:0', 'max:9999999999.99'],
+            'amount' => ['required', 'numeric', 'gt:0', 'max:9999999999.99'],
             'remark' => ['nullable', 'string', 'max:1000'],
         ]);
 

@@ -51,11 +51,8 @@
 			const id = page.params.id;
 
 			const invoiceData = await api.getInvoice(id);
-			if (
-				$user?.role !== "admin" &&
-				Number(invoiceData.user_id) !== Number($user?.id)
-			) {
-				errorMessage = "Only the invoice creator or an administrator can edit this invoice.";
+			if (!["admin", "staff", "normal_staff"].includes($user?.role)) {
+				errorMessage = "Only administrators and staff can edit invoices.";
 				invoice = null;
 				return;
 			}

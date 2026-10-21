@@ -29,6 +29,7 @@
 
 	let openMenuId = $state(null);
 	let actionMenuPosition = $state({ top: 0, left: 0 });
+	let statusMenu = $state({ invoiceId: null, top: 0, left: 0 });
 	let exportingId = $state(null);
 	let paymentInvoice = $state(null);
 	let paymentMethod = $state("cash");
@@ -47,8 +48,14 @@
 	let menuInvoice = $derived(
 		invoices.find((invoice) => invoice.id === openMenuId) ?? null,
 	);
+	let statusMenuInvoice = $derived(
+		invoices.find((invoice) => invoice.id === statusMenu.invoiceId) ?? null,
+	);
 	function canManageInvoice(invoice) {
-		return isAdmin || Number(invoice?.user_id) === Number($user?.id);
+		return isAdmin || ["staff", "normal_staff"].includes($user?.role);
+	}
+	function canSellWaste(invoice) {
+		return isAdmin || ["staff", "normal_staff"].includes($user?.role);
 	}
 
 	let currentPage = $state(1);
@@ -61,7 +68,7 @@
 		{ key: "invoiceDate", label: "Invoice Date" },
 		{ key: "totalAmount", label: "Total Amount" },
 		{ key: "createdBy", label: "Created By" },
-		{ key: "status", label: "Status" },
+		{ key: "status", label: "Payment Status" },
 	];
 	let visibleColumns = $state(
 		Object.fromEntries(invoiceColumns.map((column) => [column.key, true])),
@@ -171,6 +178,7 @@
 	}
 
 	function toggleActionMenu(invoiceId, event) {
+		closeStatusMenu();
 		if (openMenuId === invoiceId) {
 			openMenuId = null;
 			return;
@@ -192,15 +200,37 @@
 		openMenuId = invoiceId;
 	}
 
+	function toggleStatusMenu(invoice, event) {
+		if (statusMenu.invoiceId === invoice.id) {
+			closeStatusMenu();
+			return;
+		}
+		const rect = event.currentTarget.getBoundingClientRect();
+		const menuWidth = 150;
+		const menuHeight = 100;
+		const padding = 10;
+		openMenuId = null;
+		statusMenu = {
+			invoiceId: invoice.id,
+			top: Math.max(padding, Math.min(rect.bottom + 5, window.innerHeight - menuHeight - padding)),
+			left: Math.max(padding, Math.min(rect.left, window.innerWidth - menuWidth - padding)),
+		};
+	}
+
+	function closeStatusMenu() {
+		statusMenu = { invoiceId: null, top: 0, left: 0 };
+	}
+
 	function closeActionMenuOnOutsideClick(event) {
 		const target = event.target;
 		if (
 			target instanceof Element &&
-			target.closest(".more-button, .floating-action-menu")
+			target.closest(".more-button, .floating-action-menu, .invoice-status-control, .invoice-status-dropdown")
 		) {
 			return;
 		}
 		openMenuId = null;
+		closeStatusMenu();
 	}
 
 	// =========================
@@ -311,6 +341,7 @@
 			.slice(0, 10);
 		paymentError = "";
 		openMenuId = null;
+		closeStatusMenu();
 	}
 
 	function closePaymentDialog() {
@@ -344,6 +375,7 @@
 		unpaidRemark = "";
 		unpaidError = "";
 		openMenuId = null;
+		closeStatusMenu();
 	}
 
 	function closeUnpaidDialog() {
@@ -679,7 +711,7 @@
 							{#if visibleColumns.status}<th
 									class="status-column"
 								>
-									Status
+									Payment Status
 								</th>{/if}
 
 							<th class="action-column"></th>
@@ -732,17 +764,23 @@
 								{#if visibleColumns.status}<td
 										class="status-cell"
 									>
-										<span
-											class="status-badge"
-											class:paid={invoice.status ===
-												"paid"}
-											class:unpaid={invoice.status ===
-												"unpaid"}
-										>
-											{invoice.status === "paid"
-												? "Paid"
-												: "Unpaid"}
-										</span>
+										{#if invoice.status !== "cancelled" && canManageInvoice(invoice)}
+											<button
+												class="payment-badge status-action invoice-status-control"
+												class:paid={invoice.status === "paid"}
+												type="button"
+												aria-expanded={statusMenu.invoiceId === invoice.id}
+												title="Choose payment status"
+												onclick={(event) => toggleStatusMenu(invoice, event)}
+											>
+												{invoice.status === "paid" ? "Paid" : "Unpaid"}
+												<span class="status-chevron" aria-hidden="true"></span>
+											</button>
+										{:else if invoice.status === "cancelled"}
+											<span class="status-badge">Cancelled</span>
+										{:else}
+											<span class="payment-badge" class:paid={invoice.status === "paid"}>{invoice.status === "paid" ? "Paid" : "Unpaid"}</span>
+										{/if}
 									</td>{/if}
 
 								<!-- =========================
@@ -838,7 +876,7 @@
 			>
 				{exportingId === menuInvoice.id ? "Preparing..." : "Export PDF"}
 			</button>
-			{#if canManageInvoice(menuInvoice)}
+			{#if canSellWaste(menuInvoice)}
 				<button
 					type="button"
 					onclick={() => {
@@ -860,6 +898,28 @@
 					>Delete Invoice</button
 				>
 			{/if}
+		</div>
+	{/if}
+
+	{#if statusMenuInvoice}
+		<div
+			class="status-dropdown invoice-status-dropdown"
+			style:--menu-top={`${statusMenu.top}px`}
+			style:--menu-left={`${statusMenu.left}px`}
+		>
+			<button
+				type="button"
+				disabled={statusMenuInvoice.status === "paid"}
+				onclick={() => openPaymentDialog(statusMenuInvoice)}
+				>Paid</button
+			>
+			<button
+				type="button"
+				class="unpaid-option"
+				disabled={statusMenuInvoice.status !== "paid"}
+				onclick={() => openUnpaidDialog(statusMenuInvoice)}
+				>Unpaid</button
+			>
 		</div>
 	{/if}
 
@@ -1337,17 +1397,92 @@
 		font-weight: 600;
 	}
 
-	.status-badge.unpaid {
+	.payment-badge {
+		display: inline-flex;
+		min-width: 66px;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		padding: 5px 10px;
+		border: 0;
+		border-radius: 999px;
 		background: #fee2e2;
-
-		color: #dc2626;
+		color: #c81e3a;
+		font-size: 12px;
+		font-weight: 700;
 	}
-
-	.status-badge.paid {
+	.payment-badge.paid {
 		background: #ccfbf1;
-
 		color: #0f766e;
 	}
+	.payment-badge.status-action {
+		min-width: 122px;
+		box-sizing: border-box;
+		justify-content: space-between;
+		padding: 9px 12px;
+		border: 1px solid #ccd4e0;
+		border-radius: 9px;
+		background: #fff;
+		font-family: inherit;
+		font-size: 12px;
+		text-align: left;
+		cursor: pointer;
+		box-shadow: 0 1px 2px rgb(15 23 42 / 3%);
+		transition: border-color 0.15s ease, box-shadow 0.15s ease;
+	}
+	.payment-badge.status-action:not(.paid) { color: #c81e3a; }
+	.payment-badge.status-action.paid { background: #fff; color: #0f766e; }
+	.payment-badge.status-action:hover {
+		border-color: #aebbd0;
+		box-shadow: 0 2px 5px rgb(15 23 42 / 7%);
+	}
+	.payment-badge.status-action:focus-visible {
+		outline: 3px solid rgb(49 94 231 / 28%);
+		outline-offset: 2px;
+	}
+	.status-chevron {
+		width: 6px;
+		height: 6px;
+		flex: none;
+		margin: -3px 1px 0 0;
+		border-right: 1.5px solid currentColor;
+		border-bottom: 1.5px solid currentColor;
+		opacity: 0.72;
+		transform: rotate(45deg);
+		transition: transform 0.15s ease;
+	}
+	.status-action[aria-expanded="true"] .status-chevron {
+		margin-top: 3px;
+		transform: rotate(225deg);
+	}
+	.status-dropdown {
+		position: fixed;
+		top: var(--menu-top);
+		left: var(--menu-left);
+		z-index: 2000;
+		display: grid;
+		min-width: 150px;
+		overflow: hidden;
+		border: 1px solid #e5e7eb;
+		border-radius: 9px;
+		background: white;
+		box-shadow: 0 10px 30px rgb(15 23 42 / 16%);
+	}
+	.status-dropdown button {
+		width: 100%;
+		padding: 10px 13px;
+		border: 0;
+		background: white;
+		color: #202939;
+		font: inherit;
+		font-size: 13px;
+		font-weight: 650;
+		text-align: left;
+		cursor: pointer;
+	}
+	.status-dropdown button:hover:not(:disabled) { background: #f3f6fb; }
+	.status-dropdown button.unpaid-option { color: #be123c; }
+	.status-dropdown button:disabled { color: #98a2b3; cursor: default; }
 
 	/* =========================
 	   ACTION

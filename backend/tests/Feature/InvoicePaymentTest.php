@@ -51,6 +51,21 @@ class InvoicePaymentTest extends TestCase
         ]);
     }
 
+    public function test_staff_can_update_payment_status_for_an_invoice_created_by_another_staff_member(): void
+    {
+        $creator = User::factory()->create(['role' => 'staff']);
+        $staff = User::factory()->create(['role' => 'normal_staff']);
+        $invoice = $this->invoice();
+        $invoice->update(['user_id' => $creator->id]);
+        Sanctum::actingAs($staff);
+
+        $this->patchJson("/api/invoices/{$invoice->id}", [
+            'status' => 'paid',
+            'payment_method' => 'cash',
+            'payment_date' => '2026-09-23',
+        ])->assertOk()->assertJsonPath('status', 'paid');
+    }
+
     public function test_payment_details_are_required_when_marking_paid(): void
     {
         Sanctum::actingAs(User::factory()->create(['role' => 'normal_staff']));

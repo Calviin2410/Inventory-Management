@@ -129,7 +129,7 @@ class BarrelIndexTest extends TestCase
         ]);
     }
 
-    public function test_admin_can_manually_set_each_barrel_status(): void
+    public function test_admin_can_only_set_an_in_transit_barrel_as_available(): void
     {
         Sanctum::actingAs(User::factory()->create(['role' => 'admin']));
         $barrel = Barrel::create([
@@ -137,11 +137,20 @@ class BarrelIndexTest extends TestCase
             'status' => 'available',
         ]);
 
-        foreach (['rented', 'returning', 'available'] as $status) {
+        foreach (['rented', 'returning'] as $status) {
             $this->patchJson("/api/barrels/{$barrel->id}", [
                 'status' => $status,
-            ])->assertOk()->assertJsonPath('status', $status);
+            ])->assertUnprocessable()->assertJsonValidationErrors('status');
         }
+
+        $this->patchJson("/api/barrels/{$barrel->id}", [
+            'status' => 'available',
+        ])->assertUnprocessable()->assertJsonValidationErrors('status');
+
+        $barrel->update(['status' => 'returning']);
+        $this->patchJson("/api/barrels/{$barrel->id}", [
+            'status' => 'available',
+        ])->assertOk()->assertJsonPath('status', 'available');
     }
 
     public function test_in_transit_barrel_can_be_marked_available_but_not_rented(): void
