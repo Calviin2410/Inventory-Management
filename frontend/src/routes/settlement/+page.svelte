@@ -225,10 +225,10 @@
 
 	<form class="toolbar date-toolbar" onsubmit={(event) => { event.preventDefault(); loadSettlements(); }}>
 		<label>From
-			<DateInput bind:value={fromDate} max={toDate} required ariaLabel="Select from date" />
+			<DateInput bind:value={fromDate} max={toDate} required onchange={loadSettlements} ariaLabel="Select from date" />
 		</label>
 		<label>To
-			<DateInput bind:value={toDate} min={fromDate} required ariaLabel="Select to date" />
+			<DateInput bind:value={toDate} min={fromDate} required onchange={loadSettlements} ariaLabel="Select to date" />
 		</label>
 		<button class="btn btn-primary" type="submit" disabled={loading || !fromDate || !toDate}>View</button>
 		<button class="btn" type="button" onclick={() => { fromDate = malaysiaToday(); toDate = malaysiaToday(); loadSettlements(); }} disabled={loading}>Today</button>

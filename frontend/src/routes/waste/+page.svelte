@@ -190,17 +190,21 @@
 				>
 			</div>
 		</section>
-		<div class="date-range-filters" aria-label="Filter waste sales by date range">
+		<div class="date-range-filters" aria-label="Filter invoices by date range">
 			<label class="date-filter">
-				<span>Received From</span><DateInput
+				<span>Invoice From</span><DateInput
 					bind:value={fromDate}
-					ariaLabel="Received from date"
+					max={toDate}
+					onchange={() => loadWasteSales(1)}
+					ariaLabel="Invoice from date"
 				/>
 			</label>
 			<label class="date-filter">
-				<span>Received To</span><DateInput
+				<span>Invoice To</span><DateInput
 					bind:value={toDate}
-					ariaLabel="Received to date"
+					min={fromDate}
+					onchange={() => loadWasteSales(1)}
+					ariaLabel="Invoice to date"
 				/>
 			</label>
 		</div>

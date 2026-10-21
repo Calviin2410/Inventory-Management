@@ -44,11 +44,11 @@ class WasteController extends Controller
         }
 
         if (! empty($data['from_date'])) {
-            $query->whereDate('waste_sell_recorded_at', '>=', $data['from_date']);
+            $query->whereDate('issued_date', '>=', $data['from_date']);
         }
 
         if (! empty($data['to_date'])) {
-            $query->whereDate('waste_sell_recorded_at', '<=', $data['to_date']);
+            $query->whereDate('issued_date', '<=', $data['to_date']);
         }
 
         if (! empty($data['received_by'])) {

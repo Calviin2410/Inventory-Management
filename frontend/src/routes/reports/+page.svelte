@@ -332,13 +332,13 @@
             <div class="field">
                 <label for="fromDate"> From Invoice Date </label>
 
-                <DateInput id="fromDate" bind:value={fromDate} max={toDate} ariaLabel="Select report from date" />
+                <DateInput id="fromDate" bind:value={fromDate} max={toDate} onchange={generateReport} ariaLabel="Select report from date" />
             </div>
 
             <div class="field">
                 <label for="toDate"> To Invoice Date </label>
 
-                <DateInput id="toDate" bind:value={toDate} min={fromDate} ariaLabel="Select report to date" />
+                <DateInput id="toDate" bind:value={toDate} min={fromDate} onchange={generateReport} ariaLabel="Select report to date" />
             </div>
 
             <div class="filter-actions">

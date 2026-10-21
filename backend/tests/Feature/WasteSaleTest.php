@@ -111,25 +111,36 @@ class WasteSaleTest extends TestCase
         ])->assertUnprocessable()->assertJsonValidationErrors('amount');
     }
 
-    public function test_waste_page_only_contains_recorded_sales_and_filters_received_date(): void
+    public function test_waste_page_filters_invoice_date_and_includes_unsold_invoices(): void
     {
         Sanctum::actingAs(User::factory()->create(['role' => 'normal_staff']));
-        $included = $this->invoice();
-        $included->update([
-            'waste_sell_amount' => 88,
-            'waste_sell_recorded_at' => '2026-10-08',
-        ]);
-        $excluded = $this->invoice();
 
-        $this->getJson('/api/waste-sales?from_date=2026-10-08&to_date=2026-10-08')
+        $soldInRange = $this->invoice();
+        $soldInRange->update([
+            'issued_date' => '2026-09-19',
+            'waste_sell_amount' => 88,
+            'waste_sell_recorded_at' => '2026-10-17',
+        ]);
+        $unsoldInRange = $this->invoice();
+        $unsoldInRange->update(['issued_date' => '2026-09-22']);
+        $outsideRange = $this->invoice();
+        $outsideRange->update([
+            'issued_date' => '2026-10-17',
+            'waste_sell_amount' => 30,
+            'waste_sell_recorded_at' => '2026-09-05',
+        ]);
+
+        $this->getJson('/api/waste-sales?from_date=2026-09-01&to_date=2026-09-30')
             ->assertOk()
             ->assertJsonPath('per_page', 20)
+            ->assertJsonCount(2, 'data')
             ->assertJsonPath(
                 'total_amount_received',
                 fn ($amount) => (float) $amount === 88.0
             )
-            ->assertJsonFragment(['id' => $included->id])
-            ->assertJsonMissing(['id' => $excluded->id]);
+            ->assertJsonFragment(['id' => $soldInRange->id])
+            ->assertJsonFragment(['id' => $unsoldInRange->id])
+            ->assertJsonMissing(['id' => $outsideRange->id]);
     }
 
     public function test_waste_page_can_filter_by_received_by_user(): void

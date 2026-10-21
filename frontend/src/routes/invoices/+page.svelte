@@ -558,32 +558,6 @@
 				{/each}
 			</div>
 		</details>
-		<details class="column-picker">
-			<summary
-				>Columns <span class="select-chevron" aria-hidden="true"
-				></span></summary
-			>
-			<div class="column-menu">
-				<label class="all-columns">
-					<input
-						type="checkbox"
-						checked={allColumnsVisible}
-						onchange={toggleAllColumns}
-					/>
-					<span>All</span>
-				</label>
-				{#each invoiceColumns as column}
-					<label>
-						<input
-							type="checkbox"
-							checked={visibleColumns[column.key]}
-							onchange={() => toggleColumn(column.key)}
-						/>
-						<span>{column.label}</span>
-					</label>
-				{/each}
-			</div>
-		</details>
 		<span class="result-count"
 			>{totalInvoices} {totalInvoices === 1 ? "result" : "results"}</span
 		>
@@ -603,6 +577,32 @@
 				<span>To date</span>
 				<DateInput bind:value={invoiceToDate} min={invoiceFromDate} onchange={() => loadInvoices(1)} ariaLabel="Filter invoices to date" />
 			</label>
+			<details class="column-picker">
+				<summary
+					>Columns <span class="select-chevron" aria-hidden="true"
+					></span></summary
+				>
+				<div class="column-menu">
+					<label class="all-columns">
+						<input
+							type="checkbox"
+							checked={allColumnsVisible}
+							onchange={toggleAllColumns}
+						/>
+						<span>All</span>
+					</label>
+					{#each invoiceColumns as column}
+						<label>
+							<input
+								type="checkbox"
+								checked={visibleColumns[column.key]}
+								onchange={() => toggleColumn(column.key)}
+							/>
+							<span>{column.label}</span>
+						</label>
+					{/each}
+				</div>
+			</details>
 		</div>
 		{#if loading}
 			<SkeletonTable rows={6} columns={7} />
@@ -1307,6 +1307,10 @@
 		color: #596579;
 		font-size: 11px;
 		font-weight: 700;
+	}
+
+	.invoice-date-range .column-picker {
+		align-self: flex-end;
 	}
 
 	/* =========================
