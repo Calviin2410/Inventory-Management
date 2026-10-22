@@ -9,6 +9,7 @@
 	import DateInput from "$lib/DateInput.svelte";
 	import { openInvoicePrintWindow } from "$lib/invoicePrint.js";
 	import ColumnPicker from "$lib/ColumnPicker.svelte";
+	import FilterSelect from "$lib/FilterSelect.svelte";
 
 	const settlementColumns = [
 		{ key: "invoiceNumber", label: "Invoice Number" },
@@ -54,6 +55,9 @@
 	let unpaidSaving = $state(false);
 	let fromDate = $state(malaysiaToday());
 	let toDate = $state(malaysiaToday());
+	let search = $state("");
+	let searchBy = $state("all");
+	let settlementStatusFilter = $state("");
 	let paidCount = $derived(
 		invoices.filter((invoice) => invoice.status === "paid").length,
 	);
@@ -92,6 +96,11 @@
 
 		try {
 			const params = { from: fromDate, to: toDate };
+			if (search.trim()) {
+				params.search = search.trim();
+				if (searchBy !== "all") params.search_by = searchBy;
+			}
+			if (settlementStatusFilter) params.settlement_status = settlementStatusFilter;
 			if (invoiceSortDirection) {
 				params.sort = "invoice_no";
 				params.direction = invoiceSortDirection;
@@ -386,45 +395,33 @@
 		</div>
 	</div>
 
-	<form class="toolbar date-toolbar" onsubmit={(event) => { event.preventDefault(); loadSettlements(); }}>
-		<label>From
-			<DateInput bind:value={fromDate} max={toDate} required onchange={loadSettlements} ariaLabel="Select from date" />
-		</label>
-		<label>To
-			<DateInput bind:value={toDate} min={fromDate} required onchange={loadSettlements} ariaLabel="Select to date" />
-		</label>
-		<button
-			class="btn btn-primary"
-			type="submit"
-			disabled={loading || !fromDate || !toDate}>View</button
-		>
-		<button
-			class="btn"
-			type="button"
-			onclick={() => {
-				fromDate = malaysiaToday();
-				toDate = malaysiaToday();
-				loadSettlements();
-			}}
-			disabled={loading}>Today</button
-		>
-		<button
-			class="btn refresh-button"
-			type="button"
-			onclick={loadSettlements}
-			disabled={loading}>Refresh</button
-		>
-		<ColumnPicker
-			columns={settlementColumns}
-			bind:visible={visibleColumns}
-		/>
+	<form class="toolbar settlement-search-toolbar" onsubmit={(event) => { event.preventDefault(); loadSettlements(); }}>
+		<FilterSelect compact className="settlement-search-scope" ariaLabel="Search field" bind:value={searchBy} options={[{ value: "all", label: "All fields" }, { value: "invoice", label: "Invoice" }, { value: "customer", label: "Customer" }, { value: "barrel", label: "Barrel" }]} />
+		<div class="search-field">
+			<input class="control" type="search" placeholder={searchBy === "invoice" ? "Invoice number..." : searchBy === "customer" ? "Customer name..." : searchBy === "barrel" ? "Barrel code..." : "Invoice, customer or barrel..."} bind:value={search} />
+			{#if search}<button type="button" class="search-clear" aria-label="Clear search" onclick={() => { search = ""; loadSettlements(); }}>×</button>{/if}
+		</div>
+		<button class="btn btn-primary" type="submit" disabled={loading}>Search</button>
+		<FilterSelect compact className="settlement-status-filter" ariaLabel="Filter settlement status" bind:value={settlementStatusFilter} onchange={loadSettlements} options={[{ value: "", label: "All settlement statuses" }, { value: "settled", label: "Settled" }, { value: "unsettled", label: "Unsettled" }]} />
 	</form>
+
+	<section class="panel settlement-panel">
+		<div class="settlement-date-range" aria-label="Filter settlements by date range">
+			<label class="settlement-date-filter">
+				<span>From date</span>
+				<DateInput bind:value={fromDate} max={toDate} onchange={loadSettlements} ariaLabel="Select from date" />
+			</label>
+			<label class="settlement-date-filter">
+				<span>To date</span>
+				<DateInput bind:value={toDate} min={fromDate} onchange={loadSettlements} ariaLabel="Select to date" />
+			</label>
+			<ColumnPicker columns={settlementColumns} bind:visible={visibleColumns} />
+		</div>
 
 	{#if successMessage}
 		<Toast message={successMessage} onclose={() => (successMessage = "")} />
 	{/if}
 
-	<section class="panel settlement-panel">
 		{#if loading}
 			<SkeletonTable rows={5} columns={7} />
 		{:else if errorMessage}
@@ -913,25 +910,28 @@
 		font-size: 12px;
 		font-weight: 650;
 	}
-	.date-toolbar {
-		align-items: flex-end;
-		margin-bottom: 20px;
-	}
-	.date-toolbar label {
+	:global(.settlement-search-scope) { width: 140px; flex: 0 0 140px; }
+	.settlement-search-toolbar .search-field { flex: 1 1 220px; max-width: none; }
+	.settlement-search-toolbar .search-field .control { width: 100%; }
+	.settlement-date-filter {
 		display: grid;
-		min-width: 0;
-		flex: 1 1 190px;
-		gap: 6px;
+		width: 190px;
+		gap: 4px;
 		color: #536078;
 		font-size: 11px;
 		font-weight: 700;
 	}
-	.date-toolbar .btn {
-		flex: 0 1 auto;
+	:global(.filter-select.compact.settlement-search-scope) { width: 140px; flex: 0 0 140px; }
+	:global(.filter-select.compact.settlement-status-filter) { width: 190px; flex: 0 0 190px; }
+	.settlement-date-range {
+		display: flex;
+		justify-content: flex-end;
+		gap: 12px;
+		padding: 10px 16px;
+		border-bottom: 1px solid #e5e7eb;
+		background: #f8fafc;
 	}
-	.refresh-button {
-		margin-left: 0;
-	}
+	.settlement-date-range :global(.column-picker) { align-self: flex-end; }
 	.state {
 		padding: 28px;
 		color: #64748b;
@@ -1253,12 +1253,7 @@
 		.payment-summary {
 			grid-template-columns: 1fr 1fr;
 		}
-		.date-toolbar label {
-			width: 100%;
-		}
-		.refresh-button {
-			margin-left: 0;
-		}
+		.settlement-date-filter { width: 190px; }
 		.data-table {
 			min-width: 1120px;
 		}
@@ -1270,5 +1265,28 @@
 		.payment-summary {
 			grid-template-columns: 1fr;
 		}
+		.settlement-search-toolbar {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr);
+		}
+		.settlement-date-filter,
+		:global(.settlement-date-range .column-picker),
+		:global(.settlement-date-range .column-picker summary),
+		:global(.settlement-search-scope),
+		:global(.settlement-status-filter) { width: 100%; }
+		:global(.settlement-search-scope) {
+			grid-column: 1 / -1;
+			width: 100%;
+			flex: 1 1 100%;
+		}
+		:global(.filter-select.compact.settlement-search-scope) { width: 100%; flex: 1 1 100%; }
+		.settlement-search-toolbar .search-field { grid-column: 1 / -1; width: 100%; }
+		.settlement-search-toolbar > .btn { grid-column: 1 / -1; width: 100%; }
+		:global(.settlement-status-filter) {
+			grid-column: 1 / -1;
+			width: 100%;
+			flex: 1 1 100%;
+		}
+		.settlement-date-range { flex-direction: column; }
 	}
 </style>

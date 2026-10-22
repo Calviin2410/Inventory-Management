@@ -5,6 +5,7 @@
 	import SkeletonTable from "$lib/SkeletonTable.svelte";
 	import { formatCurrency } from "$lib/format.js";
 	import ColumnPicker from "$lib/ColumnPicker.svelte";
+	import FilterSelect from "$lib/FilterSelect.svelte";
 	const productColumns = [
 		{ key: "product", label: "Product" },
 		{ key: "sku", label: "SKU" },
@@ -14,10 +15,10 @@
 		{ key: "sellingPrice", label: "Selling price" },
 	];
 	let visibleColumns = $state(Object.fromEntries(productColumns.map((column) => [column.key, true])));
-	let products = $state([]), loading = $state(true), errorMessage = $state(""), search = $state("");
+	let products = $state([]), loading = $state(true), errorMessage = $state(""), search = $state(""), searchBy = $state("all");
 	async function loadProducts() {
 		loading = true; errorMessage = "";
-		try { const data = await api.getProducts(search ? { search } : {}); products = data.data ?? data ?? []; }
+		try { const params = search ? { search, ...(searchBy !== "all" ? { search_by: searchBy } : {}) } : {}; const data = await api.getProducts(params); products = data.data ?? data ?? []; }
 		catch (error) { errorMessage = error?.message || "Unable to load products"; }
 		finally { loading = false; }
 	}
@@ -28,11 +29,11 @@
 <main class="app-page">
 	<header class="page-heading"><div><p class="eyebrow">INVENTORY</p><h1>Products</h1><p>Browse products, prices and current stock levels.</p></div><a class="btn btn-primary" href="/products/create">+ Add product</a></header>
 	<form class="toolbar" onsubmit={(event) => { event.preventDefault(); loadProducts(); }}>
-		<div class="search-field"><input class="control search" placeholder="Search name, SKU or barcode…" bind:value={search} />{#if search}<button type="button" class="search-clear" aria-label="Clear search" onclick={() => { search = ""; loadProducts(); }}>×</button>{/if}</div>
+		<FilterSelect compact ariaLabel="Search field" bind:value={searchBy} options={[{ value: "all", label: "All fields" }, { value: "name", label: "Name" }, { value: "sku", label: "SKU" }, { value: "barcode", label: "Barcode" }]} />
+		<div class="search-field"><input class="control search" placeholder={searchBy === "name" ? "Search product name..." : searchBy === "sku" ? "Search SKU..." : searchBy === "barcode" ? "Search barcode..." : "Search products..."} bind:value={search} />{#if search}<button type="button" class="search-clear" aria-label="Clear search" onclick={() => { search = ""; loadProducts(); }}>×</button>{/if}</div>
 		<button class="btn" type="submit">Search</button>
-		<button class="btn" type="button" onclick={() => { search = ""; loadProducts(); }}>Refresh</button>
+		<button class="btn" type="button" onclick={() => { search = ""; searchBy = "all"; loadProducts(); }}>Refresh</button>
 		<ColumnPicker columns={productColumns} bind:visible={visibleColumns} />
-		<span class="result-count">{products.length} {products.length === 1 ? "result" : "results"}</span>
 	</form>
 	<section class="panel">
 		{#if loading}<SkeletonTable rows={5} columns={6} />

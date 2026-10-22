@@ -20,13 +20,26 @@ class ProductController extends Controller
     // GET /api/products?search=xxx&low_stock=1
     public function index(Request $request)
     {
+        $request->validate([
+            'search_by' => ['sometimes', 'in:all,name,sku,barcode'],
+        ]);
+
         $query = Product::with(['category', 'supplier']);
 
         if ($search = $request->query('search')) {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('sku', 'like', "%{$search}%")
-                  ->orWhere('barcode', 'like', "%{$search}%");
+            $searchBy = $request->query('search_by', 'all');
+            $columns = match ($searchBy) {
+                'name' => ['name'],
+                'sku' => ['sku'],
+                'barcode' => ['barcode'],
+                default => ['name', 'sku', 'barcode'],
+            };
+
+            $query->where(function ($q) use ($search, $columns) {
+                foreach ($columns as $index => $column) {
+                    $method = $index === 0 ? 'where' : 'orWhere';
+                    $q->{$method}($column, 'like', "%{$search}%");
+                }
             });
         }
 

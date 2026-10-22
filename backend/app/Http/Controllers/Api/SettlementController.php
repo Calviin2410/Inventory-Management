@@ -21,6 +21,9 @@ class SettlementController extends Controller
         $data = $request->validate([
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],
+            'search' => ['nullable', 'string', 'max:100'],
+            'search_by' => ['sometimes', 'in:all,invoice,customer,barrel'],
+            'settlement_status' => ['nullable', 'in:settled,unsettled'],
             'sort' => ['nullable', 'in:invoice_no,issued_date'],
             'direction' => ['nullable', 'in:asc,desc'],
         ]);
@@ -33,10 +36,32 @@ class SettlementController extends Controller
 
         $query = Invoice::query()
                 ->with('settledByUser:id,name')
+                ->with(['customer:id,name', 'items.barrel:id,code'])
                 ->where('created_at', '>=', $start)
                 ->where('created_at', '<', $end)
                 ->latest('created_at')
                 ->latest('id');
+
+        if ($search = trim($data['search'] ?? '')) {
+            $searchBy = $data['search_by'] ?? 'all';
+            if ($searchBy === 'invoice') {
+                $query->where('invoice_no', 'like', '%'.$search.'%');
+            } elseif ($searchBy === 'customer') {
+                $query->whereHas('customer', fn ($customerQuery) => $customerQuery->where('name', 'like', '%'.$search.'%'));
+            } elseif ($searchBy === 'barrel') {
+                $query->whereHas('items.barrel', fn ($barrelQuery) => $barrelQuery->where('code', 'like', '%'.$search.'%'));
+            } else {
+                $query->where(function ($builder) use ($search) {
+                    $builder->where('invoice_no', 'like', '%'.$search.'%')
+                        ->orWhereHas('customer', fn ($customerQuery) => $customerQuery->where('name', 'like', '%'.$search.'%'))
+                        ->orWhereHas('items.barrel', fn ($barrelQuery) => $barrelQuery->where('code', 'like', '%'.$search.'%'));
+                });
+            }
+        }
+
+        if (! empty($data['settlement_status'])) {
+            $query->where('settlement_status', $data['settlement_status']);
+        }
 
         InvoiceOrdering::apply($query, $request->query('sort'), $request->query('direction'), 'created_at');
 

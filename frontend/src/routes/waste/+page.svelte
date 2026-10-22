@@ -29,6 +29,7 @@
 	let loading = $state(true);
 	let errorMessage = $state("");
 	let search = $state("");
+	let searchBy = $state("all");
 	let fromDate = $state("");
 	let toDate = $state("");
 	let receivedByFilter = $state("");
@@ -55,7 +56,10 @@
 			const params = { page };
 			if (invoiceSortDirection) { params.sort = "invoice_no"; params.direction = invoiceSortDirection; }
 			else if (invoiceDateSortDirection) { params.sort = "issued_date"; params.direction = invoiceDateSortDirection; }
-			if (search.trim()) params.search = search.trim();
+			if (search.trim()) {
+				params.search = search.trim();
+				if (searchBy !== "all") params.search_by = searchBy;
+			}
 			if (fromDate) params.from_date = fromDate;
 			if (toDate) params.to_date = toDate;
 			if (receivedByFilter) params.received_by = receivedByFilter;
@@ -116,12 +120,13 @@
 	<div class="toolbar waste-toolbar">
 		<div class="filter-grid">
 			<label class="search-filter"
-				><span>Invoice or Barrel</span>
+				><div class="search-controls">
+					<FilterSelect compact className="search-scope" ariaLabel="Search field" bind:value={searchBy} options={[{ value: "all", label: "All fields" }, { value: "invoice", label: "Invoice" }, { value: "barrel", label: "Barrel" }]} />
 				<div class="search-field">
 					<input
 						class="control search"
 						type="search"
-						placeholder="Search invoice or barrel code..."
+						placeholder={searchBy === "invoice" ? "Search invoice number..." : searchBy === "barrel" ? "Search barrel code..." : "Search invoice or barrel code..."}
 						bind:value={search}
 						onkeydown={(event) =>
 							event.key === "Enter" && loadWasteSales(1)}
@@ -135,6 +140,7 @@
 								loadWasteSales(1);
 							}}>×</button
 						>{/if}
+				</div>
 				</div>
 			</label>
 			<FilterSelect
@@ -164,6 +170,7 @@
 					type="button"
 					onclick={() => {
 						search = "";
+						searchBy = "all";
 						fromDate = "";
 						toDate = "";
 						receivedByFilter = "";
@@ -173,10 +180,6 @@
 				>
 			</div>
 			<ColumnPicker columns={wasteColumns} bind:visible={visibleColumns} />
-		</div>
-		<div class="filter-summary">
-			{totalInvoices}
-			{totalInvoices === 1 ? "result" : "results"}
 		</div>
 	</div>
 
@@ -326,7 +329,7 @@
 	}
 	.filter-grid {
 		display: grid;
-		grid-template-columns: minmax(220px, 1.3fr) minmax(175px, 210px) minmax(170px, 205px) auto auto;
+		grid-template-columns: minmax(350px, 1.3fr) minmax(175px, 210px) minmax(170px, 205px) auto auto;
 		align-items: end;
 		gap: 12px;
 	}
@@ -336,13 +339,15 @@
 		gap: 6px;
 		min-width: 0;
 	}
+	.search-controls { display: flex; gap: 8px; min-width: 0; }
+	:global(.search-scope) { width: 130px; flex: 0 0 130px; }
+	.search-field { position: relative; flex: 1; min-width: 0; }
 	.date-range-filters {
 		display: grid;
 		grid-template-columns: repeat(2, minmax(175px, 220px));
 		align-items: end;
 		gap: 12px;
 	}
-	.search-filter span,
 	.date-filter span {
 		color: #536078;
 		font-size: 12px;
@@ -355,12 +360,6 @@
 	.filter-actions {
 		display: flex;
 		gap: 8px;
-	}
-	.filter-summary {
-		margin-top: 12px;
-		color: #7e899b;
-		font-size: 11px;
-		font-weight: 600;
 	}
 	.amount-summary {
 		display: flex;
@@ -492,6 +491,8 @@
 		.search-filter {
 			grid-column: auto;
 		}
+		.search-controls { flex-direction: column; }
+		:global(.search-scope) { width: 100%; flex-basis: auto; }
 		.filter-actions {
 			grid-column: auto;
 		}

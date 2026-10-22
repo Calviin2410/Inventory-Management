@@ -24,13 +24,13 @@
 	let loading = $state(true);
 	let errorMessage = $state("");
 	let search = $state("");
+	let searchBy = $state("all");
 	let action = $state("");
 	let subjectType = $state("");
 	let fromDate = $state("");
 	let toDate = $state("");
 	let currentPage = $state(1);
 	let lastPage = $state(1);
-	let totalLogs = $state(0);
 
 	const actionLabels = {
 		created: "Created",
@@ -154,7 +154,10 @@
 		try {
 			const params = { page: pageNumber };
 
-			if (search.trim()) params.search = search.trim();
+			if (search.trim()) {
+				params.search = search.trim();
+				if (searchBy !== "all") params.search_by = searchBy;
+			}
 			if (action) params.action = action;
 			if (subjectType) params.subject_type = subjectType;
 			if (fromDate) params.from_date = fromDate;
@@ -165,7 +168,6 @@
 			logs = result?.data ?? [];
 			currentPage = result?.current_page ?? 1;
 			lastPage = result?.last_page ?? 1;
-			totalLogs = result?.total ?? 0;
 		} catch (error) {
 			errorMessage = error?.message || "Unable to load activity logs.";
 		} finally {
@@ -175,6 +177,7 @@
 
 	function clearFilters() {
 		search = "";
+		searchBy = "all";
 		action = "";
 		subjectType = "";
 		fromDate = "";
@@ -211,11 +214,13 @@
 	</header>
 
 	<section class="filter-card" aria-label="Activity log filters">
+		<div class="search-row">
+		<FilterSelect compact className="search-scope" ariaLabel="Search field" bind:value={searchBy} options={[{ value: "all", label: "All fields" }, { value: "user", label: "User" }, { value: "record", label: "Record" }, { value: "activity", label: "Activity" }]} />
 		<div class="search-wrap">
 			<input
 				class="control"
 				type="search"
-				placeholder="Search user, record or activity..."
+				placeholder={searchBy === "user" ? "Search user..." : searchBy === "record" ? "Search record..." : searchBy === "activity" ? "Search activity..." : "Search user, record or activity..."}
 				bind:value={search}
 				onkeydown={(event) => event.key === "Enter" && loadLogs(1)}
 			/>
@@ -229,6 +234,7 @@
 					}}>×</button
 				>
 			{/if}
+		</div>
 		</div>
 
 		<FilterSelect
@@ -245,37 +251,33 @@
 			ariaLabel="Filter by record type"
 		/>
 
-		<label
-			><span>From</span><DateInput
-				bind:value={fromDate}
-				max={toDate}
-				onchange={() => loadLogs(1)}
-				ariaLabel="Select activity from date"
-			/></label
-		>
-		<label
-			><span>To</span><DateInput
-				bind:value={toDate}
-				min={fromDate}
-				onchange={() => loadLogs(1)}
-				ariaLabel="Select activity to date"
-			/></label
-		>
-
 		<button class="btn" type="button" onclick={() => loadLogs(1)}
 			>Search</button
 		>
 		<button class="btn" type="button" onclick={clearFilters}>Refresh</button
 		>
-		<ColumnPicker columns={activityColumns} bind:visible={visibleColumns} />
 	</section>
 
-	<div class="count">
-		{totalLogs}
-		{totalLogs === 1 ? "activity" : "activities"}
-	</div>
-
 	<section class="panel">
+		<div class="activity-date-range" aria-label="Filter activity by date range">
+			<label>
+				<span>From</span><DateInput
+					bind:value={fromDate}
+					max={toDate}
+					onchange={() => loadLogs(1)}
+					ariaLabel="Select activity from date"
+				/>
+			</label>
+			<label>
+				<span>To</span><DateInput
+					bind:value={toDate}
+					min={fromDate}
+					onchange={() => loadLogs(1)}
+					ariaLabel="Select activity to date"
+				/>
+			</label>
+			<ColumnPicker columns={activityColumns} bind:visible={visibleColumns} />
+		</div>
 		{#if loading}
 			<SkeletonTable rows={7} columns={5} />
 		{:else if errorMessage}
@@ -376,10 +378,7 @@
 	.filter-card {
 		display: grid;
 		grid-template-columns:
-			minmax(240px, 1fr) repeat(2, minmax(145px, auto)) repeat(
-				2,
-				minmax(145px, auto)
-			)
+			minmax(380px, 1fr) repeat(2, minmax(145px, auto))
 			auto auto;
 		align-items: end;
 		gap: 10px;
@@ -392,6 +391,9 @@
 	.search-wrap {
 		position: relative;
 	}
+	.search-row { display: flex; gap: 8px; min-width: 0; }
+	:global(.search-scope) { width: 132px; flex: 0 0 132px; }
+	.search-row .search-wrap { flex: 1; min-width: 0; }
 	.search-wrap .control {
 		width: 100%;
 		padding-right: 42px;
@@ -410,22 +412,23 @@
 		color: #64748b;
 		cursor: pointer;
 	}
-	.filter-card label {
+	.activity-date-range {
 		display: flex;
-		flex-direction: column;
-		gap: 5px;
+		justify-content: flex-end;
+		gap: 12px;
+		padding: 10px 16px;
+		border-bottom: 1px solid #e5e7eb;
+		background: #f8fafc;
 	}
-	.filter-card label span {
-		color: #64748b;
-		font-size: 10px;
+	.activity-date-range > label {
+		display: grid;
+		width: 190px;
+		gap: 4px;
+		color: #596579;
+		font-size: 11px;
 		font-weight: 700;
 	}
-	.count {
-		margin: 0 4px 14px;
-		color: #7e899b;
-		font-size: 11px;
-		font-weight: 600;
-	}
+	.activity-date-range :global(.column-picker) { align-self: flex-end; }
 	.state {
 		padding: 40px 24px;
 		color: #64748b;
@@ -521,7 +524,7 @@
 		.filter-card {
 			grid-template-columns: repeat(3, minmax(0, 1fr));
 		}
-		.search-wrap {
+		.search-row {
 			grid-column: span 3;
 		}
 	}
@@ -529,9 +532,18 @@
 		.filter-card {
 			grid-template-columns: 1fr;
 		}
-		.search-wrap {
+		.search-row {
 			grid-column: auto;
 		}
+		.search-row { flex-direction: column; }
+		:global(.search-scope) { width: 100%; flex-basis: auto; }
+		.activity-date-range { flex-wrap: wrap; }
+	}
+	@media (max-width: 560px) {
+		.activity-date-range { align-items: stretch; flex-direction: column; }
+		.activity-date-range > label { width: 100%; }
+		:global(.column-picker),
+		:global(.column-picker summary) { width: 100%; }
 		.filter-card .control,
 		.filter-card .btn {
 			width: 100%;

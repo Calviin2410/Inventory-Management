@@ -130,9 +130,6 @@
             />
         </div>
 
-        <span class="result-count">
-            {totalInvoices} {totalInvoices === 1 ? "invoice" : "invoices"}
-        </span>
         <ColumnPicker columns={customerInvoiceColumns} bind:visible={visibleColumns} />
     </section>
 
@@ -265,12 +262,6 @@
         font-weight: 600;
     }
 
-    .result-count {
-        padding-bottom: 12px;
-        color: #64748b;
-        font-size: 13px;
-    }
-
     .status-badge {
         display: inline-flex;
         align-items: center;
@@ -302,8 +293,5 @@
             width: 100%;
         }
 
-        .result-count {
-            padding-bottom: 0;
-        }
     }
 </style>

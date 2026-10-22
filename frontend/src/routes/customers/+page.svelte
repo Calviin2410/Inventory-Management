@@ -4,6 +4,7 @@
 	import Nav from "$lib/Nav.svelte";
 	import SkeletonTable from "$lib/SkeletonTable.svelte";
 	import ColumnPicker from "$lib/ColumnPicker.svelte";
+	import FilterSelect from "$lib/FilterSelect.svelte";
 
 	const customerColumns = [
 		{ key: "customer", label: "Customer" },
@@ -18,6 +19,7 @@
 	let errorMessage = $state("");
 
 	let search = $state("");
+	let searchBy = $state("all");
 
 	let currentPage = $state(1);
 	let lastPage = $state(1);
@@ -41,6 +43,7 @@
 
 			if (search.trim()) {
 				params.search = search.trim();
+				if (searchBy !== "all") params.search_by = searchBy;
 			}
 
 			const result = await api.getCustomers(params);
@@ -102,10 +105,11 @@
 	========================= -->
 
 	<div class="toolbar">
+		<FilterSelect compact className="search-scope" ariaLabel="Search field" bind:value={searchBy} options={[{ value: "all", label: "All fields" }, { value: "name", label: "Name" }, { value: "phone", label: "Phone" }]} />
 		<div class="search-field"><input
 			class="control search"
 			type="text"
-			placeholder="Search name or phone..."
+			placeholder={searchBy === "name" ? "Search customer name..." : searchBy === "phone" ? "Search phone number..." : "Search name or phone..."}
 			bind:value={search}
 			onkeydown={(event) => {
 				if (event.key === "Enter") {
@@ -127,13 +131,13 @@
 			class="btn"
 			onclick={() => {
 				search = "";
+				searchBy = "all";
 				loadCustomers(1);
 			}}
 		>
 			Refresh
 		</button>
 		<ColumnPicker columns={customerColumns} bind:visible={visibleColumns} />
-		<span class="result-count">{totalCustomers} {totalCustomers === 1 ? "result" : "results"}</span>
 	</div>
 
 	<!-- =========================

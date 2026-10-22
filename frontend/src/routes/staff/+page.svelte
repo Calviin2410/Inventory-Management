@@ -10,6 +10,7 @@
 	import SkeletonTable from "$lib/SkeletonTable.svelte";
 	import Toast from "$lib/Toast.svelte";
 	import ColumnPicker from "$lib/ColumnPicker.svelte";
+	import FilterSelect from "$lib/FilterSelect.svelte";
 
 	const staffColumns = [
 		{ key: "name", label: "Staff Name" },
@@ -22,6 +23,7 @@
 	let loading = $state(true);
 	let errorMessage = $state("");
 	let search = $state("");
+	let searchBy = $state("all");
 	let selectedStaff = $state(null);
 	let resetting = $state(false);
 	let resetError = $state("");
@@ -35,9 +37,10 @@
 
 		if (!keyword) return staff;
 
-		return staff.filter((member) =>
-			`${member.name} ${member.email}`.toLowerCase().includes(keyword),
-		);
+		return staff.filter((member) => {
+			const value = searchBy === "name" ? member.name : searchBy === "email" ? member.email : `${member.name} ${member.email}`;
+			return value.toLowerCase().includes(keyword);
+		});
 	});
 
 	async function loadStaff() {
@@ -139,6 +142,7 @@
 	</header>
 
 	<form class="toolbar" onsubmit={(event) => event.preventDefault()}>
+		<FilterSelect compact ariaLabel="Search field" bind:value={searchBy} options={[{ value: "all", label: "All fields" }, { value: "name", label: "Name" }, { value: "email", label: "Email" }]} />
 		<div class="search-field"><input
 			class="control search"
 			type="search"
@@ -149,12 +153,9 @@
 		</div>
 
 		<button type="submit" class="btn">Search</button>
-		<button type="button" class="btn" onclick={() => { search = ""; loadStaff(); }}>Refresh</button>
+		<button type="button" class="btn" onclick={() => { search = ""; searchBy = "all"; loadStaff(); }}>Refresh</button>
 		<ColumnPicker columns={staffColumns} bind:visible={visibleColumns} />
 
-		<span class="result-count">
-			{filteredStaff.length} {filteredStaff.length === 1 ? "staff member" : "staff members"}
-		</span>
 	</form>
 
 	<section class="panel staff-panel">

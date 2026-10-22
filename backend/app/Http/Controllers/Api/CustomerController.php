@@ -13,6 +13,10 @@ class CustomerController extends Controller
 {
     public function index(Request $request)
     {
+        $request->validate([
+            'search_by' => ['sometimes', 'in:all,name,phone'],
+        ]);
+
         $query = Customer::query()
             ->latest('id');
 
@@ -24,27 +28,41 @@ class CustomerController extends Controller
             });
         } elseif ($search = $request->query('search')) {
             $normalizedSearch = Customer::normalizePhone($search);
+            $searchBy = $request->query('search_by', 'all');
 
-            $query->where(function ($q) use ($search, $normalizedSearch) {
-                $q->where(
-                    'name',
-                    'like',
-                    '%' . $search . '%'
-                )
-                ->orWhere(
-                    'phone',
-                    'like',
-                    '%' . $search . '%'
-                );
+            if ($searchBy === 'name') {
+                $query->where('name', 'like', '%'.$search.'%');
+            } elseif ($searchBy === 'phone') {
+                $query->where(function ($q) use ($search, $normalizedSearch) {
+                    $q->where('phone', 'like', '%'.$search.'%');
 
-                if ($normalizedSearch !== null) {
-                    $q->orWhere(
-                        'phone_normalized',
+                    if ($normalizedSearch !== null) {
+                        $q->orWhere('phone_normalized', 'like', '%'.$normalizedSearch.'%')
+                            ->orWhereJsonContains('phone_numbers', $normalizedSearch);
+                    }
+                });
+            } else {
+                $query->where(function ($q) use ($search, $normalizedSearch) {
+                    $q->where(
+                        'name',
                         'like',
-                        '%' . $normalizedSearch . '%'
-                    )->orWhereJsonContains('phone_numbers', $normalizedSearch);
-                }
-            });
+                        '%' . $search . '%'
+                    )
+                    ->orWhere(
+                        'phone',
+                        'like',
+                        '%' . $search . '%'
+                    );
+
+                    if ($normalizedSearch !== null) {
+                        $q->orWhere(
+                            'phone_normalized',
+                            'like',
+                            '%' . $normalizedSearch . '%'
+                        )->orWhereJsonContains('phone_numbers', $normalizedSearch);
+                    }
+                });
+            }
         }
 
         return response()->json(

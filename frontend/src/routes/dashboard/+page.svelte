@@ -828,6 +828,12 @@
 	}
 
 	@media (max-width: 600px) {
+		/* Keep one horizontal scroller (the panel) instead of nesting it inside
+		   a second table scroller, which can trap vertical touch scrolling. */
+		.table-wrapper {
+			display: contents;
+		}
+
 		.stat-grid {
 			grid-template-columns: repeat(2, minmax(0, 1fr));
 			gap: 10px;

@@ -19,16 +19,32 @@ class ActivityLogController extends Controller
             'Only administrators can view activity logs.'
         );
 
+        $request->validate([
+            'search_by' => ['sometimes', 'in:all,user,record,activity'],
+        ]);
+
         $query = ActivityLog::query()->latest('id');
 
         if ($search = trim((string) $request->query('search'))) {
-            $query->where(function ($builder) use ($search) {
-                $builder
-                    ->where('description', 'like', "%{$search}%")
-                    ->orWhere('actor_name', 'like', "%{$search}%")
-                    ->orWhere('actor_email', 'like', "%{$search}%")
-                    ->orWhere('subject_label', 'like', "%{$search}%");
-            });
+            $searchBy = $request->query('search_by', 'all');
+            if ($searchBy === 'user') {
+                $query->where(function ($builder) use ($search) {
+                    $builder->where('actor_name', 'like', "%{$search}%")
+                        ->orWhere('actor_email', 'like', "%{$search}%");
+                });
+            } elseif ($searchBy === 'record') {
+                $query->where('subject_label', 'like', "%{$search}%");
+            } elseif ($searchBy === 'activity') {
+                $query->where('description', 'like', "%{$search}%");
+            } else {
+                $query->where(function ($builder) use ($search) {
+                    $builder
+                        ->where('description', 'like', "%{$search}%")
+                        ->orWhere('actor_name', 'like', "%{$search}%")
+                        ->orWhere('actor_email', 'like', "%{$search}%")
+                        ->orWhere('subject_label', 'like', "%{$search}%");
+                });
+            }
         }
 
         if ($request->filled('action')) {

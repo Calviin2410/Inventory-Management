@@ -17,6 +17,7 @@ class WasteController extends Controller
     {
         $data = $request->validate([
             'search' => ['nullable', 'string', 'max:100'],
+            'search_by' => ['sometimes', 'in:all,invoice,barrel'],
             'from_date' => ['nullable', 'date'],
             'to_date' => ['nullable', 'date', 'after_or_equal:from_date'],
             'received_by' => ['nullable', 'integer'],
@@ -34,13 +35,18 @@ class WasteController extends Controller
             ->latest('id');
 
         if ($search = trim($data['search'] ?? '')) {
-            $query->where(function ($builder) use ($search) {
-                $builder
-                    ->where('invoice_no', 'like', '%'.$search.'%')
-                    ->orWhereHas('items.barrel', function ($barrelQuery) use ($search) {
-                        $barrelQuery->where('code', 'like', '%'.$search.'%');
-                    });
-            });
+            $searchBy = $data['search_by'] ?? 'all';
+            if ($searchBy === 'invoice') {
+                $query->where('invoice_no', 'like', '%'.$search.'%');
+            } elseif ($searchBy === 'barrel') {
+                $query->whereHas('items.barrel', fn ($barrelQuery) => $barrelQuery->where('code', 'like', '%'.$search.'%'));
+            } else {
+                $query->where(function ($builder) use ($search) {
+                    $builder
+                        ->where('invoice_no', 'like', '%'.$search.'%')
+                        ->orWhereHas('items.barrel', fn ($barrelQuery) => $barrelQuery->where('code', 'like', '%'.$search.'%'));
+                });
+            }
         }
 
         if (! empty($data['from_date'])) {

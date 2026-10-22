@@ -78,4 +78,44 @@ class RentalReportTest extends TestCase
                 ->assertJsonPath('data.0.id', $invoice->id);
         }
     }
+
+    public function test_rental_report_can_search_only_barrel_codes(): void
+    {
+        Sanctum::actingAs(User::factory()->create(['role' => 'admin']));
+
+        $customer = Customer::create(['name' => 'Barrel Scope Customer']);
+        $matchingBarrel = Barrel::create(['code' => '001']);
+        $otherBarrel = Barrel::create(['code' => '007']);
+
+        $barrelMatch = Invoice::create([
+            'invoice_no' => 'TKS-BARREL-SCOPE-A',
+            'customer_id' => $customer->id,
+            'issued_date' => '2026-10-08',
+            'status' => 'unpaid',
+            'settlement_status' => 'unsettled',
+        ]);
+        InvoiceItem::create([
+            'invoice_id' => $barrelMatch->id,
+            'barrel_id' => $matchingBarrel->id,
+            'rental_start' => '2026-10-08',
+        ]);
+
+        $invoiceNumberMatch = Invoice::create([
+            'invoice_no' => 'TKS-001-BARREL-SCOPE',
+            'customer_id' => $customer->id,
+            'issued_date' => '2026-10-07',
+            'status' => 'unpaid',
+            'settlement_status' => 'unsettled',
+        ]);
+        InvoiceItem::create([
+            'invoice_id' => $invoiceNumberMatch->id,
+            'barrel_id' => $otherBarrel->id,
+            'rental_start' => '2026-10-07',
+        ]);
+
+        $this->getJson('/api/reports/rentals?search=001&search_by=barrel')
+            ->assertOk()
+            ->assertJsonPath('total', 1)
+            ->assertJsonPath('data.0.id', $barrelMatch->id);
+    }
 }

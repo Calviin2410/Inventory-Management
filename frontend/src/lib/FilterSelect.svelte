@@ -5,6 +5,8 @@
 		disabled = false,
 		ariaLabel = "Select filter",
 		onchange = undefined,
+		className = "",
+		compact = false,
 	} = $props();
 
 	let selectedLabel = $derived(
@@ -23,7 +25,7 @@
 	}
 </script>
 
-<details class:disabled class="filter-select">
+<details class:disabled class:compact class="filter-select {className}">
 	<summary
 		class="control"
 		aria-label={ariaLabel}
@@ -52,6 +54,12 @@
 		position: relative;
 		width: 100%;
 		min-width: 0;
+	}
+
+	.filter-select.compact {
+		width: auto;
+		min-width: 132px;
+		flex: none;
 	}
 
 	summary {

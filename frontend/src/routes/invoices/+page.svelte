@@ -9,6 +9,7 @@
 	import { formatDate } from "$lib/format.js";
 	import { user } from "$lib/stores/auth.js";
 	import WasteSaleDialog from "$lib/WasteSaleDialog.svelte";
+	import FilterSelect from "$lib/FilterSelect.svelte";
 
 	// =========================
 	// State
@@ -18,6 +19,7 @@
 	let loading = $state(true);
 	let errorMessage = $state("");
 	let search = $state("");
+	let searchBy = $state("all");
 	let statusFilter = $state("");
 	let invoicePrefixFilter = $state("");
 	let creatorFilter = $state("");
@@ -247,6 +249,7 @@
 
 			if (search.trim()) {
 				params.search = search.trim();
+				if (searchBy !== "all") params.search_by = searchBy;
 			}
 
 			if (statusFilter) {
@@ -482,11 +485,12 @@
 	========================= -->
 
 	<div class="toolbar">
+		<FilterSelect compact className="search-scope" ariaLabel="Search field" bind:value={searchBy} options={[{ value: "all", label: "All fields" }, { value: "invoice", label: "Invoice" }, { value: "customer", label: "Customer" }, { value: "barrel", label: "Barrel" }]} />
 		<div class="search-field">
 			<input
 				class="control search"
 				type="text"
-				placeholder="Search invoice or customer..."
+				placeholder={searchBy === "invoice" ? "Search invoice number..." : searchBy === "customer" ? "Search customer..." : searchBy === "barrel" ? "Search barrel code..." : "Search invoice, customer or barrel..."}
 				bind:value={search}
 				onkeydown={(event) => {
 					if (event.key === "Enter") {
@@ -507,7 +511,7 @@
 			{/if}
 		</div>
 
-		<button type="button" class="btn" onclick={() => loadInvoices(1)}>
+		<button type="button" class="btn invoice-search-btn" onclick={() => loadInvoices(1)}>
 			Search
 		</button>
 
@@ -516,6 +520,7 @@
 			class="btn refresh-btn"
 			onclick={() => {
 				search = "";
+				searchBy = "all";
 				statusFilter = "";
 				invoicePrefixFilter = "";
 				creatorFilter = "";
@@ -590,9 +595,6 @@
 				{/each}
 			</div>
 		</details>
-		<span class="result-count"
-			>{totalInvoices} {totalInvoices === 1 ? "result" : "results"}</span
-		>
 	</div>
 
 	<!-- =========================
@@ -1069,6 +1071,8 @@
 		flex: 1 1 260px;
 		max-width: 360px;
 	}
+
+	:global(.search-scope) { width: 140px; flex: 0 0 140px; }
 
 	.refresh-btn {
 		flex-shrink: 0;
@@ -1784,11 +1788,6 @@
 			width: min(100%, 280px);
 		}
 
-		.result-count {
-			width: auto;
-			margin-left: 0;
-		}
-
 		.status-column,
 		.status-cell {
 			width: auto;
@@ -1803,6 +1802,24 @@
 		td {
 			padding: 12px 10px;
 		}
+	}
+
+	@media (max-width: 480px) {
+		.toolbar {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		}
+
+		:global(.filter-select.compact.search-scope) {
+			grid-column: 1 / -1;
+			width: 100%;
+			flex: 1 1 100%;
+		}
+
+		.toolbar .search-field { grid-column: 1 / -1; width: 100%; }
+		.toolbar > .invoice-search-btn,
+		.toolbar > .refresh-btn { width: 100%; }
+		.toolbar > .status-filter { grid-column: 1 / -1; width: 100%; }
 	}
 
 	@media (max-width: 900px) and (max-height: 500px) {

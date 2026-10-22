@@ -18,6 +18,10 @@ class InvoiceController extends Controller
     // GET /api/invoices?limit=5
     public function index(Request $request)
     {
+        $request->validate([
+            'search_by' => ['sometimes', 'in:all,invoice,customer,barrel'],
+        ]);
+
         $query = Invoice::with([
             'customer',
             'createdBy:id,name',
@@ -25,21 +29,22 @@ class InvoiceController extends Controller
             'items.barrel:id,code',
         ]);
 
-        if ($search = $request->query('search')) {
-            $query->where(function ($q) use ($search) {
-                $q->where(
-                    'invoice_no',
-                    'like',
-                    '%' . $search . '%'
-                )
-                ->orWhereHas('customer', function ($customerQuery) use ($search) {
-                    $customerQuery->where(
-                        'name',
-                        'like',
-                        '%' . $search . '%'
-                    );
+        if ($search = trim((string) $request->query('search', ''))) {
+            $searchBy = $request->query('search_by', 'all');
+
+            if ($searchBy === 'invoice') {
+                $query->where('invoice_no', 'like', "%{$search}%");
+            } elseif ($searchBy === 'customer') {
+                $query->whereHas('customer', fn ($customerQuery) => $customerQuery->where('name', 'like', "%{$search}%"));
+            } elseif ($searchBy === 'barrel') {
+                $query->whereHas('items.barrel', fn ($barrelQuery) => $barrelQuery->where('code', 'like', "%{$search}%"));
+            } else {
+                $query->where(function ($q) use ($search) {
+                    $q->where('invoice_no', 'like', "%{$search}%")
+                        ->orWhereHas('customer', fn ($customerQuery) => $customerQuery->where('name', 'like', "%{$search}%"))
+                        ->orWhereHas('items.barrel', fn ($barrelQuery) => $barrelQuery->where('code', 'like', "%{$search}%"));
                 });
-            });
+            }
         }
 
         if (

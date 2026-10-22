@@ -11,6 +11,10 @@ class ReportController extends Controller
 {
     public function rentalReport(Request $request)
     {
+        $request->validate([
+            'search_by' => ['sometimes', 'in:all,invoice,customer,barrel'],
+        ]);
+
         abort_unless(
             in_array($request->user()?->role, ['admin', 'staff', 'normal_staff'], true),
             403,
@@ -43,16 +47,30 @@ class ReportController extends Controller
         }
 
         if ($search = trim((string) $request->query('search', ''))) {
-            $query->where(function ($searchQuery) use ($search) {
-                $searchQuery
-                    ->where('invoice_no', 'like', "%{$search}%")
-                    ->orWhereHas('customer', function ($customerQuery) use ($search) {
-                        $customerQuery->where('name', 'like', "%{$search}%");
-                    })
-                    ->orWhereHas('items.barrel', function ($barrelQuery) use ($search) {
-                        $barrelQuery->where('code', 'like', "%{$search}%");
-                    });
-            });
+            $searchBy = $request->query('search_by', 'all');
+
+            if ($searchBy === 'invoice') {
+                $query->where('invoice_no', 'like', "%{$search}%");
+            } elseif ($searchBy === 'customer') {
+                $query->whereHas('customer', function ($customerQuery) use ($search) {
+                    $customerQuery->where('name', 'like', "%{$search}%");
+                });
+            } elseif ($searchBy === 'barrel') {
+                $query->whereHas('items.barrel', function ($barrelQuery) use ($search) {
+                    $barrelQuery->where('code', 'like', "%{$search}%");
+                });
+            } else {
+                $query->where(function ($searchQuery) use ($search) {
+                    $searchQuery
+                        ->where('invoice_no', 'like', "%{$search}%")
+                        ->orWhereHas('customer', function ($customerQuery) use ($search) {
+                            $customerQuery->where('name', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('items.barrel', function ($barrelQuery) use ($search) {
+                            $barrelQuery->where('code', 'like', "%{$search}%");
+                        });
+                });
+            }
         }
 
         if ($request->boolean('export')) {

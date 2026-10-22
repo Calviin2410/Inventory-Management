@@ -8,6 +8,7 @@
     import Nav from "$lib/Nav.svelte";
     import SkeletonTable from "$lib/SkeletonTable.svelte";
     import DateInput from "$lib/DateInput.svelte";
+    import FilterSelect from "$lib/FilterSelect.svelte";
     import Toast from "$lib/Toast.svelte";
     import { formatDate } from "$lib/format.js";
 
@@ -39,6 +40,7 @@
     let toDate = $state("");
 	let searchInput = $state("");
 	let appliedSearch = $state("");
+	let searchBy = $state("all");
 	let currentPage = $state(1);
 	let lastPage = $state(1);
 	let totalInvoices = $state(0);
@@ -79,17 +81,14 @@
 		if (fromDate) params.from_date = fromDate;
 		if (toDate) params.to_date = toDate;
 		if (appliedSearch) params.search = appliedSearch;
+		if (searchBy !== "all") params.search_by = searchBy;
 		return params;
-	}
-
-	function runSearch() {
-		appliedSearch = searchInput.trim();
-		loadReports(1);
 	}
 
 	function submitSearch(event) {
 		event.preventDefault();
-		runSearch();
+		appliedSearch = searchInput.trim();
+		loadReports(1);
 	}
 
 	function toggleSort(column) {
@@ -268,6 +267,7 @@
         toDate = "";
 		searchInput = "";
 		appliedSearch = "";
+		searchBy = "all";
 
         await loadReports(1);
     }
@@ -480,31 +480,18 @@
     <!-- Search and report actions -->
     <section class="filter-card">
         <div class="filter-grid">
-            <div class="field">
-                <label for="fromDate"> From Invoice Date </label>
-
-                <DateInput id="fromDate" bind:value={fromDate} max={toDate} onchange={generateReport} ariaLabel="Select report from date" />
-            </div>
-
-            <div class="field">
-                <label for="toDate"> To Invoice Date </label>
-
-                <DateInput id="toDate" bind:value={toDate} min={fromDate} onchange={generateReport} ariaLabel="Select report to date" />
-            </div>
             <form class="report-search" onsubmit={submitSearch}>
-				<label for="reportSearch">Search invoices</label>
 				<div class="search-control">
+					<FilterSelect compact className="search-scope" ariaLabel="Search field" bind:value={searchBy} options={[{ value: "all", label: "All fields" }, { value: "invoice", label: "Invoice" }, { value: "customer", label: "Customer" }, { value: "barrel", label: "Barrel" }]} />
 					<input
-						id="reportSearch"
 						class="control"
 						type="search"
-						placeholder="Invoice, customer or barrel..."
+						placeholder={searchBy === "barrel" ? "Barrel code..." : searchBy === "invoice" ? "Invoice number..." : searchBy === "customer" ? "Customer name..." : "Invoice, customer or barrel..."}
 						bind:value={searchInput}
 					/>
 					<button class="btn btn-primary" type="submit" disabled={loading}>Search</button>
 				</div>
 			</form>
-
             <div class="filter-actions">
                 <button
                     type="button"
@@ -515,15 +502,6 @@
                 >
                     <span aria-hidden="true">⇩</span>
                     {exporting ? "Exporting..." : "Export Excel"}
-                </button>
-
-                <button
-                    type="button"
-                    class="btn btn-primary"
-                    onclick={generateReport}
-                    disabled={loading}
-                >
-                    Generate Report
                 </button>
 
                 <button type="button" class="btn" onclick={clearFilter}>
@@ -605,11 +583,11 @@
 					<div class="report-date-range">
 						<div class="field">
 							<label for="fromDate">From Invoice Date</label>
-							<DateInput id="fromDate" bind:value={fromDate} max={toDate} ariaLabel="Select report from date" />
+							<DateInput id="fromDate" bind:value={fromDate} max={toDate} onchange={generateReport} ariaLabel="Select report from date" />
 						</div>
 						<div class="field">
 							<label for="toDate">To Invoice Date</label>
-							<DateInput id="toDate" bind:value={toDate} min={fromDate} ariaLabel="Select report to date" />
+							<DateInput id="toDate" bind:value={toDate} min={fromDate} onchange={generateReport} ariaLabel="Select report to date" />
 						</div>
 					</div>
 
@@ -852,18 +830,16 @@
 
         background: white;
     }
-
-    .filter-grid {
-        display: grid;
-
-        grid-template-columns:
-            minmax(280px, 1fr)
-            minmax(0, auto);
-
-        align-items: end;
-
-        gap: 16px;
-    }
+	.filter-grid {
+		display: grid;
+		grid-template-columns: minmax(280px, 1fr) minmax(0, auto);
+		align-items: end;
+		gap: 16px;
+	}
+	.search-control { display: flex; min-width: 0; gap: 10px; }
+	.search-control input { width: 100%; min-width: 0; }
+	.search-control :global(.search-scope) { flex: 0 0 145px; }
+	.search-control .btn { flex: none; }
 
     .field {
         display: flex;
@@ -872,12 +848,6 @@
 
         gap: 7px;
     }
-
-	.report-search { display: flex; flex-direction: column; min-width: 0; gap: 7px; }
-	.report-search > label { color: #374151; font-size: 13px; font-weight: 600; }
-	.search-control { display: flex; min-width: 0; gap: 10px; }
-	.search-control input { min-width: 0; width: 100%; }
-	.search-control .btn { flex: none; }
 
     .field label {
         color: #374151;
@@ -888,24 +858,21 @@
 
     .filter-actions {
         display: flex;
+		justify-content: flex-end;
 		min-width: 0;
-		flex-wrap: wrap;
+		flex-wrap: nowrap;
         gap: 10px;
     }
 
 	.filter-actions .btn {
-		flex: 1 1 105px;
-		white-space: normal;
+		flex: 0 0 auto;
+		min-width: 120px;
+		white-space: nowrap;
 	}
 
 	@media (max-width: 1280px) {
-		.filter-grid {
-			grid-template-columns: minmax(0, 1fr);
-		}
-
-		.filter-actions {
-			grid-column: 1 / -1;
-		}
+		.filter-grid { grid-template-columns: minmax(0, 1fr); }
+		.filter-actions { grid-column: 1 / -1; }
 	}
 
     .btn-export {
@@ -1236,12 +1203,9 @@
             z-index: 3;
             background: #f8fafc;
         }
-        .filter-grid {
-            grid-template-columns: 1fr;
-        }
 		.search-control { gap: 8px; }
+		.search-control :global(.search-scope) { flex-basis: 112px; }
 		.search-control .btn { min-width: 76px; }
-
         .filter-actions {
             flex-direction: row;
             flex-wrap: nowrap;

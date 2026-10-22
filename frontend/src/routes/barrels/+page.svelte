@@ -319,7 +319,6 @@
 			</button>
 		</div>
 		{#if view === "table"}<ColumnPicker columns={barrelColumns} bind:visible={visibleColumns} />{/if}
-		<span class="result-count">{totalBarrels} {totalBarrels === 1 ? "result" : "results"}</span>
 	</div>
 
 	{#if view === "visual" && !loading && !errorMessage && barrels.length > 0}

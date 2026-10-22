@@ -204,7 +204,6 @@
             Refresh
         </button>
 		<ColumnPicker columns={vehicleColumns} bind:visible={visibleColumns} />
-		<span class="result-count">{filteredVehicles.length} {filteredVehicles.length === 1 ? "result" : "results"}</span>
     </div>
 
     <section class="panel">
