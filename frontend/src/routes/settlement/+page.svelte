@@ -100,7 +100,8 @@
 				params.search = search.trim();
 				if (searchBy !== "all") params.search_by = searchBy;
 			}
-			if (settlementStatusFilter) params.settlement_status = settlementStatusFilter;
+			if (settlementStatusFilter)
+				params.settlement_status = settlementStatusFilter;
 			if (invoiceSortDirection) {
 				params.sort = "invoice_no";
 				params.direction = invoiceSortDirection;
@@ -395,32 +396,100 @@
 		</div>
 	</div>
 
-	<form class="toolbar settlement-search-toolbar" onsubmit={(event) => { event.preventDefault(); loadSettlements(); }}>
-		<FilterSelect compact className="settlement-search-scope" ariaLabel="Search field" bind:value={searchBy} options={[{ value: "all", label: "All fields" }, { value: "invoice", label: "Invoice" }, { value: "customer", label: "Customer" }, { value: "barrel", label: "Barrel" }]} />
+	<form
+		class="toolbar settlement-search-toolbar"
+		onsubmit={(event) => {
+			event.preventDefault();
+			loadSettlements();
+		}}
+	>
+		<FilterSelect
+			compact
+			className="settlement-search-scope"
+			ariaLabel="Search field"
+			bind:value={searchBy}
+			options={[
+				{ value: "all", label: "All fields" },
+				{ value: "invoice", label: "Invoice" },
+				{ value: "customer", label: "Customer" },
+				{ value: "barrel", label: "Barrel" },
+			]}
+		/>
 		<div class="search-field">
-			<input class="control" type="search" placeholder={searchBy === "invoice" ? "Invoice number..." : searchBy === "customer" ? "Customer name..." : searchBy === "barrel" ? "Barrel code..." : "Invoice, customer or barrel..."} bind:value={search} />
-			{#if search}<button type="button" class="search-clear" aria-label="Clear search" onclick={() => { search = ""; loadSettlements(); }}>×</button>{/if}
+			<input
+				class="control"
+				type="search"
+				placeholder={searchBy === "invoice"
+					? "Invoice number..."
+					: searchBy === "customer"
+						? "Customer name..."
+						: searchBy === "barrel"
+							? "Barrel code..."
+							: "Invoice, customer or barrel..."}
+				bind:value={search}
+			/>
+			{#if search}<button
+					type="button"
+					class="search-clear"
+					aria-label="Clear search"
+					onclick={() => {
+						search = "";
+						loadSettlements();
+					}}>×</button
+				>{/if}
 		</div>
-		<button class="btn btn-primary" type="submit" disabled={loading}>Search</button>
-		<FilterSelect compact className="settlement-status-filter" ariaLabel="Filter settlement status" bind:value={settlementStatusFilter} onchange={loadSettlements} options={[{ value: "", label: "All settlement statuses" }, { value: "settled", label: "Settled" }, { value: "unsettled", label: "Unsettled" }]} />
+		<button class="btn btn-primary" type="submit" disabled={loading}
+			>Search</button
+		>
+		<FilterSelect
+			compact
+			className="settlement-status-filter"
+			ariaLabel="Filter settlement status"
+			bind:value={settlementStatusFilter}
+			onchange={loadSettlements}
+			options={[
+				{ value: "", label: "All Status" },
+				{ value: "settled", label: "Settled" },
+				{ value: "unsettled", label: "Unsettled" },
+			]}
+		/>
 	</form>
 
 	<section class="panel settlement-panel">
-		<div class="settlement-date-range" aria-label="Filter settlements by date range">
+		<div
+			class="settlement-date-range"
+			aria-label="Filter settlements by date range"
+		>
 			<label class="settlement-date-filter">
 				<span>From date</span>
-				<DateInput bind:value={fromDate} max={toDate} onchange={loadSettlements} ariaLabel="Select from date" />
+				<DateInput
+					bind:value={fromDate}
+					max={toDate}
+					onchange={loadSettlements}
+					ariaLabel="Select from date"
+				/>
 			</label>
 			<label class="settlement-date-filter">
 				<span>To date</span>
-				<DateInput bind:value={toDate} min={fromDate} onchange={loadSettlements} ariaLabel="Select to date" />
+				<DateInput
+					bind:value={toDate}
+					min={fromDate}
+					onchange={loadSettlements}
+					ariaLabel="Select to date"
+				/>
 			</label>
-			<ColumnPicker columns={settlementColumns} bind:visible={visibleColumns} />
+			<ColumnPicker
+				columns={settlementColumns}
+				bind:visible={visibleColumns}
+			/>
 		</div>
 
-	{#if successMessage}
-		<Toast message={successMessage} onclose={() => (successMessage = "")} />
-	{/if}
+		{#if successMessage}
+			<Toast
+				message={successMessage}
+				onclose={() => (successMessage = "")}
+			/>
+		{/if}
 
 		{#if loading}
 			<SkeletonTable rows={5} columns={7} />
@@ -495,7 +564,7 @@
 								{#if visibleColumns.invoiceNumber}<td
 										><a
 											class="invoice-link"
-							href={`/invoices/${invoice.id}?source=settlement`}
+											href={`/invoices/${invoice.id}?source=settlement`}
 											>{invoice.invoice_no}</a
 										></td
 									>{/if}
@@ -910,9 +979,17 @@
 		font-size: 12px;
 		font-weight: 650;
 	}
-	:global(.settlement-search-scope) { width: 140px; flex: 0 0 140px; }
-	.settlement-search-toolbar .search-field { flex: 1 1 220px; max-width: none; }
-	.settlement-search-toolbar .search-field .control { width: 100%; }
+	:global(.settlement-search-scope) {
+		width: 140px;
+		flex: 0 0 140px;
+	}
+	.settlement-search-toolbar .search-field {
+		flex: 1 1 220px;
+		max-width: none;
+	}
+	.settlement-search-toolbar .search-field .control {
+		width: 100%;
+	}
 	.settlement-date-filter {
 		display: grid;
 		width: 190px;
@@ -921,8 +998,14 @@
 		font-size: 11px;
 		font-weight: 700;
 	}
-	:global(.filter-select.compact.settlement-search-scope) { width: 140px; flex: 0 0 140px; }
-	:global(.filter-select.compact.settlement-status-filter) { width: 190px; flex: 0 0 190px; }
+	:global(.filter-select.compact.settlement-search-scope) {
+		width: 140px;
+		flex: 0 0 140px;
+	}
+	:global(.filter-select.compact.settlement-status-filter) {
+		width: 190px;
+		flex: 0 0 190px;
+	}
 	.settlement-date-range {
 		display: flex;
 		justify-content: flex-end;
@@ -931,7 +1014,9 @@
 		border-bottom: 1px solid #e5e7eb;
 		background: #f8fafc;
 	}
-	.settlement-date-range :global(.column-picker) { align-self: flex-end; }
+	.settlement-date-range :global(.column-picker) {
+		align-self: flex-end;
+	}
 	.state {
 		padding: 28px;
 		color: #64748b;
@@ -1253,7 +1338,9 @@
 		.payment-summary {
 			grid-template-columns: 1fr 1fr;
 		}
-		.settlement-date-filter { width: 190px; }
+		.settlement-date-filter {
+			width: 190px;
+		}
 		.data-table {
 			min-width: 1120px;
 		}
@@ -1273,20 +1360,33 @@
 		:global(.settlement-date-range .column-picker),
 		:global(.settlement-date-range .column-picker summary),
 		:global(.settlement-search-scope),
-		:global(.settlement-status-filter) { width: 100%; }
+		:global(.settlement-status-filter) {
+			width: 100%;
+		}
 		:global(.settlement-search-scope) {
 			grid-column: 1 / -1;
 			width: 100%;
 			flex: 1 1 100%;
 		}
-		:global(.filter-select.compact.settlement-search-scope) { width: 100%; flex: 1 1 100%; }
-		.settlement-search-toolbar .search-field { grid-column: 1 / -1; width: 100%; }
-		.settlement-search-toolbar > .btn { grid-column: 1 / -1; width: 100%; }
+		:global(.filter-select.compact.settlement-search-scope) {
+			width: 100%;
+			flex: 1 1 100%;
+		}
+		.settlement-search-toolbar .search-field {
+			grid-column: 1 / -1;
+			width: 100%;
+		}
+		.settlement-search-toolbar > .btn {
+			grid-column: 1 / -1;
+			width: 100%;
+		}
 		:global(.settlement-status-filter) {
 			grid-column: 1 / -1;
 			width: 100%;
 			flex: 1 1 100%;
 		}
-		.settlement-date-range { flex-direction: column; }
+		.settlement-date-range {
+			flex-direction: column;
+		}
 	}
 </style>

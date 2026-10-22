@@ -272,23 +272,23 @@
 						<tbody>
 							{#each invoice.items ?? [] as item}
 								<tr>
-									<td class="barrel-code">
+									<td class="barrel-code" data-label="Barrel">
 										{item.barrel?.code ?? "-"}
 									</td>
 
-									<td>
+									<td data-label="Description">
 										{item.description ?? "-"}
 									</td>
 
-									<td>
+									<td data-label="Rental Start">
 										{formatDate(item.rental_start)}
 									</td>
 
-									<td>
+									<td data-label="Rental End">
 										{formatDate(item.rental_end)}
 									</td>
 
-									<td class="amount-cell">
+									<td class="amount-cell" data-label="Total Amount">
 										{formatAmount(invoice.total_amount)}
 									</td>
 								</tr>
@@ -696,5 +696,38 @@
 			width: min(100%, 280px);
 			margin-left: auto;
 		}
+	}
+
+	@media (max-width: 480px) {
+		.table-wrapper { overflow: hidden; }
+		table,
+		tbody { display: block; width: 100%; }
+		thead { display: none; }
+		tbody tr {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 14px 12px;
+			padding: 14px;
+			border-bottom: 1px solid #e5e7eb;
+		}
+		tbody tr:last-child { border-bottom: 0; }
+		td {
+			min-width: 0;
+			padding: 0;
+			border: 0;
+			overflow-wrap: anywhere;
+			font-size: 13px;
+		}
+		td::before {
+			display: block;
+			margin-bottom: 4px;
+			color: #667085;
+			font-size: 10px;
+			font-weight: 700;
+		}
+		td[data-label]::before { content: attr(data-label); }
+		td.amount-cell { white-space: normal; }
+		td.empty { grid-column: 1 / -1; padding: 14px 0; }
+		td.empty::before { display: none; }
 	}
 </style>

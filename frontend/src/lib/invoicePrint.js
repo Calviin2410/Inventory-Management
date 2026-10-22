@@ -49,7 +49,7 @@ export function buildInvoiceDocument(invoice, options = {}) {
 
 			return `
 				<tr>
-					<td>
+					<td data-label="Barrel">
 						<strong>
 							${escapeHtml(barrelCode)}
 						</strong>
@@ -64,26 +64,26 @@ export function buildInvoiceDocument(invoice, options = {}) {
 				}
 					</td>
 
-					<td>
+					<td data-label="Description">
 						${escapeHtml(
 					item?.description ||
 					"Barrel rental",
 				)}
 					</td>
 
-					<td>
+					<td data-label="Rental Start">
 						${displayDate(
 					item?.rental_start,
 				)}
 					</td>
 
-					<td>
+					<td data-label="Rental End">
 						${displayDate(
 					item?.rental_end,
 				)}
 					</td>
 
-					<td class="amount-cell">
+					<td class="amount-cell" data-label="Total Amount">
 						${escapeHtml(displayAmount(invoice?.total_amount))}
 					</td>
 				</tr>
@@ -112,8 +112,15 @@ export function buildInvoiceDocument(invoice, options = {}) {
 
 				<style>
 					@page {
-						size: A4;
+						size: letter portrait;
 						margin: 0;
+
+						@top-left { content: none; }
+						@top-center { content: none; }
+						@top-right { content: none; }
+						@bottom-left { content: none; }
+						@bottom-center { content: none; }
+						@bottom-right { content: none; }
 					}
 
 					* {
@@ -536,13 +543,65 @@ export function buildInvoiceDocument(invoice, options = {}) {
 					@media print {
 						html,
 						body {
-							width: 210mm;
+							width: 216mm;
 						}
 
 						.invoice-page {
 							max-width: none;
-							padding: 15mm;
 						}
+
+						.header { padding-bottom: 16px; }
+						.meta { padding-top: 26px; padding-bottom: 24px; }
+						.address-block { margin-bottom: 16px; padding-bottom: 14px; }
+						th { padding-top: 8px; padding-bottom: 8px; }
+						td { padding-top: 9px; padding-bottom: 9px; }
+						.payment-details { margin-top: 16px; padding-top: 12px; padding-bottom: 12px; }
+						.invoice-bottom { margin-top: 32px; }
+						.footer { margin-top: 16px; padding-top: 10px; }
+						.terms ol {
+							font-family: "Times New Roman", Times, serif;
+							font-size: 11px;
+						}
+					}
+
+					@media screen and (max-width: 600px) {
+						.invoice-page { max-width: none; padding: 22px 18px; }
+						.header { flex-direction: column; gap: 16px; }
+						.header-right { text-align: left; }
+						.company-truck { width: 92px; height: 64px; }
+						.company-logo-wrap { max-width: 100%; }
+						.company-wordmark { width: min(250px, calc(100% - 102px)); }
+						.meta { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; padding: 24px 0; }
+						.meta-block { gap: 14px; }
+						.address-block { padding-bottom: 20px; }
+						.table-card { overflow: hidden; }
+						table, tbody { display: block; width: 100%; }
+						thead { display: none; }
+						tbody tr {
+							display: grid;
+							grid-template-columns: repeat(2, minmax(0, 1fr));
+							gap: 14px 12px;
+							padding: 14px;
+							border-bottom: 1px solid #e4e9f1;
+						}
+						tbody tr:last-child { border-bottom: 0; }
+						td { min-width: 0; padding: 0; border: 0; overflow-wrap: anywhere; font-size: 13px; }
+						td[data-label]::before {
+							display: block;
+							margin-bottom: 4px;
+							color: #697386;
+							font-size: 10px;
+							font-weight: 700;
+						}
+						td[data-label]::before { content: attr(data-label); }
+						td.amount-cell { white-space: normal; }
+						.payment-details { grid-template-columns: 1fr; gap: 14px; }
+						.invoice-bottom { grid-template-columns: 1fr; gap: 48px; margin-top: 28px; }
+						.terms { font-size: 14px; }
+						.terms-title { font-size: 14px; }
+						.terms ol { padding-left: 21px; font-size: 14px; line-height: 1.55; }
+						.terms li + li { margin-top: 8px; }
+						.signature { width: min(100%, 280px); margin-left: auto; }
 					}
 				</style>
 			</head>

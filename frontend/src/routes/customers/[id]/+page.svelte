@@ -16,7 +16,11 @@
         { key: "date", label: "Invoice Date" },
         { key: "status", label: "Status" },
     ];
-    let visibleColumns = $state(Object.fromEntries(customerInvoiceColumns.map((column) => [column.key, true])));
+    let visibleColumns = $state(
+        Object.fromEntries(
+            customerInvoiceColumns.map((column) => [column.key, true]),
+        ),
+    );
 
     let customer = $state(null);
     let invoices = $state([]);
@@ -35,12 +39,14 @@
     function getCustomerPhones(record) {
         const phones = record?.phone_numbers?.length
             ? record.phone_numbers
-            : record?.phone ? [record.phone] : [];
+            : record?.phone
+              ? [record.phone]
+              : [];
         return phones.join(", ") || "No phone number";
     }
 
     const statusOptions = [
-        { value: "", label: "All statuses" },
+        { value: "", label: "   s" },
         { value: "paid", label: "Paid" },
         { value: "unpaid", label: "Unpaid" },
     ];
@@ -55,13 +61,15 @@
             if (statusFilter) {
                 params.status = statusFilter;
             }
-            if (invoiceSortDirection) { params.sort = "invoice_no"; params.direction = invoiceSortDirection; }
-            else if (invoiceDateSortDirection) { params.sort = "issued_date"; params.direction = invoiceDateSortDirection; }
+            if (invoiceSortDirection) {
+                params.sort = "invoice_no";
+                params.direction = invoiceSortDirection;
+            } else if (invoiceDateSortDirection) {
+                params.sort = "issued_date";
+                params.direction = invoiceDateSortDirection;
+            }
 
-            const result = await api.getCustomer(
-                page.params.id,
-                params,
-            );
+            const result = await api.getCustomer(page.params.id, params);
 
             customer = result.customer;
             invoices = result.invoices?.data ?? [];
@@ -69,8 +77,7 @@
             lastPage = result.invoices?.last_page ?? 1;
             totalInvoices = result.invoices?.total ?? 0;
         } catch (error) {
-            errorMessage =
-                error?.message || "Unable to load customer";
+            errorMessage = error?.message || "Unable to load customer";
         } finally {
             loading = false;
         }
@@ -78,10 +85,12 @@
 
     function toggleSort(column) {
         if (column === "invoice_no") {
-            invoiceSortDirection = invoiceSortDirection === "asc" ? "desc" : "asc";
+            invoiceSortDirection =
+                invoiceSortDirection === "asc" ? "desc" : "asc";
             invoiceDateSortDirection = "";
         } else {
-            invoiceDateSortDirection = invoiceDateSortDirection === "asc" ? "desc" : "asc";
+            invoiceDateSortDirection =
+                invoiceDateSortDirection === "asc" ? "desc" : "asc";
             invoiceSortDirection = "";
         }
         loadCustomer(1);
@@ -130,7 +139,10 @@
             />
         </div>
 
-        <ColumnPicker columns={customerInvoiceColumns} bind:visible={visibleColumns} />
+        <ColumnPicker
+            columns={customerInvoiceColumns}
+            bind:visible={visibleColumns}
+        />
     </section>
 
     <section class="panel">
@@ -149,9 +161,50 @@
                 <table class="data-table">
                     <thead>
                         <tr>
-                            {#if visibleColumns.invoice}<th aria-sort={invoiceSortDirection === "asc" ? "ascending" : invoiceSortDirection === "desc" ? "descending" : "none"}><button class="sort-header" type="button" onclick={() => toggleSort("invoice_no")}>Invoice Number <span aria-hidden="true">{invoiceSortDirection === "asc" ? "↑" : invoiceSortDirection === "desc" ? "↓" : "↕"}</span></button></th>{/if}
-                            {#if visibleColumns.barrels}<th>Barrel Code</th>{/if}
-                            {#if visibleColumns.date}<th aria-sort={invoiceDateSortDirection === "asc" ? "ascending" : invoiceDateSortDirection === "desc" ? "descending" : "none"}><button class="sort-header" type="button" onclick={() => toggleSort("issued_date")}>Invoice Date <span aria-hidden="true">{invoiceDateSortDirection === "asc" ? "↑" : invoiceDateSortDirection === "desc" ? "↓" : "↕"}</span></button></th>{/if}
+                            {#if visibleColumns.invoice}<th
+                                    aria-sort={invoiceSortDirection === "asc"
+                                        ? "ascending"
+                                        : invoiceSortDirection === "desc"
+                                          ? "descending"
+                                          : "none"}
+                                    ><button
+                                        class="sort-header"
+                                        type="button"
+                                        onclick={() => toggleSort("invoice_no")}
+                                        >Invoice Number <span aria-hidden="true"
+                                            >{invoiceSortDirection === "asc"
+                                                ? "↑"
+                                                : invoiceSortDirection ===
+                                                    "desc"
+                                                  ? "↓"
+                                                  : "↕"}</span
+                                        ></button
+                                    ></th
+                                >{/if}
+                            {#if visibleColumns.barrels}<th>Barrel Code</th
+                                >{/if}
+                            {#if visibleColumns.date}<th
+                                    aria-sort={invoiceDateSortDirection ===
+                                    "asc"
+                                        ? "ascending"
+                                        : invoiceDateSortDirection === "desc"
+                                          ? "descending"
+                                          : "none"}
+                                    ><button
+                                        class="sort-header"
+                                        type="button"
+                                        onclick={() =>
+                                            toggleSort("issued_date")}
+                                        >Invoice Date <span aria-hidden="true"
+                                            >{invoiceDateSortDirection === "asc"
+                                                ? "↑"
+                                                : invoiceDateSortDirection ===
+                                                    "desc"
+                                                  ? "↓"
+                                                  : "↕"}</span
+                                        ></button
+                                    ></th
+                                >{/if}
                             {#if visibleColumns.status}<th>Status</th>{/if}
                             <th>Action</th>
                         </tr>
@@ -161,31 +214,37 @@
                         {#each invoices as invoice (invoice.id)}
                             <tr>
                                 {#if visibleColumns.invoice}<td class="strong">
-                                    <a class="invoice-link" href={`/invoices/${invoice.id}`}>{invoice.invoice_no}</a>
-                                </td>{/if}
+                                        <a
+                                            class="invoice-link"
+                                            href={`/invoices/${invoice.id}`}
+                                            >{invoice.invoice_no}</a
+                                        >
+                                    </td>{/if}
 
                                 {#if visibleColumns.barrels}<td>
-                                    {invoice.items
-                                        ?.map((item) => item.barrel?.code)
-                                        .filter(Boolean)
-                                        .join(", ") || "—"}
-                                </td>{/if}
+                                        {invoice.items
+                                            ?.map((item) => item.barrel?.code)
+                                            .filter(Boolean)
+                                            .join(", ") || "—"}
+                                    </td>{/if}
 
                                 {#if visibleColumns.date}<td>
-                                    {formatDate(invoice.issued_date)}
-                                </td>{/if}
+                                        {formatDate(invoice.issued_date)}
+                                    </td>{/if}
 
                                 {#if visibleColumns.status}<td>
-                                    <span
-                                        class="status-badge"
-                                        class:paid={invoice.status === "paid"}
-                                        class:unpaid={invoice.status === "unpaid"}
-                                    >
-                                        {invoice.status === "paid"
-                                            ? "Paid"
-                                            : "Unpaid"}
-                                    </span>
-                                </td>{/if}
+                                        <span
+                                            class="status-badge"
+                                            class:paid={invoice.status ===
+                                                "paid"}
+                                            class:unpaid={invoice.status ===
+                                                "unpaid"}
+                                        >
+                                            {invoice.status === "paid"
+                                                ? "Paid"
+                                                : "Unpaid"}
+                                        </span>
+                                    </td>{/if}
 
                                 <td>
                                     {#if isAdmin}
@@ -292,6 +351,5 @@
         .filter-field {
             width: 100%;
         }
-
     }
 </style>

@@ -100,21 +100,21 @@
 	}
 
 	const statusOptions = [
-		{ value: "", label: "All statuses" },
+		{ value: "", label: "All Status" },
 		{ value: "paid", label: "Paid" },
 		{ value: "unpaid", label: "Unpaid" },
 	];
 
 	let selectedStatusLabel = $derived(
 		statusOptions.find((option) => option.value === statusFilter)?.label ??
-			"All statuses",
+			"All Status",
 	);
-	let selectedPrefixLabel = $derived(
-		invoicePrefixFilter || "All invoices",
-	);
+	let selectedPrefixLabel = $derived(invoicePrefixFilter || "All invoices");
 	let selectedCreatorLabel = $derived(
 		creatorFilter
-			? creatorOptions.find((creator) => String(creator.id) === creatorFilter)?.name ?? "All invoices created by"
+			? (creatorOptions.find(
+					(creator) => String(creator.id) === creatorFilter,
+				)?.name ?? "All invoices created by")
 			: "All invoices created by",
 	);
 
@@ -143,7 +143,8 @@
 	}
 
 	function toggleInvoiceDateSort() {
-		invoiceDateSortDirection = invoiceDateSortDirection === "asc" ? "desc" : "asc";
+		invoiceDateSortDirection =
+			invoiceDateSortDirection === "asc" ? "desc" : "asc";
 		invoiceSortDirection = "";
 		loadInvoices(1);
 	}
@@ -214,8 +215,17 @@
 		openMenuId = null;
 		statusMenu = {
 			invoiceId: invoice.id,
-			top: Math.max(padding, Math.min(rect.bottom + 5, window.innerHeight - menuHeight - padding)),
-			left: Math.max(padding, Math.min(rect.left, window.innerWidth - menuWidth - padding)),
+			top: Math.max(
+				padding,
+				Math.min(
+					rect.bottom + 5,
+					window.innerHeight - menuHeight - padding,
+				),
+			),
+			left: Math.max(
+				padding,
+				Math.min(rect.left, window.innerWidth - menuWidth - padding),
+			),
 		};
 	}
 
@@ -227,7 +237,9 @@
 		const target = event.target;
 		if (
 			target instanceof Element &&
-			target.closest(".more-button, .floating-action-menu, .invoice-status-control, .invoice-status-dropdown")
+			target.closest(
+				".more-button, .floating-action-menu, .invoice-status-control, .invoice-status-dropdown",
+			)
 		) {
 			return;
 		}
@@ -485,12 +497,29 @@
 	========================= -->
 
 	<div class="toolbar">
-		<FilterSelect compact className="search-scope" ariaLabel="Search field" bind:value={searchBy} options={[{ value: "all", label: "All fields" }, { value: "invoice", label: "Invoice" }, { value: "customer", label: "Customer" }, { value: "barrel", label: "Barrel" }]} />
+		<FilterSelect
+			compact
+			className="search-scope"
+			ariaLabel="Search field"
+			bind:value={searchBy}
+			options={[
+				{ value: "all", label: "All fields" },
+				{ value: "invoice", label: "Invoice" },
+				{ value: "customer", label: "Customer" },
+				{ value: "barrel", label: "Barrel" },
+			]}
+		/>
 		<div class="search-field">
 			<input
 				class="control search"
 				type="text"
-				placeholder={searchBy === "invoice" ? "Search invoice number..." : searchBy === "customer" ? "Search customer..." : searchBy === "barrel" ? "Search barrel code..." : "Search invoice, customer or barrel..."}
+				placeholder={searchBy === "invoice"
+					? "Search invoice number..."
+					: searchBy === "customer"
+						? "Search customer..."
+						: searchBy === "barrel"
+							? "Search barrel code..."
+							: "Search invoice, customer or barrel..."}
 				bind:value={search}
 				onkeydown={(event) => {
 					if (event.key === "Enter") {
@@ -511,7 +540,11 @@
 			{/if}
 		</div>
 
-		<button type="button" class="btn invoice-search-btn" onclick={() => loadInvoices(1)}>
+		<button
+			type="button"
+			class="btn invoice-search-btn"
+			onclick={() => loadInvoices(1)}
+		>
 			Search
 		</button>
 
@@ -534,7 +567,10 @@
 			Refresh
 		</button>
 		<details class="status-filter">
-			<summary class="control" aria-label="Filter invoices by invoice prefix">
+			<summary
+				class="control"
+				aria-label="Filter invoices by invoice prefix"
+			>
 				<span>{selectedPrefixLabel}</span>
 				<span class="select-chevron" aria-hidden="true"></span>
 			</summary>
@@ -567,7 +603,8 @@
 					<button
 						type="button"
 						class:active={creatorFilter === String(creator.id)}
-						onclick={(event) => selectCreator(String(creator.id), event)}
+						onclick={(event) =>
+							selectCreator(String(creator.id), event)}
 					>
 						{creator.name}
 					</button>
@@ -602,14 +639,27 @@
 	========================= -->
 
 	<section class="panel invoice-panel">
-		<div class="invoice-date-range" aria-label="Filter invoices by date range">
+		<div
+			class="invoice-date-range"
+			aria-label="Filter invoices by date range"
+		>
 			<label class="invoice-date-filter">
 				<span>From date</span>
-				<DateInput bind:value={invoiceFromDate} max={invoiceToDate} onchange={() => loadInvoices(1)} ariaLabel="Filter invoices from date" />
+				<DateInput
+					bind:value={invoiceFromDate}
+					max={invoiceToDate}
+					onchange={() => loadInvoices(1)}
+					ariaLabel="Filter invoices from date"
+				/>
 			</label>
 			<label class="invoice-date-filter">
 				<span>To date</span>
-				<DateInput bind:value={invoiceToDate} min={invoiceFromDate} onchange={() => loadInvoices(1)} ariaLabel="Filter invoices to date" />
+				<DateInput
+					bind:value={invoiceToDate}
+					min={invoiceFromDate}
+					onchange={() => loadInvoices(1)}
+					ariaLabel="Filter invoices to date"
+				/>
 			</label>
 			<details class="column-picker">
 				<summary
@@ -694,11 +744,30 @@
 									Barrel Code
 								</th>{/if}
 
-			{#if visibleColumns.invoiceDate}
-								<th aria-sort={invoiceDateSortDirection === "asc" ? "ascending" : invoiceDateSortDirection === "desc" ? "descending" : "none"}>
-									<button class="sort-header" type="button" onclick={toggleInvoiceDateSort} aria-label="Sort by invoice date">
+							{#if visibleColumns.invoiceDate}
+								<th
+									aria-sort={invoiceDateSortDirection ===
+									"asc"
+										? "ascending"
+										: invoiceDateSortDirection === "desc"
+											? "descending"
+											: "none"}
+								>
+									<button
+										class="sort-header"
+										type="button"
+										onclick={toggleInvoiceDateSort}
+										aria-label="Sort by invoice date"
+									>
 										Invoice Date
-										<span aria-hidden="true">{invoiceDateSortDirection === "asc" ? "↑" : invoiceDateSortDirection === "desc" ? "↓" : "↕"}</span>
+										<span aria-hidden="true"
+											>{invoiceDateSortDirection === "asc"
+												? "↑"
+												: invoiceDateSortDirection ===
+													  "desc"
+													? "↓"
+													: "↕"}</span
+										>
 									</button>
 								</th>
 							{/if}
@@ -730,7 +799,8 @@
 											class="invoice-number-link"
 											href={`/invoices/${invoice.id}`}
 											title={`View invoice ${invoice.invoice_no}`}
-										>{invoice.invoice_no}</a>
+											>{invoice.invoice_no}</a
+										>
 									</td>{/if}
 
 								{#if visibleColumns.customer}<td>
@@ -747,7 +817,11 @@
 									</td>{/if}
 
 								{#if visibleColumns.invoiceDate}<td>
-									<a class="invoice-date-link" href={`/invoices/${invoice.id}`} title={`View invoice ${invoice.invoice_no}`}>
+										<a
+											class="invoice-date-link"
+											href={`/invoices/${invoice.id}`}
+											title={`View invoice ${invoice.invoice_no}`}
+										>
 											{formatDate(invoice.issued_date)}
 										</a>
 									</td>{/if}
@@ -769,19 +843,39 @@
 										{#if invoice.status !== "cancelled" && canManageInvoice(invoice)}
 											<button
 												class="payment-badge status-action invoice-status-control"
-												class:paid={invoice.status === "paid"}
+												class:paid={invoice.status ===
+													"paid"}
 												type="button"
-												aria-expanded={statusMenu.invoiceId === invoice.id}
+												aria-expanded={statusMenu.invoiceId ===
+													invoice.id}
 												title="Choose payment status"
-												onclick={(event) => toggleStatusMenu(invoice, event)}
+												onclick={(event) =>
+													toggleStatusMenu(
+														invoice,
+														event,
+													)}
 											>
-												{invoice.status === "paid" ? "Paid" : "Unpaid"}
-												<span class="status-chevron" aria-hidden="true"></span>
+												{invoice.status === "paid"
+													? "Paid"
+													: "Unpaid"}
+												<span
+													class="status-chevron"
+													aria-hidden="true"
+												></span>
 											</button>
 										{:else if invoice.status === "cancelled"}
-											<span class="status-badge">Cancelled</span>
+											<span class="status-badge"
+												>Cancelled</span
+											>
 										{:else}
-											<span class="payment-badge" class:paid={invoice.status === "paid"}>{invoice.status === "paid" ? "Paid" : "Unpaid"}</span>
+											<span
+												class="payment-badge"
+												class:paid={invoice.status ===
+													"paid"}
+												>{invoice.status === "paid"
+													? "Paid"
+													: "Unpaid"}</span
+											>
 										{/if}
 									</td>{/if}
 
@@ -1023,8 +1117,7 @@
 						maxlength="1000"
 						bind:value={unpaidRemark}
 						required
-						placeholder="Enter the reason..."
-					></textarea>
+						placeholder="Enter the reason..."></textarea>
 				</label>
 				<div class="dialog-actions">
 					<button
@@ -1072,7 +1165,10 @@
 		max-width: 360px;
 	}
 
-	:global(.search-scope) { width: 140px; flex: 0 0 140px; }
+	:global(.search-scope) {
+		width: 140px;
+		flex: 0 0 140px;
+	}
 
 	.refresh-btn {
 		flex-shrink: 0;
@@ -1432,10 +1528,17 @@
 		text-align: left;
 		cursor: pointer;
 		box-shadow: 0 1px 2px rgb(15 23 42 / 3%);
-		transition: border-color 0.15s ease, box-shadow 0.15s ease;
+		transition:
+			border-color 0.15s ease,
+			box-shadow 0.15s ease;
 	}
-	.payment-badge.status-action:not(.paid) { color: #c81e3a; }
-	.payment-badge.status-action.paid { background: #fff; color: #0f766e; }
+	.payment-badge.status-action:not(.paid) {
+		color: #c81e3a;
+	}
+	.payment-badge.status-action.paid {
+		background: #fff;
+		color: #0f766e;
+	}
 	.payment-badge.status-action:hover {
 		border-color: #aebbd0;
 		box-shadow: 0 2px 5px rgb(15 23 42 / 7%);
@@ -1484,9 +1587,16 @@
 		text-align: left;
 		cursor: pointer;
 	}
-	.status-dropdown button:hover:not(:disabled) { background: #f3f6fb; }
-	.status-dropdown button.unpaid-option { color: #be123c; }
-	.status-dropdown button:disabled { color: #98a2b3; cursor: default; }
+	.status-dropdown button:hover:not(:disabled) {
+		background: #f3f6fb;
+	}
+	.status-dropdown button.unpaid-option {
+		color: #be123c;
+	}
+	.status-dropdown button:disabled {
+		color: #98a2b3;
+		cursor: default;
+	}
 
 	/* =========================
 	   ACTION
@@ -1816,10 +1926,18 @@
 			flex: 1 1 100%;
 		}
 
-		.toolbar .search-field { grid-column: 1 / -1; width: 100%; }
+		.toolbar .search-field {
+			grid-column: 1 / -1;
+			width: 100%;
+		}
 		.toolbar > .invoice-search-btn,
-		.toolbar > .refresh-btn { width: 100%; }
-		.toolbar > .status-filter { grid-column: 1 / -1; width: 100%; }
+		.toolbar > .refresh-btn {
+			width: 100%;
+		}
+		.toolbar > .status-filter {
+			grid-column: 1 / -1;
+			width: 100%;
+		}
 	}
 
 	@media (max-width: 900px) and (max-height: 500px) {
