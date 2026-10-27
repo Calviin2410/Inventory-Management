@@ -65,9 +65,11 @@
 	let totalInvoices = $state(0);
 	const invoiceColumns = [
 		{ key: "invoiceNumber", label: "Invoice Number" },
-		{ key: "customer", label: "Customer" },
-		{ key: "barrelCode", label: "Barrel Code" },
 		{ key: "invoiceDate", label: "Invoice Date" },
+		{ key: "customer", label: "Customer" },
+		{ key: "barrelCode", label: "Barrel" },
+		{ key: "rentalStart", label: "Rental Start" },
+		{ key: "rentalEnd", label: "Rental End" },
 		{ key: "totalAmount", label: "Total Amount" },
 		{ key: "createdBy", label: "Created By" },
 		{ key: "status", label: "Payment Status" },
@@ -97,6 +99,10 @@
 
 	function formatAmount(value) {
 		return `RM ${Number(value ?? 0).toFixed(2)}`;
+	}
+
+	function invoiceItemDates(invoice, field) {
+		return [...new Set((invoice.items ?? []).map((item) => item?.[field]).filter(Boolean).map(formatDate))].join(", ") || "—";
 	}
 
 	const statusOptions = [
@@ -466,7 +472,14 @@
 	// Page Load
 	// =========================
 
-	onMount(loadInvoices);
+	onMount(() => {
+		const params = new URLSearchParams(window.location.search);
+		const requestedStatus = params.get("status");
+		if (["paid", "unpaid"].includes(requestedStatus)) statusFilter = requestedStatus;
+		invoiceFromDate = params.get("from_date") ?? "";
+		invoiceToDate = params.get("to_date") ?? "";
+		loadInvoices(1);
+	});
 </script>
 
 <svelte:window onclick={closeActionMenuOnOutsideClick} />
@@ -736,41 +749,26 @@
 								</th>
 							{/if}
 
+							{#if visibleColumns.invoiceDate}
+								<th
+									aria-sort={invoiceDateSortDirection === "asc" ? "ascending" : invoiceDateSortDirection === "desc" ? "descending" : "none"}
+								>
+									<button class="sort-header" type="button" onclick={toggleInvoiceDateSort} aria-label="Sort by invoice date">
+										Invoice Date <span aria-hidden="true">{invoiceDateSortDirection === "asc" ? "↑" : invoiceDateSortDirection === "desc" ? "↓" : "↕"}</span>
+									</button>
+								</th>
+							{/if}
+
 							{#if visibleColumns.customer}<th>
 									Customer
 								</th>{/if}
 
 							{#if visibleColumns.barrelCode}<th>
-									Barrel Code
+									Barrel
 								</th>{/if}
 
-							{#if visibleColumns.invoiceDate}
-								<th
-									aria-sort={invoiceDateSortDirection ===
-									"asc"
-										? "ascending"
-										: invoiceDateSortDirection === "desc"
-											? "descending"
-											: "none"}
-								>
-									<button
-										class="sort-header"
-										type="button"
-										onclick={toggleInvoiceDateSort}
-										aria-label="Sort by invoice date"
-									>
-										Invoice Date
-										<span aria-hidden="true"
-											>{invoiceDateSortDirection === "asc"
-												? "↑"
-												: invoiceDateSortDirection ===
-													  "desc"
-													? "↓"
-													: "↕"}</span
-										>
-									</button>
-								</th>
-							{/if}
+							{#if visibleColumns.rentalStart}<th>Rental Start</th>{/if}
+							{#if visibleColumns.rentalEnd}<th>Rental End</th>{/if}
 							{#if visibleColumns.totalAmount}<th>
 									Total Amount
 								</th>{/if}
@@ -803,6 +801,10 @@
 										>
 									</td>{/if}
 
+								{#if visibleColumns.invoiceDate}<td>
+										<a class="invoice-date-link" href={`/invoices/${invoice.id}`} title={`View invoice ${invoice.invoice_no}`}>{formatDate(invoice.issued_date)}</a>
+									</td>{/if}
+
 								{#if visibleColumns.customer}<td>
 										{invoice.customer?.name ?? "-"}
 									</td>{/if}
@@ -816,15 +818,8 @@
 											.join(", ") || "—"}
 									</td>{/if}
 
-								{#if visibleColumns.invoiceDate}<td>
-										<a
-											class="invoice-date-link"
-											href={`/invoices/${invoice.id}`}
-											title={`View invoice ${invoice.invoice_no}`}
-										>
-											{formatDate(invoice.issued_date)}
-										</a>
-									</td>{/if}
+								{#if visibleColumns.rentalStart}<td>{invoiceItemDates(invoice, "rental_start")}</td>{/if}
+								{#if visibleColumns.rentalEnd}<td>{invoiceItemDates(invoice, "rental_end")}</td>{/if}
 								{#if visibleColumns.totalAmount}<td>
 										{formatAmount(invoice.total_amount)}
 									</td>{/if}
@@ -840,7 +835,7 @@
 								{#if visibleColumns.status}<td
 										class="status-cell"
 									>
-										{#if invoice.status !== "cancelled" && canManageInvoice(invoice)}
+						{#if invoice.status !== "cancelled" && invoice.settlement_status !== "settled" && canManageInvoice(invoice)}
 											<button
 												class="payment-badge status-action invoice-status-control"
 												class:paid={invoice.status ===
@@ -950,7 +945,7 @@
 				>View Invoice</a
 			>
 			<div class="menu-divider"></div>
-			{#if canManageInvoice(menuInvoice)}
+			{#if canManageInvoice(menuInvoice) && menuInvoice.settlement_status !== "settled"}
 				<button
 					type="button"
 					disabled={menuInvoice.status === "paid"}
@@ -972,7 +967,7 @@
 			>
 				{exportingId === menuInvoice.id ? "Preparing..." : "Export PDF"}
 			</button>
-			{#if canSellWaste(menuInvoice)}
+			{#if canSellWaste(menuInvoice) && menuInvoice.settlement_status !== "settled"}
 				<button
 					type="button"
 					onclick={() => {
@@ -985,7 +980,7 @@
 						: "UpdateSell"}
 				</button>
 			{/if}
-			{#if isAdmin}
+			{#if isAdmin && menuInvoice.settlement_status !== "settled"}
 				<div class="menu-divider"></div>
 				<button
 					type="button"

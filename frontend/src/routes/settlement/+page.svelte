@@ -146,6 +146,17 @@
 		);
 	}
 
+	function canSettleInvoice(invoice) {
+		return invoice?.status === "paid" && invoice?.waste_sell_amount != null && invoice?.settlement_status !== "settled";
+	}
+
+	function settleRequirement(invoice) {
+		if (invoice?.settlement_status === "settled") return "Already settled.";
+		if (invoice?.status !== "paid") return "Mark this invoice Paid first.";
+		if (invoice?.waste_sell_amount == null) return "Record Sell Waste first.";
+		return "Ready to settle.";
+	}
+
 	function openPaymentDialog(invoice) {
 		paymentInvoice = invoice;
 		paymentMethod = "cash";
@@ -574,7 +585,7 @@
 										)}</td
 									>{/if}
 								{#if visibleColumns.paymentStatus}<td>
-										{#if canManageSettlement(invoice) && invoice.status !== "cancelled"}
+						{#if canManageSettlement(invoice) && invoice.status !== "cancelled" && invoice.settlement_status !== "settled"}
 											<button
 												class:paid={invoice.status ===
 													"paid"}
@@ -719,9 +730,13 @@
 			>
 			{#if canManageSettlement(actionInvoice)}
 				<div class="menu-divider"></div>
+				{#if actionInvoice.settlement_status !== "settled" && !canSettleInvoice(actionInvoice)}
+					<p class="settlement-requirement">{settleRequirement(actionInvoice)}</p>
+				{/if}
 				<button
 					type="button"
-					disabled={actionInvoice.settlement_status === "settled"}
+					disabled={!canSettleInvoice(actionInvoice)}
+					title={settleRequirement(actionInvoice)}
 					onclick={() => openDialog(actionInvoice, "settle")}
 					>Settle</button
 				>
@@ -756,9 +771,13 @@
 					>Unpaid</button
 				>
 			{:else}
+				{#if statusMenuInvoice.settlement_status !== "settled" && !canSettleInvoice(statusMenuInvoice)}
+					<p class="settlement-requirement">{settleRequirement(statusMenuInvoice)}</p>
+				{/if}
 				<button
 					type="button"
-					disabled={statusMenuInvoice.settlement_status === "settled"}
+					disabled={!canSettleInvoice(statusMenuInvoice)}
+					title={settleRequirement(statusMenuInvoice)}
 					onclick={() => openDialog(statusMenuInvoice, "settle")}
 					>Settle</button
 				>
@@ -978,6 +997,12 @@
 		color: #64748b;
 		font-size: 12px;
 		font-weight: 650;
+	}
+	.settlement-requirement {
+		margin: 6px 12px;
+		color: #64748b;
+		font-size: 12px;
+		line-height: 1.4;
 	}
 	:global(.settlement-search-scope) {
 		width: 140px;

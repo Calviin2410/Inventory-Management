@@ -50,6 +50,8 @@
 	let unpaidInvoices = $state(0);
 	let settledInvoices = $state(0);
 	let unsettledInvoices = $state(0);
+	let paymentStatusFilter = $state("");
+	let settlementStatusFilter = $state("");
 	const reportColumns = [
 		{ key: "invoice", label: "Invoice" },
 		{ key: "invoiceDate", label: "Invoice Date" },
@@ -57,12 +59,13 @@
 		{ key: "barrel", label: "Barrel" },
 		{ key: "rentalStart", label: "Rental Start" },
 		{ key: "rentalEnd", label: "Rental End" },
-		{ key: "invoiceAmount", label: "Invoice Amount" },
+		{ key: "invoiceAmount", label: "Total Amount" },
+		{ key: "createdBy", label: "Created By" },
 		{ key: "wasteSellAmount", label: "Sell Waste Amount" },
-		{ key: "settlementStatus", label: "Settlement Status" },
 		{ key: "paymentStatus", label: "Payment Status" },
+		{ key: "settlementStatus", label: "Settlement Status" },
 	];
-	let visibleColumns = $state(Object.fromEntries(reportColumns.map((column) => [column.key, !["rentalStart", "rentalEnd"].includes(column.key)])));
+	let visibleColumns = $state(Object.fromEntries(reportColumns.map((column) => [column.key, true])));
 	let allColumnsVisible = $derived(reportColumns.every((column) => visibleColumns[column.key]));
 
 	function toggleColumn(key) {
@@ -82,7 +85,27 @@
 		if (toDate) params.to_date = toDate;
 		if (appliedSearch) params.search = appliedSearch;
 		if (searchBy !== "all") params.search_by = searchBy;
+		if (paymentStatusFilter) params.payment_status = paymentStatusFilter;
+		if (settlementStatusFilter) params.settlement_status = settlementStatusFilter;
 		return params;
+	}
+
+	function summaryHref({ paymentStatus, settlementStatus } = {}) {
+		const params = new URLSearchParams();
+		if (paymentStatus) params.set("payment_status", paymentStatus);
+		if (settlementStatus) params.set("settlement_status", settlementStatus);
+		if (fromDate) params.set("from_date", fromDate);
+		if (toDate) params.set("to_date", toDate);
+		return `/reports?${params.toString()}`;
+	}
+
+	function invoiceSummaryHref(status = "") {
+		const params = new URLSearchParams();
+		if (status) params.set("status", status);
+		if (fromDate) params.set("from_date", fromDate);
+		if (toDate) params.set("to_date", toDate);
+		const query = params.toString();
+		return `/invoices${query ? `?${query}` : ""}`;
 	}
 
 	function submitSearch(event) {
@@ -104,6 +127,17 @@
 
 	function settledInvoiceHref(invoice) {
 		return `/invoices/${invoice.id}${invoice.settlement_status === "settled" ? "?source=settlement" : ""}`;
+	}
+
+	function canSettleInvoice(invoice) {
+		return invoice?.status === "paid" && invoice?.waste_sell_amount != null && invoice?.settlement_status !== "settled";
+	}
+
+	function settleRequirement(invoice) {
+		if (invoice?.settlement_status === "settled") return "Already settled.";
+		if (invoice?.status !== "paid") return "Mark this invoice Paid first.";
+		if (invoice?.waste_sell_amount == null) return "Record Sell Waste first.";
+		return "Ready to settle.";
 	}
 
     function malaysiaToday() {
@@ -268,6 +302,8 @@
 		searchInput = "";
 		appliedSearch = "";
 		searchBy = "all";
+		paymentStatusFilter = "";
+		settlementStatusFilter = "";
 
         await loadReports(1);
     }
@@ -439,8 +475,16 @@
         }
     }
 
-    onMount(async () => {
+	    onMount(async () => {
         try {
+            const params = new URLSearchParams(window.location.search);
+            fromDate = params.get("from_date") ?? "";
+            toDate = params.get("to_date") ?? "";
+            const paymentStatus = params.get("payment_status");
+            const settlementStatus = params.get("settlement_status");
+            if (["paid", "unpaid"].includes(paymentStatus)) paymentStatusFilter = paymentStatus;
+            if (["settled", "unsettled"].includes(settlementStatus)) settlementStatusFilter = settlementStatus;
+
             const currentUser = await api.me();
 
             user.set(currentUser);
@@ -493,16 +537,18 @@
 				</div>
 			</form>
             <div class="filter-actions">
-                <button
-                    type="button"
-                    class="btn btn-export"
-                    onclick={exportExcel}
-                    disabled={loading || filteredInvoices.length === 0 || exporting}
-                    aria-busy={exporting}
-                >
-                    <span aria-hidden="true">⇩</span>
-                    {exporting ? "Exporting..." : "Export Excel"}
-                </button>
+                {#if $user?.role === "admin"}
+                    <button
+                        type="button"
+                        class="btn btn-export"
+                        onclick={exportExcel}
+                        disabled={loading || filteredInvoices.length === 0 || exporting}
+                        aria-busy={exporting}
+                    >
+                        <span aria-hidden="true">⇩</span>
+                        {exporting ? "Exporting..." : "Export Excel"}
+                    </button>
+                {/if}
 
                 <button type="button" class="btn" onclick={clearFilter}>
                     Clear
@@ -525,45 +571,45 @@
             <h2>Summary</h2>
 
             <div class="summary-grid">
-                <div class="summary-card">
+                <a class="summary-card" href={invoiceSummaryHref()}>
                     <span> Total Invoices </span>
 
                     <strong>
                         {totalInvoices}
                     </strong>
-                </div>
+                </a>
 
-                <div class="summary-card">
+                <a class="summary-card" href={invoiceSummaryHref("paid")}>
                     <span> Paid </span>
 
                     <strong>
                         {paidInvoices}
                     </strong>
-                </div>
+                </a>
 
-                <div class="summary-card">
+                <a class="summary-card" href={invoiceSummaryHref("unpaid")}>
                     <span> Unpaid </span>
 
                     <strong>
                         {unpaidInvoices}
                     </strong>
-                </div>
+                </a>
 
-                <div class="summary-card">
+                <a class="summary-card" href={summaryHref({ settlementStatus: "settled" })}>
                     <span> Settled Invoices </span>
 
                     <strong>
 						{settledInvoices}
 					</strong>
-				</div>
+				</a>
 
-				<div class="summary-card">
+				<a class="summary-card" href={summaryHref({ settlementStatus: "unsettled" })}>
 					<span> Unsettled Invoices </span>
 
 					<strong>
 						{unsettledInvoices}
                     </strong>
-                </div>
+                </a>
             </div>
         </section>
 
@@ -628,11 +674,11 @@
 
 								{#if visibleColumns.rentalEnd}<th> Rental End </th>{/if}
 
-								{#if visibleColumns.invoiceAmount}<th>Invoice Amount</th>{/if}
+								{#if visibleColumns.invoiceAmount}<th>Total Amount</th>{/if}
+								{#if visibleColumns.createdBy}<th>Created By</th>{/if}
 								{#if visibleColumns.wasteSellAmount}<th>Sell Waste Amount</th>{/if}
-								{#if visibleColumns.settlementStatus}<th> Settlement Status </th>{/if}
-
 								{#if visibleColumns.paymentStatus}<th> Payment Status </th>{/if}
+								{#if visibleColumns.settlementStatus}<th> Settlement Status </th>{/if}
                             </tr>
                         </thead>
 
@@ -662,10 +708,21 @@
 											{#if visibleColumns.rentalEnd}<td>
                                                 {formatDate(item.rental_end)}
                                             </td>{/if}
-											{#if visibleColumns.invoiceAmount}<td>{itemIndex === 0 ? new Intl.NumberFormat("en-MY", { style: "currency", currency: "MYR" }).format(Number(invoice.total_amount ?? 0)) : "—"}</td>{/if}
+							{#if visibleColumns.invoiceAmount}<td>{itemIndex === 0 ? new Intl.NumberFormat("en-MY", { style: "currency", currency: "MYR" }).format(Number(invoice.total_amount ?? 0)) : "—"}</td>{/if}
+							{#if visibleColumns.createdBy}<td>{invoice.created_by?.name ?? "—"}</td>{/if}
 											{#if visibleColumns.wasteSellAmount}<td>{itemIndex === 0 ? new Intl.NumberFormat("en-MY", { style: "currency", currency: "MYR" }).format(Number(invoice.waste_sell_amount ?? 0)) : "—"}</td>{/if}
 
-											{#if visibleColumns.settlementStatus}<td>
+							{#if visibleColumns.paymentStatus}<td>
+								{#if invoice.status !== "cancelled"}
+									{#if invoice.settlement_status !== "settled"}
+									<button class="payment-status-control status-action report-status-control" class:paid={invoice.status === "paid"} class:unpaid={invoice.status === "unpaid"} type="button" aria-expanded={statusMenu.invoiceId === invoice.id && statusMenu.kind === "payment"} title="Choose payment status" onclick={(event) => togglePaymentMenu(invoice, "payment", event)}>
+										{invoice.status === "paid" ? "Paid" : "Unpaid"}<span class="status-chevron" aria-hidden="true"></span>
+									</button>
+									{:else}<span class="payment-status-control" class:paid={invoice.status === "paid"}>{invoice.status === "paid" ? "Paid" : "Unpaid"}</span>{/if}
+								{:else}<span class="status-badge">Cancelled</span>{/if}
+							</td>{/if}
+
+							{#if visibleColumns.settlementStatus}<td>
 								{#if $user?.role === "admin"}
 													<button class="settlement-badge status-action report-status-control" class:settled={invoice.settlement_status === "settled"} type="button" aria-expanded={statusMenu.invoiceId === invoice.id && statusMenu.kind === "settlement"} title="Choose settlement status" onclick={(event) => togglePaymentMenu(invoice, "settlement", event)}>
 														<span class="status-icon" aria-hidden="true">{invoice.settlement_status === "settled" ? "✓" : "×"}</span>
@@ -677,13 +734,6 @@
 								{/if}
 											</td>{/if}
 
-											{#if visibleColumns.paymentStatus}<td>
-												{#if invoice.status !== "cancelled"}
-													<button class="payment-status-control status-action report-status-control" class:paid={invoice.status === "paid"} class:unpaid={invoice.status === "unpaid"} type="button" aria-expanded={statusMenu.invoiceId === invoice.id && statusMenu.kind === "payment"} title="Choose payment status" onclick={(event) => togglePaymentMenu(invoice, "payment", event)}>
-														{invoice.status === "paid" ? "Paid" : "Unpaid"}<span class="status-chevron" aria-hidden="true"></span>
-													</button>
-												{:else}<span class="status-badge">Cancelled</span>{/if}
-											</td>{/if}
                                         </tr>
                                     {/each}
                                 {:else}
@@ -704,9 +754,20 @@
 
 									{#if visibleColumns.rentalEnd}<td> - </td>{/if}
 					{#if visibleColumns.invoiceAmount}<td>{new Intl.NumberFormat("en-MY", { style: "currency", currency: "MYR" }).format(Number(invoice.total_amount ?? 0))}</td>{/if}
+					{#if visibleColumns.createdBy}<td>{invoice.created_by?.name ?? "—"}</td>{/if}
 					{#if visibleColumns.wasteSellAmount}<td>{new Intl.NumberFormat("en-MY", { style: "currency", currency: "MYR" }).format(Number(invoice.waste_sell_amount ?? 0))}</td>{/if}
 
-									{#if visibleColumns.settlementStatus}<td>
+								{#if visibleColumns.paymentStatus}<td>
+									{#if invoice.status !== "cancelled"}
+										{#if invoice.settlement_status !== "settled"}
+										<button class="payment-status-control status-action report-status-control" class:paid={invoice.status === "paid"} class:unpaid={invoice.status === "unpaid"} type="button" aria-expanded={statusMenu.invoiceId === invoice.id && statusMenu.kind === "payment"} title="Choose payment status" onclick={(event) => togglePaymentMenu(invoice, "payment", event)}>
+											{invoice.status === "paid" ? "Paid" : "Unpaid"}<span class="status-chevron" aria-hidden="true"></span>
+										</button>
+										{:else}<span class="payment-status-control" class:paid={invoice.status === "paid"}>{invoice.status === "paid" ? "Paid" : "Unpaid"}</span>{/if}
+									{:else}<span class="status-badge">Cancelled</span>{/if}
+								</td>{/if}
+
+								{#if visibleColumns.settlementStatus}<td>
 						{#if $user?.role === "admin"}
 										<button class="settlement-badge status-action report-status-control" class:settled={invoice.settlement_status === "settled"} type="button" aria-expanded={statusMenu.invoiceId === invoice.id && statusMenu.kind === "settlement"} title="Choose settlement status" onclick={(event) => togglePaymentMenu(invoice, "settlement", event)}>
 											<span class="status-icon" aria-hidden="true">{invoice.settlement_status === "settled" ? "✓" : "×"}</span>
@@ -718,13 +779,6 @@
 						{/if}
 									</td>{/if}
 
-									{#if visibleColumns.paymentStatus}<td>
-										{#if invoice.status !== "cancelled"}
-											<button class="payment-status-control status-action report-status-control" class:paid={invoice.status === "paid"} class:unpaid={invoice.status === "unpaid"} type="button" aria-expanded={statusMenu.invoiceId === invoice.id && statusMenu.kind === "payment"} title="Choose payment status" onclick={(event) => togglePaymentMenu(invoice, "payment", event)}>
-												{invoice.status === "paid" ? "Paid" : "Unpaid"}<span class="status-chevron" aria-hidden="true"></span>
-											</button>
-										{:else}<span class="status-badge">Cancelled</span>{/if}
-									</td>{/if}
                                     </tr>
                                 {/if}
                             {/each}
@@ -752,7 +806,10 @@
 			<button type="button" disabled={statusMenuInvoice.status === "paid"} onclick={() => openPaymentDialog(statusMenuInvoice)}>Paid</button>
 			<button type="button" class="unpaid-option" disabled={statusMenuInvoice.status !== "paid"} onclick={() => openUnpaidDialog(statusMenuInvoice)}>Unpaid</button>
 		{:else if $user?.role === "admin"}
-			<button type="button" disabled={statusMenuInvoice.settlement_status === "settled"} onclick={() => openSettlementDialog(statusMenuInvoice, "settle")}>Settle</button>
+			{#if statusMenuInvoice.settlement_status !== "settled" && !canSettleInvoice(statusMenuInvoice)}
+				<p class="settlement-requirement">{settleRequirement(statusMenuInvoice)}</p>
+			{/if}
+			<button type="button" disabled={!canSettleInvoice(statusMenuInvoice)} title={settleRequirement(statusMenuInvoice)} onclick={() => openSettlementDialog(statusMenuInvoice, "settle")}>Settle</button>
 			<button type="button" class="unpaid-option" disabled={statusMenuInvoice.settlement_status !== "settled"} onclick={() => openSettlementDialog(statusMenuInvoice, "reopen")}>Reopen</button>
 		{/if}
 	</div>
@@ -916,13 +973,35 @@
     }
 
     .summary-card {
+        display: block;
         padding: 20px;
 
         border: 1px solid #e5e7eb;
         border-radius: 10px;
 
         background: white;
+        color: inherit;
+        text-decoration: none;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
     }
+
+    .summary-card:hover {
+        border-color: #bdc9da;
+        box-shadow: 0 5px 14px rgb(15 23 42 / 8%);
+        transform: translateY(-1px);
+    }
+
+    .summary-card:focus-visible {
+        outline: 3px solid rgb(49 94 231 / 30%);
+        outline-offset: 2px;
+    }
+
+	.settlement-requirement {
+		margin: 6px 12px;
+		color: #64748b;
+		font-size: 12px;
+		line-height: 1.4;
+	}
 
     .summary-card span {
         display: block;

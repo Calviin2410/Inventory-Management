@@ -79,11 +79,40 @@ class SettlementTest extends TestCase
         ])->assertUnprocessable()->assertJsonValidationErrors('remark');
     }
 
+    public function test_invoice_must_be_paid_and_have_sell_waste_recorded_before_settling(): void
+    {
+        Sanctum::actingAs(User::factory()->create(['role' => 'admin']));
+        $invoice = $this->invoice();
+
+        $this->patchJson("/api/settlements/{$invoice->id}", [
+            'action' => 'settle',
+            'remark' => 'Checked.',
+        ])->assertUnprocessable()->assertJsonValidationErrors('action');
+
+        $invoice->update(['status' => 'paid']);
+
+        $this->patchJson("/api/settlements/{$invoice->id}", [
+            'action' => 'settle',
+            'remark' => 'Checked.',
+        ])->assertUnprocessable()->assertJsonValidationErrors('action');
+
+        $invoice->update(['waste_sell_amount' => 80]);
+
+        $this->patchJson("/api/settlements/{$invoice->id}", [
+            'action' => 'settle',
+            'remark' => 'Checked.',
+        ])->assertOk()->assertJsonPath('settlement_status', 'settled');
+    }
+
     public function test_admin_can_settle_and_reopen_with_remarks(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
         Sanctum::actingAs($admin);
         $invoice = $this->invoice();
+        $invoice->update([
+            'status' => 'paid',
+            'waste_sell_amount' => 80,
+        ]);
 
         $this->patchJson("/api/settlements/{$invoice->id}", [
             'action' => 'settle',

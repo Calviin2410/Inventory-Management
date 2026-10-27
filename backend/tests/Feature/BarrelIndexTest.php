@@ -153,6 +153,38 @@ class BarrelIndexTest extends TestCase
         ])->assertOk()->assertJsonPath('status', 'available');
     }
 
+    public function test_return_cannot_change_rental_end_for_a_settled_invoice(): void
+    {
+        Sanctum::actingAs(User::factory()->create(['role' => 'normal_staff']));
+        $customer = Customer::create(['name' => 'Locked Return Customer']);
+        $barrel = Barrel::create([
+            'code' => 'FLOW-LOCKED-RETURN',
+            'status' => 'returning',
+            'current_customer_id' => $customer->id,
+        ]);
+        $invoice = Invoice::create([
+            'invoice_no' => 'TKS-LOCKED-RETURN',
+            'customer_id' => $customer->id,
+            'issued_date' => now()->toDateString(),
+            'status' => 'paid',
+            'settlement_status' => 'settled',
+        ]);
+        $item = $invoice->items()->create([
+            'barrel_id' => $barrel->id,
+            'rental_start' => now()->subDays(3)->toDateString(),
+        ]);
+
+        $this->patchJson("/api/barrels/{$barrel->id}/return", [])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('status');
+
+        $this->assertNull($item->fresh()->rental_end);
+        $this->assertDatabaseHas('barrels', [
+            'id' => $barrel->id,
+            'status' => 'returning',
+        ]);
+    }
+
     public function test_in_transit_barrel_can_be_marked_available_but_not_rented(): void
     {
         Sanctum::actingAs(User::factory()->create(['role' => 'normal_staff']));

@@ -136,6 +136,42 @@ class InvoicePaymentTest extends TestCase
             ->assertJsonFragment(['invoice_no' => 'KT09999']);
     }
 
+    public function test_settled_invoice_cannot_be_edited_or_have_its_rental_end_changed(): void
+    {
+        Sanctum::actingAs(User::factory()->create(['role' => 'admin']));
+        $invoice = $this->invoice();
+        $invoice->update([
+            'settlement_status' => 'settled',
+            'status' => 'paid',
+            'payment_method' => 'cash',
+            'payment_date' => '2026-09-23',
+        ]);
+        $item = $invoice->items()->create([
+            'barrel_id' => Barrel::create(['code' => 'LOCKED-001'])->id,
+            'rental_start' => '2026-09-25',
+            'rental_end' => null,
+        ]);
+
+        $this->patchJson("/api/invoices/{$invoice->id}", [
+            'status' => 'unpaid',
+            'unpaid_remark' => 'Attempted change.',
+            'items' => [[
+                'id' => $item->id,
+                'rental_end' => '2026-10-12',
+            ]],
+        ])->assertUnprocessable()->assertJsonValidationErrors('invoice');
+
+        $this->assertDatabaseHas('invoices', [
+            'id' => $invoice->id,
+            'status' => 'paid',
+            'settlement_status' => 'settled',
+        ]);
+        $this->assertDatabaseHas('invoice_items', [
+            'id' => $item->id,
+            'rental_end' => null,
+        ]);
+    }
+
     public function test_invoice_responses_include_creator_and_vehicle(): void
     {
         $creator = User::factory()->create([

@@ -52,6 +52,17 @@ class RentalReportTest extends TestCase
             ->assertJsonPath('summary.total_invoices', 0);
     }
 
+    public function test_only_admin_can_export_rental_reports(): void
+    {
+        Sanctum::actingAs(User::factory()->create(['role' => 'staff']));
+
+        $this->getJson('/api/reports/rentals?export=1')->assertForbidden();
+
+        Sanctum::actingAs(User::factory()->create(['role' => 'admin']));
+
+        $this->getJson('/api/reports/rentals?export=1')->assertOk();
+    }
+
     public function test_rental_report_search_matches_invoice_customer_and_barrel(): void
     {
         Sanctum::actingAs(User::factory()->create(['role' => 'admin']));

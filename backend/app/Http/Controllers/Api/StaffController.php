@@ -24,9 +24,22 @@ class StaffController extends Controller
     {
         $this->ensureAdmin($request);
 
+        $primaryAdminId = User::query()
+            ->where('role', 'admin')
+            ->min('id');
+        $canViewAllAdmins = (int) $request->user()->id === (int) $primaryAdminId;
+
         return response()->json(
             User::query()
-                ->where('role', 'normal_staff')
+                ->where(function ($query) use ($request) {
+                    $query->where('role', 'normal_staff')
+                        ->orWhere(function ($adminQuery) use ($request, $canViewAllAdmins) {
+                            // The first-created admin (Bryan in production) can
+                            // see all admins. Other admins only see themselves.
+                            $adminQuery->where('role', 'admin')
+                                ->when(!$canViewAllAdmins, fn ($query) => $query->where('id', $request->user()->id));
+                        });
+                })
                 ->orderBy('name')
                 ->get(['id', 'name', 'email', 'role', 'created_at'])
         );
@@ -98,5 +111,35 @@ class StaffController extends Controller
         return response()->json([
             'message' => 'Staff password reset successfully.',
         ]);
+    }
+
+    public function destroy(Request $request, User $staff)
+    {
+        $this->ensureAdmin($request);
+
+        abort_unless(
+            $staff->role === 'normal_staff',
+            404,
+            'Staff account not found.'
+        );
+
+        $staffData = $staff->only(['id', 'name', 'email', 'role']);
+
+        ActivityLog::record(
+            $request,
+            'deleted',
+            'Staff',
+            $staff->id,
+            $staff->name,
+            'Deleted staff account for '.$staff->name,
+            $staffData
+        );
+
+        // Invoice and activity-log history is retained; nullable user links are
+        // detached by the database constraints when the account is removed.
+        $staff->tokens()->delete();
+        $staff->delete();
+
+        return response()->json(['message' => 'Staff account deleted successfully.']);
     }
 }

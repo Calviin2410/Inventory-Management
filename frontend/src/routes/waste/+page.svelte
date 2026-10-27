@@ -12,16 +12,16 @@
 
 	const wasteColumns = [
 		{ key: "invoiceNumber", label: "Invoice Number" },
-		{ key: "barrelCode", label: "Barrel Code" },
 		{ key: "invoiceDate", label: "Invoice Date" },
-		{ key: "totalAmount", label: "Total Amount" },
+		{ key: "customer", label: "Customer" },
+		{ key: "barrelCode", label: "Barrel" },
+		{ key: "wasteSellAmount", label: "Sell Waste Amount" },
 		{ key: "sellDate", label: "Sell Date" },
-		{ key: "remark", label: "Remark" },
-		{ key: "receivedBy", label: "Received By" },
+		{ key: "createdBy", label: "Created By" },
 	];
 	let visibleColumns = $state(
 		Object.fromEntries(
-			wasteColumns.map((column) => [column.key, column.key !== "remark"]),
+			wasteColumns.map((column) => [column.key, true]),
 		),
 	);
 
@@ -46,7 +46,7 @@
 	let saleInvoice = $state(null);
 	let isAdmin = $derived($user?.role === "admin");
 	function canManageInvoice(invoice) {
-		return isAdmin || ["staff", "normal_staff"].includes($user?.role);
+		return invoice?.settlement_status !== "settled" && (isAdmin || ["staff", "normal_staff"].includes($user?.role));
 	}
 
 	async function loadWasteSales(page = 1) {
@@ -231,13 +231,13 @@
 					<thead
 						><tr>
 							{#if visibleColumns.invoiceNumber}<th aria-sort={invoiceSortDirection === "asc" ? "ascending" : invoiceSortDirection === "desc" ? "descending" : "none"}><button class="sort-header" type="button" onclick={() => toggleSort("invoice_no")}>Invoice Number <span aria-hidden="true">{invoiceSortDirection === "asc" ? "↑" : invoiceSortDirection === "desc" ? "↓" : "↕"}</span></button></th>{/if}
-							{#if visibleColumns.barrelCode}<th>Barrel Code</th>{/if}
 							{#if visibleColumns.invoiceDate}<th aria-sort={invoiceDateSortDirection === "asc" ? "ascending" : invoiceDateSortDirection === "desc" ? "descending" : "none"}><button class="sort-header" type="button" onclick={() => toggleSort("issued_date")}>Invoice Date <span aria-hidden="true">{invoiceDateSortDirection === "asc" ? "↑" : invoiceDateSortDirection === "desc" ? "↓" : "↕"}</span></button></th>{/if}
-							{#if visibleColumns.totalAmount}<th>Total Amount</th>{/if}
+							{#if visibleColumns.customer}<th>Customer</th>{/if}
+							{#if visibleColumns.barrelCode}<th>Barrel</th>{/if}
+							{#if visibleColumns.wasteSellAmount}<th>Sell Waste Amount</th>{/if}
 							{#if visibleColumns.sellDate}<th>Sell Date</th>{/if}
-							{#if visibleColumns.remark}<th>Remark</th>{/if}
-							{#if visibleColumns.receivedBy}<th>Received By</th>{/if}
-							<th>Action</th>
+							{#if visibleColumns.createdBy}<th>Created By</th>{/if}
+							<th>Action Status</th>
 						</tr></thead
 					>
 					<tbody>
@@ -249,13 +249,14 @@
 										href={`/invoices/${invoice.id}`}
 										>{invoice.invoice_no}</a
 									></td>{/if}
+								{#if visibleColumns.invoiceDate}<td>{formatDate(invoice.issued_date)}</td>{/if}
+								{#if visibleColumns.customer}<td>{invoice.customer?.name ?? "—"}</td>{/if}
 								{#if visibleColumns.barrelCode}<td
 									>{invoice.items
 										?.map((item) => item.barrel?.code)
 										.filter(Boolean)
 										.join(", ") || "—"}</td>{/if}
-								{#if visibleColumns.invoiceDate}<td>{formatDate(invoice.issued_date)}</td>{/if}
-								{#if visibleColumns.totalAmount}<td class="amount-cell"
+								{#if visibleColumns.wasteSellAmount}<td class="amount-cell"
 									>{formatAmount(
 						invoice.waste_sell_amount ?? 0,
 									)}</td>{/if}
@@ -263,9 +264,7 @@
 									>{formatDate(
 										invoice.waste_sell_recorded_at,
 									)}</td>{/if}
-								{#if visibleColumns.remark}<td class="remark-cell"
-									>{invoice.waste_sell_remark || "—"}</td>{/if}
-								{#if visibleColumns.receivedBy}<td
+								{#if visibleColumns.createdBy}<td
 									>{invoice.waste_sell_recorded_by?.name ||
 										"—"}</td>{/if}
 				<td
@@ -435,12 +434,6 @@
 		color: #087a55;
 		font-weight: 700;
 		white-space: nowrap;
-	}
-	.remark-cell {
-		max-width: 280px;
-		color: #536078;
-		line-height: 1.45;
-		white-space: normal;
 	}
 	.state {
 		padding: 36px 24px;

@@ -10,12 +10,15 @@
 	import { user } from "$lib/stores/auth.js";
 
 	const recentInvoiceColumns = [
-		{ key: "invoice", label: "Invoice" },
-		{ key: "customer", label: "Customer" },
+		{ key: "invoice", label: "Invoice Number" },
 		{ key: "invoiceDate", label: "Invoice Date" },
+		{ key: "customer", label: "Customer" },
+		{ key: "barrelCode", label: "Barrel" },
+		{ key: "rentalStart", label: "Rental Start" },
+		{ key: "rentalEnd", label: "Rental End" },
+		{ key: "totalAmount", label: "Total Amount" },
 		{ key: "createdBy", label: "Created By" },
 		{ key: "status", label: "Payment Status" },
-		{ key: "settlementStatus", label: "Settlement Status" },
 	];
 	let visibleColumns = $state(Object.fromEntries(recentInvoiceColumns.map((column) => [column.key, true])));
 
@@ -49,6 +52,12 @@
 		}
 		return (new Date(a.issued_date).getTime() - new Date(b.issued_date).getTime()) * sign;
 	}));
+	function invoiceItemDates(invoice, field) {
+		return [...new Set((invoice.items ?? []).map((item) => item?.[field]).filter(Boolean).map(formatDate))].join(", ") || "—";
+	}
+	function formatAmount(value) {
+		return new Intl.NumberFormat("en-MY", { style: "currency", currency: "MYR" }).format(Number(value ?? 0));
+	}
 
 	function toggleRecentSort(column) {
 		if (column === "invoice_no") {
@@ -64,6 +73,7 @@
 	let paidInvoices = $state(0);
 	let unpaidInvoices = $state(0);
 	let settledInvoices = $state(0);
+	let unsettledInvoices = $state(0);
 	let availableBarrels = $state(0);
 	let rentedBarrels = $state(0);
 
@@ -93,6 +103,8 @@
 			unpaidInvoices = result?.unpaid_invoices ?? 0;
 
 			settledInvoices = result?.settled_invoices ?? 0;
+
+			unsettledInvoices = result?.unsettled_invoices ?? 0;
 
 			availableBarrels = result?.available_barrels ?? 0;
 
@@ -245,38 +257,36 @@
 	{:else}
 		<!-- 统计卡片 -->
 		<div class="stat-grid">
-			<div class="stat-card blue">
+			<a class="stat-card blue" href="/invoices">
 				<div class="stat-top"><span>Total invoices</span><i>▤</i></div>
 				<strong>{totalInvoices}</strong>
 				<small>All recorded invoices</small>
-			</div>
-			<div class="stat-card green">
+			</a>
+			<a class="stat-card green" href="/invoices?status=paid">
 				<div class="stat-top"><span>Paid invoices</span><i>✓</i></div>
 				<strong>{paidInvoices}</strong>
 				<small>Successfully settled</small>
-			</div>
-			<div class="stat-card amber">
+			</a>
+			<a class="stat-card amber" href="/invoices?status=unpaid">
 				<div class="stat-top"><span>Outstanding</span><i>!</i></div>
 				<strong>{unpaidInvoices}</strong>
 				<small>Awaiting payment</small>
-			</div>
-			<div class="stat-card">
+			</a>
+			<a class="stat-card" href="/reports?settlement_status=settled">
 				<div class="stat-top"><span>Settled invoices</span><i>✓</i></div>
 				<strong>{settledInvoices}</strong>
 				<small>Invoices settled</small>
-			</div>
-			<div class="stat-card">
-				<div class="stat-top">
-					<span>Available barrels</span><i>◇</i>
-				</div>
-				<strong>{availableBarrels}</strong>
-				<small>Ready for allocation</small>
-			</div>
-			<div class="stat-card">
+			</a>
+			<a class="stat-card" href="/reports?settlement_status=unsettled">
+				<div class="stat-top"><span>Unsettled invoices</span><i>×</i></div>
+				<strong>{unsettledInvoices}</strong>
+				<small>Awaiting settlement</small>
+			</a>
+			<a class="stat-card" href="/barrels?status=rented">
 				<div class="stat-top"><span>Barrels in use</span><i>↗</i></div>
 				<strong>{rentedBarrels}</strong>
 				<small>{barrelUtilization}% inventory utilization</small>
-			</div>
+			</a>
 		</div>
 
 		<section class="panel">
@@ -303,15 +313,17 @@
 					<table class="data-table">
 						<thead>
 							<tr>
-								{#if visibleColumns.invoice}<th aria-sort={invoiceSortDirection === "asc" ? "ascending" : invoiceSortDirection === "desc" ? "descending" : "none"}><button class="sort-header" type="button" onclick={() => toggleRecentSort("invoice_no")}>Invoice <span aria-hidden="true">{invoiceSortDirection === "asc" ? "↑" : invoiceSortDirection === "desc" ? "↓" : "↕"}</span></button></th>{/if}
-
-								{#if visibleColumns.customer}<th> Customer </th>{/if}
+								{#if visibleColumns.invoice}<th aria-sort={invoiceSortDirection === "asc" ? "ascending" : invoiceSortDirection === "desc" ? "descending" : "none"}><button class="sort-header" type="button" onclick={() => toggleRecentSort("invoice_no")}>Invoice Number <span aria-hidden="true">{invoiceSortDirection === "asc" ? "↑" : invoiceSortDirection === "desc" ? "↓" : "↕"}</span></button></th>{/if}
 
 								{#if visibleColumns.invoiceDate}<th aria-sort={invoiceDateSortDirection === "asc" ? "ascending" : invoiceDateSortDirection === "desc" ? "descending" : "none"}><button class="sort-header" type="button" onclick={() => toggleRecentSort("issued_date")}>Invoice Date <span aria-hidden="true">{invoiceDateSortDirection === "asc" ? "↑" : invoiceDateSortDirection === "desc" ? "↓" : "↕"}</span></button></th>{/if}
+								{#if visibleColumns.customer}<th> Customer </th>{/if}
+								{#if visibleColumns.barrelCode}<th>Barrel</th>{/if}
+								{#if visibleColumns.rentalStart}<th>Rental Start</th>{/if}
+								{#if visibleColumns.rentalEnd}<th>Rental End</th>{/if}
+								{#if visibleColumns.totalAmount}<th>Total Amount</th>{/if}
 								{#if visibleColumns.createdBy}<th>Created By</th>{/if}
 
 								{#if visibleColumns.status}<th> Payment Status </th>{/if}
-								{#if visibleColumns.settlementStatus}<th> Settlement Status </th>{/if}
 							</tr>
 						</thead>
 
@@ -327,17 +339,18 @@
 										</a>
 									</td>{/if}
 
-									{#if visibleColumns.customer}<td>
-										{invoice.customer?.name ?? "-"}
-									</td>{/if}
-
 									{#if visibleColumns.invoiceDate}<td>
 										{formatDate(invoice.issued_date)}
 									</td>{/if}
+								{#if visibleColumns.customer}<td>{invoice.customer?.name ?? "-"}</td>{/if}
+								{#if visibleColumns.barrelCode}<td>{invoice.items?.map((item) => item.barrel?.code).filter(Boolean).join(", ") || "—"}</td>{/if}
+								{#if visibleColumns.rentalStart}<td>{invoiceItemDates(invoice, "rental_start")}</td>{/if}
+								{#if visibleColumns.rentalEnd}<td>{invoiceItemDates(invoice, "rental_end")}</td>{/if}
+								{#if visibleColumns.totalAmount}<td>{formatAmount(invoice.total_amount)}</td>{/if}
 									{#if visibleColumns.createdBy}<td>{invoice.created_by?.name ?? "—"}</td>{/if}
 
 									{#if visibleColumns.status}<td>
-						{#if invoice.status !== "cancelled" && ["admin", "staff", "normal_staff"].includes($user?.role)}
+						{#if invoice.status !== "cancelled" && invoice.settlement_status !== "settled" && ["admin", "staff", "normal_staff"].includes($user?.role)}
 							<button
 								class="payment-badge status-action dashboard-status-control"
 								class:paid={invoice.status === "paid"}
@@ -351,27 +364,6 @@
 							</button>
 						{:else}
 							<span class="badge" class:paid={invoice.status === "paid"} class:unpaid={invoice.status === "unpaid"}>{invoice.status === "cancelled" ? "Cancelled" : invoice.status === "paid" ? "Paid" : "Unpaid"}</span>
-						{/if}
-									</td>{/if}
-									{#if visibleColumns.settlementStatus}<td>
-						{#if isAdmin}
-							<button
-								class="settlement-badge status-action dashboard-status-control"
-								class:settled={invoice.settlement_status === "settled"}
-								type="button"
-								aria-expanded={statusMenu.invoiceId === invoice.id && statusMenu.kind === "settlement"}
-								title="Choose settlement status"
-								onclick={(event) => toggleStatusMenu(invoice, "settlement", event)}
-							>
-								<span class="status-icon" aria-hidden="true">{invoice.settlement_status === "settled" ? "✓" : "×"}</span>
-								{invoice.settlement_status === "settled" ? "Settled" : "Unsettled"}
-								<span class="status-chevron" aria-hidden="true"></span>
-							</button>
-						{:else}
-							<span class="settlement-badge" class:settled={invoice.settlement_status === "settled"}>
-								<span class="status-icon" aria-hidden="true">{invoice.settlement_status === "settled" ? "✓" : "×"}</span>
-								{invoice.settlement_status === "settled" ? "Settled" : "Unsettled"}
-							</span>
 						{/if}
 									</td>{/if}
 								</tr>
@@ -448,6 +440,7 @@
 	}
 
 	.stat-card {
+		display: block;
 		position: relative;
 		overflow: hidden;
 		padding: 19px 20px 18px;
@@ -455,6 +448,18 @@
 		border-radius: 10px;
 		background: white;
 		box-shadow: 0 2px 7px rgb(15 23 42 / 3%);
+		color: inherit;
+		text-decoration: none;
+		transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+	}
+	.stat-card:hover {
+		border-color: #bdc9da;
+		box-shadow: 0 5px 14px rgb(15 23 42 / 8%);
+		transform: translateY(-1px);
+	}
+	.stat-card:focus-visible {
+		outline: 3px solid rgb(49 94 231 / 30%);
+		outline-offset: 2px;
 	}
 
 	.stat-card::before {
@@ -648,8 +653,7 @@
 
 		color: #dc2626;
 	}
-	.payment-badge,
-	.settlement-badge {
+	.payment-badge {
 		display: inline-flex;
 		min-width: 66px;
 		align-items: center;
@@ -668,16 +672,6 @@
 		background: #ccfbf1;
 		color: #0f766e;
 	}
-	.settlement-badge {
-		min-width: 82px;
-		border-radius: 6px;
-		background: #fff1f2;
-		color: #be123c;
-	}
-	.settlement-badge.settled {
-		background: #dff8ee;
-		color: #087a55;
-	}
 	.status-action {
 		min-width: 122px;
 		box-sizing: border-box;
@@ -694,23 +688,8 @@
 	}
 	.payment-badge.status-action { color: #c81e3a; }
 	.payment-badge.status-action.paid { background: #fff; color: #0f766e; }
-	.settlement-badge.status-action { min-width: 146px; background: #fff; }
-	.settlement-badge.status-action.settled { color: #087a55; }
 	.status-action:hover { border-color: #aebbd0; box-shadow: 0 2px 5px rgb(15 23 42 / 7%); }
 	.status-action:focus-visible { outline: 3px solid rgb(49 94 231 / 28%); outline-offset: 2px; }
-	.status-icon {
-		display: grid;
-		width: 17px;
-		height: 17px;
-		flex: none;
-		place-items: center;
-		border-radius: 50%;
-		background: #be123c;
-		color: #fff;
-		font-size: 12px;
-		line-height: 1;
-	}
-	.settlement-badge.settled .status-icon { background: #087a55; }
 	.status-chevron {
 		width: 6px;
 		height: 6px;

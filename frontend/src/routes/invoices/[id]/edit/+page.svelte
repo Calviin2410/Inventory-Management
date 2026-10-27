@@ -58,6 +58,11 @@
 			}
 
 			invoice = invoiceData;
+			if (invoice.settlement_status === "settled") {
+				errorMessage = "This invoice is settled and locked. Reopen settlement before changing it.";
+				invoice = null;
+				return;
+			}
 
 			customerName = invoice.customer?.name ?? "";
 			customerPhone = invoice.customer?.phone ?? "";

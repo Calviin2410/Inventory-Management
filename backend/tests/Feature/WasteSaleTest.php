@@ -97,6 +97,26 @@ class WasteSaleTest extends TestCase
         ]);
     }
 
+    public function test_settled_invoice_sell_waste_cannot_be_changed(): void
+    {
+        Sanctum::actingAs(User::factory()->create(['role' => 'normal_staff']));
+        $invoice = $this->invoice();
+        $invoice->update([
+            'settlement_status' => 'settled',
+            'waste_sell_amount' => 45,
+        ]);
+
+        $this->patchJson("/api/waste-sales/{$invoice->id}", [
+            'amount' => 90,
+        ])->assertUnprocessable();
+
+        $this->assertDatabaseHas('invoices', [
+            'id' => $invoice->id,
+            'settlement_status' => 'settled',
+            'waste_sell_amount' => 45,
+        ]);
+    }
+
     public function test_amount_is_required_and_must_be_greater_than_zero(): void
     {
         Sanctum::actingAs(User::factory()->create(['role' => 'normal_staff']));

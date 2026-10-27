@@ -12,17 +12,27 @@ class StaffManagementTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_admin_can_list_staff_without_exposing_administrators(): void
+    public function test_only_first_created_admin_can_see_other_admin_accounts(): void
     {
-        $admin = User::factory()->create(['role' => 'admin']);
+        $earlierAdmin = User::factory()->create(['role' => 'admin']);
+        $laterAdmin = User::factory()->create(['role' => 'admin']);
         $staff = User::factory()->create(['role' => 'normal_staff']);
 
-        Sanctum::actingAs($admin);
+        Sanctum::actingAs($earlierAdmin);
 
         $this->getJson('/api/staff')
             ->assertOk()
             ->assertJsonFragment(['id' => $staff->id])
-            ->assertJsonMissing(['id' => $admin->id]);
+            ->assertJsonFragment(['id' => $laterAdmin->id, 'role' => 'admin'])
+            ->assertJsonFragment(['id' => $earlierAdmin->id, 'role' => 'admin']);
+
+        Sanctum::actingAs($laterAdmin);
+
+        $this->getJson('/api/staff')
+            ->assertOk()
+            ->assertJsonFragment(['id' => $laterAdmin->id, 'role' => 'admin'])
+            ->assertJsonMissing(['id' => $earlierAdmin->id, 'role' => 'admin'])
+            ->assertJsonFragment(['id' => $staff->id]);
     }
 
     public function test_non_admin_cannot_manage_staff_accounts(): void
@@ -41,6 +51,7 @@ class StaffManagementTest extends TestCase
             'password' => 'NewPassword123!',
             'password_confirmation' => 'NewPassword123!',
         ])->assertForbidden();
+        $this->deleteJson("/api/staff/{$staff->id}")->assertForbidden();
     }
 
     public function test_admin_can_create_a_staff_account(): void
@@ -90,5 +101,26 @@ class StaffManagementTest extends TestCase
 
         $this->assertTrue(Hash::check('NewPassword123!', $staff->password));
         $this->assertCount(0, $staff->tokens);
+    }
+
+    public function test_admin_can_delete_staff_but_cannot_delete_an_admin(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $staff = User::factory()->create(['role' => 'normal_staff']);
+        Sanctum::actingAs($admin);
+
+        $this->deleteJson("/api/staff/{$staff->id}")
+            ->assertOk()
+            ->assertJsonFragment(['message' => 'Staff account deleted successfully.']);
+
+        $this->assertDatabaseMissing('users', ['id' => $staff->id]);
+        $this->assertDatabaseHas('activity_logs', [
+            'action' => 'deleted',
+            'subject_type' => 'Staff',
+            'subject_id' => $staff->id,
+        ]);
+
+        $this->deleteJson("/api/staff/{$admin->id}")->assertNotFound();
+        $this->assertDatabaseHas('users', ['id' => $admin->id, 'role' => 'admin']);
     }
 }

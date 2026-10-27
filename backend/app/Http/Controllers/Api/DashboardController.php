@@ -11,7 +11,7 @@ class DashboardController extends Controller
 {
     public function summary(Request $request)
     {
-        $recentInvoicesQuery = Invoice::with(['customer', 'createdBy:id,name'])
+        $recentInvoicesQuery = Invoice::with(['customer', 'createdBy:id,name', 'items.barrel:id,code'])
             ->latest('issued_date')
             ->latest('id');
 
@@ -35,6 +35,11 @@ class DashboardController extends Controller
             'settled_invoices' => Invoice::where(
                 'settlement_status',
                 'settled'
+            )->count(),
+
+            'unsettled_invoices' => Invoice::where(
+                'settlement_status',
+                'unsettled'
             )->count(),
 
             'available_barrels' => Barrel::where(

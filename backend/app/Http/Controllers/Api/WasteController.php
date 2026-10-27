@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Support\InvoiceOrdering;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class WasteController extends Controller
 {
@@ -28,6 +29,7 @@ class WasteController extends Controller
 
         $query = Invoice::query()
             ->with([
+                'customer:id,name',
                 'items.barrel:id,code',
                 'wasteSellRecordedBy:id,name',
             ])
@@ -100,6 +102,12 @@ class WasteController extends Controller
             'Only administrators and staff can record or update a waste sell.'
         );
 
+        abort_if(
+            $invoice->settlement_status === 'settled',
+            422,
+            'This invoice is settled and locked. Reopen settlement before changing Sell Waste.'
+        );
+
         $data = $request->validate([
             'amount' => ['required', 'numeric', 'gt:0', 'max:9999999999.99'],
             'remark' => ['nullable', 'string', 'max:1000'],
@@ -123,6 +131,11 @@ class WasteController extends Controller
             &$barrelStatusesAfter
         ) {
             $lockedInvoice = Invoice::query()->lockForUpdate()->findOrFail($invoice->id);
+            if ($lockedInvoice->settlement_status === 'settled') {
+                throw ValidationException::withMessages([
+                    'invoice' => ['This invoice is settled and locked. Reopen settlement before changing Sell Waste.'],
+                ]);
+            }
             $lockedInvoice->update([
                 'waste_sell_amount' => $data['amount'],
                 'waste_sell_remark' => filled($data['remark'] ?? null)

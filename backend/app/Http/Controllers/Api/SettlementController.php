@@ -96,6 +96,18 @@ class SettlementController extends Controller
             $lockedInvoice = Invoice::query()->lockForUpdate()->findOrFail($invoice->id);
             $isSettling = $data['action'] === 'settle';
 
+            if ($isSettling && $lockedInvoice->status !== 'paid') {
+                throw ValidationException::withMessages([
+                    'action' => ['This invoice must be marked Paid before it can be settled.'],
+                ]);
+            }
+
+            if ($isSettling && $lockedInvoice->waste_sell_amount === null) {
+                throw ValidationException::withMessages([
+                    'action' => ['Sell Waste must be recorded before this invoice can be settled.'],
+                ]);
+            }
+
             if ($isSettling && $lockedInvoice->settlement_status === 'settled') {
                 throw ValidationException::withMessages([
                     'action' => 'This invoice is already settled.',

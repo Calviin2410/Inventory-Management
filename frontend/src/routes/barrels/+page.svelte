@@ -233,7 +233,11 @@
 		}
 	}
 
-	onMount(loadBarrels);
+	onMount(() => {
+		const requestedStatus = new URLSearchParams(window.location.search).get("status");
+		if (["available", "rented", "returning"].includes(requestedStatus)) status = requestedStatus;
+		loadBarrels(1);
+	});
 </script>
 
 <svelte:window onclick={closeActionMenuOnOutsideClick} />

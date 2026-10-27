@@ -125,6 +125,12 @@ class InvoiceController extends Controller
             'Only administrators and staff can edit invoices.'
         );
 
+        abort_if(
+            $invoice->settlement_status === 'settled',
+            422,
+            'This invoice is settled and locked. Reopen settlement before changing it.'
+        );
+
         $managementFields = [
             'customer_name',
             'customer_phone',
@@ -289,6 +295,13 @@ class InvoiceController extends Controller
 		$beforeItems = $loadRentalItemSnapshots();
 
         DB::transaction(function () use ($invoice, $data) {
+            $lockedInvoice = Invoice::query()->lockForUpdate()->findOrFail($invoice->id);
+            if ($lockedInvoice->settlement_status === 'settled') {
+                throw ValidationException::withMessages([
+                    'invoice' => ['This invoice is settled and locked. Reopen settlement before changing it.'],
+                ]);
+            }
+
             $invoiceFields = collect($data)->except(['items', 'customer_name', 'customer_phone'])->all();
             $invoice->update($invoiceFields);
 
@@ -384,6 +397,12 @@ class InvoiceController extends Controller
             'Only administrators can delete invoices.'
         );
 
+        abort_if(
+            $invoice->settlement_status === 'settled',
+            422,
+            'A settled invoice is locked and cannot be deleted. Reopen settlement first.'
+        );
+
         $invoice->load('items');
         $barrelIds = $invoice->items->pluck('barrel_id')->unique()->values();
         $snapshot = $invoice->only([
@@ -398,7 +417,13 @@ class InvoiceController extends Controller
         $invoiceNo = $invoice->invoice_no;
 
         DB::transaction(function () use ($invoice, $barrelIds) {
-            $invoice->delete();
+            $lockedInvoice = Invoice::query()->lockForUpdate()->findOrFail($invoice->id);
+            if ($lockedInvoice->settlement_status === 'settled') {
+                throw ValidationException::withMessages([
+                    'invoice' => ['A settled invoice is locked and cannot be deleted. Reopen settlement first.'],
+                ]);
+            }
+            $lockedInvoice->delete();
 
             foreach ($barrelIds as $barrelId) {
                 $remainingRental = \App\Models\InvoiceItem::query()

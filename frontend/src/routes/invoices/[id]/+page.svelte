@@ -136,7 +136,7 @@
 
 		{#if invoice}
 			<div class="header-actions">
-				{#if canSellWaste}
+				{#if canSellWaste && invoice.settlement_status !== "settled"}
 					<button
 						type="button"
 						class="btn sale-button"
@@ -156,7 +156,7 @@
 					{exporting ? "Preparing..." : "Export PDF"}
 				</button>
 
-				{#if !settlementView && canManageInvoice}
+				{#if !settlementView && canManageInvoice && invoice.settlement_status !== "settled"}
 					<a
 						class="btn btn-primary"
 						href={`/invoices/${invoice.id}/edit`}

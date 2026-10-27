@@ -151,18 +151,24 @@ class BarrelController extends Controller
             );
         }
 
+        $latestOpenRental = $barrel->invoiceItems()
+            ->with('invoice:id,settlement_status')
+            ->whereNull('rental_end')
+            ->latest()
+            ->first();
+
+        if ($latestOpenRental?->invoice?->settlement_status === 'settled') {
+            throw ValidationException::withMessages([
+                'status' => ['This barrel belongs to a settled invoice. Reopen settlement before completing its return.'],
+            ]);
+        }
+
         $before = $barrel->only(['status', 'current_customer_id']);
 
         $barrel->update([
             'status' => 'available',
             'current_customer_id' => null,
         ]);
-
-        $latestOpenRental =
-            $barrel->invoiceItems()
-                ->whereNull('rental_end')
-                ->latest()
-                ->first();
 
         if ($latestOpenRental) {
             $latestOpenRental->update([

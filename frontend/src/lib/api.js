@@ -79,6 +79,7 @@ export const api = {
 	me: () => request('/me'),
 	getStaff: () => request('/staff'),
 	createStaff: (payload) => request('/staff', { method: 'POST', body: payload }),
+	deleteStaff: (id) => request(`/staff/${id}`, { method: 'DELETE' }),
 	resetStaffPassword: (id, payload) =>
 		request(`/staff/${id}/password`, {
 			method: 'PATCH',
