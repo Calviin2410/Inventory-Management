@@ -65,7 +65,7 @@ class ActivityLogTest extends TestCase
             'subject_type' => 'Invoice',
             'subject_id' => 10,
             'subject_label' => 'TKS00010',
-            'description' => 'Recorded waste sell for invoice TKS00010',
+            'description' => 'Recorded Sell Waste for invoice TKS00010',
             'old_values' => ['waste_sell_recorded_by' => $previousUser->id],
             'new_values' => ['waste_sell_recorded_by' => $recordingUser->id],
             'created_at' => now(),

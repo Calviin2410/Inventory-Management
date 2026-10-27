@@ -99,7 +99,7 @@ class WasteController extends Controller
             $request->user()?->isAdmin()
                 || in_array($request->user()?->role, ['staff', 'normal_staff'], true),
             403,
-            'Only administrators and staff can record or update a waste sell.'
+            'Only administrators and staff can record or update Sell Waste.'
         );
 
         abort_if(
@@ -199,7 +199,7 @@ class WasteController extends Controller
             $invoice->id,
             $invoice->invoice_no,
             ($action === 'waste_sell_recorded' ? 'Recorded' : 'Updated')
-                .' waste sell for invoice '.$invoice->invoice_no,
+                .' Sell Waste for invoice '.$invoice->invoice_no,
             array_merge($before, $barrelStatusesBefore),
             $after,
         );

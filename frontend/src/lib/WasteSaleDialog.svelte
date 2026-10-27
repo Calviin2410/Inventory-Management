@@ -31,7 +31,7 @@
 			errorMessage =
 				error?.errors?.amount?.[0] ||
 				error?.message ||
-				"Unable to save waste sell.";
+				"Unable to save Sell Waste.";
 		} finally {
 			saving = false;
 		}
@@ -53,8 +53,8 @@
 	>
 		<h2>
 			{invoice?.waste_sell_amount === null
-				? "Record Waste Sell"
-				: "Update Waste Sell"}
+				? "Record Sell Waste"
+				: "Update Sell"}
 		</h2>
 		<p>{invoice?.invoice_no}</p>
 		{#if errorMessage}<div class="dialog-error" role="alert">

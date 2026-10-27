@@ -40,10 +40,10 @@
 		password_reset: "Password reset",
 		settled: "Settled",
 		reopened: "Reopened",
-		waste_sell_recorded: "Waste sell recorded",
-		waste_sell_updated: "Waste sell updated",
-		waste_sale_recorded: "Waste sale recorded",
-		waste_sale_updated: "Waste sale updated",
+		waste_sell_recorded: "Sell Waste recorded",
+		waste_sell_updated: "Sell Waste updated",
+		waste_sale_recorded: "Sell Waste recorded",
+		waste_sale_updated: "Sell Waste updated",
 	};
 
 	const actionOptions = [
@@ -53,10 +53,10 @@
 		{ value: "returned", label: "Returned" },
 		{ value: "deleted", label: "Deleted" },
 		{ value: "password_reset", label: "Password reset" },
-		{ value: "waste_sell_recorded", label: "Waste sell recorded" },
-		{ value: "waste_sell_updated", label: "Waste sell updated" },
-		{ value: "waste_sale_recorded", label: "Waste sale recorded (legacy logs)" },
-		{ value: "waste_sale_updated", label: "Waste sale updated (legacy logs)" },
+		{ value: "waste_sell_recorded", label: "Sell Waste recorded" },
+		{ value: "waste_sell_updated", label: "Sell Waste updated" },
+		{ value: "waste_sale_recorded", label: "Sell Waste recorded (legacy logs)" },
+		{ value: "waste_sale_updated", label: "Sell Waste updated (legacy logs)" },
 	];
 
 	const recordTypeOptions = [
@@ -84,9 +84,18 @@
 		return Object.entries(values)
 			.map(
 				([key, value]) =>
-					`${key.replaceAll("_", " ")}: ${formatChangeValue(key, value, actorName)}`,
+					`${formatFieldLabel(key)}: ${formatChangeValue(key, value, actorName)}`,
 			)
 			.join("\n");
+	}
+
+	function formatFieldLabel(key) {
+		const label = key.replaceAll("_", " ");
+		return label.replace(/^waste (?:sale|sell)/i, "Sell Waste");
+	}
+
+	function formatActivityDescription(description) {
+		return String(description ?? "").replace(/waste (?:sale|sell)/gi, "Sell Waste");
 	}
 
 	function formatChangeValue(key, value, actorName = "") {
@@ -323,7 +332,7 @@
 									<small>{formatRecordLabel(log)}</small>
 								</td>{/if}
 								{#if visibleColumns.activity}<td class="activity-cell">
-									<span>{log.description}</span>
+									<span>{formatActivityDescription(log.description)}</span>
 									{#if log.old_values || log.new_values}
 										<details>
 											<summary>View changes</summary>

@@ -843,7 +843,6 @@
 												type="button"
 												aria-expanded={statusMenu.invoiceId ===
 													invoice.id}
-												title="Choose payment status"
 												onclick={(event) =>
 													toggleStatusMenu(
 														invoice,

@@ -15,6 +15,8 @@
 
 	html {
 		min-width: 320px;
+		max-width: 100%;
+		overflow-x: hidden;
 		background: var(--canvas);
 	}
 
@@ -414,8 +416,11 @@
 
 	@media (max-width: 900px) {
 		.app-page {
+			width: 100%;
+			max-width: 100%;
 			margin-left: 0;
 			padding: 94px 20px 56px;
+			overflow-x: clip;
 		}
 
 		.toolbar {

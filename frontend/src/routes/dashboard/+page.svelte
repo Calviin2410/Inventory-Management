@@ -356,7 +356,6 @@
 								class:paid={invoice.status === "paid"}
 								type="button"
 								aria-expanded={statusMenu.invoiceId === invoice.id && statusMenu.kind === "payment"}
-								title="Choose payment status"
 								onclick={(event) => toggleStatusMenu(invoice, "payment", event)}
 							>
 								{invoice.status === "paid" ? "Paid" : "Unpaid"}

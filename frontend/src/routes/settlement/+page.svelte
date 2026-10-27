@@ -595,7 +595,6 @@
 													invoice.id &&
 													statusMenu.kind ===
 														"payment"}
-												title="Choose payment status"
 												onclick={(event) =>
 													toggleStatusMenu(
 														invoice,
@@ -633,7 +632,6 @@
 													invoice.id &&
 													statusMenu.kind ===
 														"settlement"}
-												title="Choose settlement status"
 												onclick={(event) =>
 													toggleStatusMenu(
 														invoice,
@@ -736,7 +734,6 @@
 				<button
 					type="button"
 					disabled={!canSettleInvoice(actionInvoice)}
-					title={settleRequirement(actionInvoice)}
 					onclick={() => openDialog(actionInvoice, "settle")}
 					>Settle</button
 				>
@@ -777,7 +774,6 @@
 				<button
 					type="button"
 					disabled={!canSettleInvoice(statusMenuInvoice)}
-					title={settleRequirement(statusMenuInvoice)}
 					onclick={() => openDialog(statusMenuInvoice, "settle")}
 					>Settle</button
 				>

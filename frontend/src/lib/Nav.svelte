@@ -135,7 +135,6 @@
 			<button
 				class="sign-out"
 				type="button"
-				title="Sign out"
 				aria-label="Sign out"
 				onclick={handleLogout}
 			>

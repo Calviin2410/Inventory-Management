@@ -78,7 +78,7 @@
 			totalInvoices = result?.total ?? 0;
 			totalAmountReceived = result?.total_amount_received ?? 0;
 		} catch (error) {
-			errorMessage = error?.message || "Unable to load waste sell.";
+			errorMessage = error?.message || "Unable to load Sell Waste.";
 		} finally {
 			loading = false;
 		}
@@ -111,7 +111,7 @@
 <main class="app-page">
 	<header class="page-heading">
 		<div>
-			<p class="eyebrow">WASTE SELL</p>
+			<p class="eyebrow">SELL WASTE</p>
 			<h1>Waste</h1>
 			<p>Record money received when collected waste is sold.</p>
 		</div>
@@ -146,17 +146,17 @@
 			<FilterSelect
 				bind:value={receivedByFilter}
 				options={receivedByOptions}
-				ariaLabel="Filter waste sales by receiver"
+				ariaLabel="Filter Sell Waste by receiver"
 				onchange={() => loadWasteSales(1)}
 			/>
 			<FilterSelect
 				bind:value={wasteStatusFilter}
 				options={[
-					{ value: "", label: "All waste sales" },
+					{ value: "", label: "All Sell Waste" },
 					{ value: "unsold", label: "Not sold" },
 					{ value: "sold", label: "Sold" },
 				]}
-				ariaLabel="Filter invoices by waste sale status"
+				ariaLabel="Filter invoices by Sell Waste status"
 				onchange={() => loadWasteSales(1)}
 			/>
 			<div class="filter-actions">
@@ -186,11 +186,11 @@
 	<div class="waste-overview-row">
 		<section
 			class="amount-summary"
-			aria-label="Total waste sell amount received"
+			aria-label="Total Sell Waste amount received"
 		>
 			<div class="amount-icon">RM</div>
 			<div>
-				<span>Total Amount Sell</span><strong
+				<span>Total Sell Waste Amount</span><strong
 					>{formatAmount(totalAmountReceived)}</strong
 				>
 			</div>
@@ -273,7 +273,7 @@
 											type="button"
 											onclick={() =>
 												(saleInvoice = invoice)}
-							>{invoice.waste_sell_amount === null ? "Sell Waste" : "UpdateSell"}</button
+							>{invoice.waste_sell_amount === null ? "Sell Waste" : "Update Sell"}</button
 										>{:else}—{/if}</td
 								>
 							</tr>
