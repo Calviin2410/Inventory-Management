@@ -31,7 +31,7 @@ class StaffController extends Controller
 
         return response()->json(
             User::query()
-                ->where(function ($query) use ($request) {
+                ->where(function ($query) use ($request, $canViewAllAdmins) {
                     $query->where('role', 'normal_staff')
                         ->orWhere(function ($adminQuery) use ($request, $canViewAllAdmins) {
                             // The first-created admin (Bryan in production) can
