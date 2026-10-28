@@ -9,6 +9,7 @@
     import SkeletonTable from "$lib/SkeletonTable.svelte";
     import DateInput from "$lib/DateInput.svelte";
     import FilterSelect from "$lib/FilterSelect.svelte";
+	import { loadPageAndScrollToTop } from "$lib/pagination.js";
     import Toast from "$lib/Toast.svelte";
     import { formatDate } from "$lib/format.js";
 
@@ -791,8 +792,8 @@
 						Page {currentPage} of {lastPage} · {totalInvoices} invoices
 					</div>
 					<div class="pagination-actions">
-						<button type="button" disabled={currentPage <= 1 || loading} onclick={() => loadReports(currentPage - 1)}>Previous</button>
-						<button type="button" disabled={currentPage >= lastPage || loading} onclick={() => loadReports(currentPage + 1)}>Next</button>
+						<button type="button" disabled={currentPage <= 1 || loading} onclick={() => loadPageAndScrollToTop(() => loadReports(currentPage - 1))}>Previous</button>
+						<button type="button" disabled={currentPage >= lastPage || loading} onclick={() => loadPageAndScrollToTop(() => loadReports(currentPage + 1))}>Next</button>
 					</div>
 				</div>
             {/if}

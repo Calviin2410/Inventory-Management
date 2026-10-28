@@ -9,6 +9,7 @@
 	import { user } from "$lib/stores/auth.js";
 	import ColumnPicker from "$lib/ColumnPicker.svelte";
 	import FilterSelect from "$lib/FilterSelect.svelte";
+	import { loadPageAndScrollToTop } from "$lib/pagination.js";
 
 	const wasteColumns = [
 		{ key: "invoiceNumber", label: "Invoice Number" },
@@ -292,13 +293,13 @@
 					<button
 						type="button"
 						disabled={currentPage <= 1 || loading}
-						onclick={() => loadWasteSales(currentPage - 1)}
+						onclick={() => loadPageAndScrollToTop(() => loadWasteSales(currentPage - 1))}
 						>Previous</button
 					>
 					<button
 						type="button"
 						disabled={currentPage >= lastPage || loading}
-						onclick={() => loadWasteSales(currentPage + 1)}
+						onclick={() => loadPageAndScrollToTop(() => loadWasteSales(currentPage + 1))}
 						>Next</button
 					>
 				</div>

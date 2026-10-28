@@ -10,6 +10,7 @@
 	import { user } from "$lib/stores/auth.js";
 	import WasteSaleDialog from "$lib/WasteSaleDialog.svelte";
 	import FilterSelect from "$lib/FilterSelect.svelte";
+	import { loadPageAndScrollToTop } from "$lib/pagination.js";
 
 	// =========================
 	// State
@@ -317,7 +318,7 @@
 			return;
 		}
 
-		await loadInvoices(currentPage - 1);
+		await loadPageAndScrollToTop(() => loadInvoices(currentPage - 1));
 	}
 
 	async function nextPage() {
@@ -325,7 +326,7 @@
 			return;
 		}
 
-		await loadInvoices(currentPage + 1);
+		await loadPageAndScrollToTop(() => loadInvoices(currentPage + 1));
 	}
 
 	// =========================

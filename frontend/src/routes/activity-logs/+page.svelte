@@ -10,6 +10,7 @@
 	import FilterSelect from "$lib/FilterSelect.svelte";
 	import { formatDate } from "$lib/format.js";
 	import ColumnPicker from "$lib/ColumnPicker.svelte";
+	import { loadPageAndScrollToTop } from "$lib/pagination.js";
 
 	const activityColumns = [
 		{ key: "dateTime", label: "Date & Time" },
@@ -369,13 +370,13 @@
 					<button
 						type="button"
 						disabled={currentPage <= 1 || loading}
-						onclick={() => loadLogs(currentPage - 1)}
+						onclick={() => loadPageAndScrollToTop(() => loadLogs(currentPage - 1))}
 						>Previous</button
 					>
 					<button
 						type="button"
 						disabled={currentPage >= lastPage || loading}
-						onclick={() => loadLogs(currentPage + 1)}>Next</button
+						onclick={() => loadPageAndScrollToTop(() => loadLogs(currentPage + 1))}>Next</button
 					>
 				</div>
 			</div>

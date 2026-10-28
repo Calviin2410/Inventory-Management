@@ -5,6 +5,7 @@
 	import SkeletonTable from "$lib/SkeletonTable.svelte";
 	import ColumnPicker from "$lib/ColumnPicker.svelte";
 	import FilterSelect from "$lib/FilterSelect.svelte";
+	import { loadPageAndScrollToTop } from "$lib/pagination.js";
 
 	const customerColumns = [
 		{ key: "customer", label: "Customer" },
@@ -67,7 +68,7 @@
 			return;
 		}
 
-		await loadCustomers(currentPage - 1);
+		await loadPageAndScrollToTop(() => loadCustomers(currentPage - 1));
 	}
 
 	async function nextPage() {
@@ -75,7 +76,7 @@
 			return;
 		}
 
-		await loadCustomers(currentPage + 1);
+		await loadPageAndScrollToTop(() => loadCustomers(currentPage + 1));
 	}
 
 	onMount(() => {

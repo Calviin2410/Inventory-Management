@@ -7,6 +7,7 @@
 	import Toast from "$lib/Toast.svelte";
 	import { user } from "$lib/stores/auth.js";
 	import ColumnPicker from "$lib/ColumnPicker.svelte";
+	import { loadPageAndScrollToTop } from "$lib/pagination.js";
 
 	const barrelColumns = [
 		{ key: "code", label: "Barrel Code" },
@@ -517,7 +518,7 @@
 					<button
 						type="button"
 						disabled={currentPage <= 1}
-						onclick={() => loadBarrels(currentPage - 1)}
+						onclick={() => loadPageAndScrollToTop(() => loadBarrels(currentPage - 1))}
 					>
 						Previous
 					</button>
@@ -525,7 +526,7 @@
 					<button
 						type="button"
 						disabled={currentPage >= lastPage}
-						onclick={() => loadBarrels(currentPage + 1)}
+						onclick={() => loadPageAndScrollToTop(() => loadBarrels(currentPage + 1))}
 					>
 						Next
 					</button>

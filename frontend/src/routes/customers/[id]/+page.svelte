@@ -9,6 +9,7 @@
     import { formatDate } from "$lib/format.js";
     import { user } from "$lib/stores/auth.js";
     import ColumnPicker from "$lib/ColumnPicker.svelte";
+    import { loadPageAndScrollToTop } from "$lib/pagination.js";
 
     const customerInvoiceColumns = [
         { key: "invoice", label: "Invoice Number" },
@@ -101,7 +102,7 @@
             return;
         }
 
-        await loadCustomer(currentPage - 1);
+        await loadPageAndScrollToTop(() => loadCustomer(currentPage - 1));
     }
 
     async function nextPage() {
@@ -109,7 +110,7 @@
             return;
         }
 
-        await loadCustomer(currentPage + 1);
+        await loadPageAndScrollToTop(() => loadCustomer(currentPage + 1));
     }
 
     onMount(() => loadCustomer());
