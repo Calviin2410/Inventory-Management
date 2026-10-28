@@ -44,6 +44,7 @@
 		invoices.find((invoice) => invoice.id === statusMenu.invoiceId) ?? null,
 	);
 	let successMessage = $state("");
+	let isAdmin = $derived($user?.role === "admin");
 	let paymentInvoice = $state(null);
 	let paymentMethod = $state("cash");
 	let paymentDate = $state("");
@@ -343,7 +344,7 @@
 	}
 
 	async function exportSettledInvoice(invoice) {
-		if (invoice.settlement_status !== "settled" || exportingId !== null)
+		if (!isAdmin || invoice.settlement_status !== "settled" || exportingId !== null)
 			return;
 		openActionId = null;
 
@@ -717,15 +718,17 @@
 				>View Invoice</a
 			>
 			<div class="menu-divider"></div>
-			<button
-				type="button"
-				disabled={actionInvoice.settlement_status !== "settled" ||
-					exportingId !== null}
-				onclick={() => exportSettledInvoice(actionInvoice)}
-				>{exportingId === actionInvoice.id
-					? "Preparing…"
-					: "Export Invoice"}</button
-			>
+			{#if isAdmin}
+				<button
+					type="button"
+					disabled={actionInvoice.settlement_status !== "settled" ||
+						exportingId !== null}
+					onclick={() => exportSettledInvoice(actionInvoice)}
+					>{exportingId === actionInvoice.id
+						? "Preparing…"
+						: "Export Invoice"}</button
+				>
+			{/if}
 			{#if canManageSettlement(actionInvoice)}
 				<div class="menu-divider"></div>
 				{#if actionInvoice.settlement_status !== "settled" && !canSettleInvoice(actionInvoice)}

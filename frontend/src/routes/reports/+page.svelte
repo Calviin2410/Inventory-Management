@@ -688,16 +688,16 @@
                                     {#each invoice.items as item, itemIndex}
                                         <tr>
 											{#if visibleColumns.invoice}
-											<td><a class="invoice-link" href={settledInvoiceHref(invoice)}>{invoice.invoice_no}</a></td>
+							<td><a class="invoice-link" href={settledInvoiceHref(invoice)}>{invoice.invoice_no}</a></td>
 											{/if}
 
-											{#if visibleColumns.invoiceDate}<td>{formatDate(invoice.issued_date)}</td>{/if}
+							{#if visibleColumns.invoiceDate}<td>{formatDate(invoice.issued_date)}</td>{/if}
 
-											{#if visibleColumns.customer}<td>
+							{#if visibleColumns.customer}<td>
                                                 {invoice.customer?.name ?? "-"}
                                             </td>{/if}
 
-											{#if visibleColumns.barrel}<td class="barrel-column">
+										{#if visibleColumns.barrel}<td class="barrel-column">
                                                 {item.barrel?.code ?? "-"}
                                             </td>{/if}
 
@@ -705,12 +705,12 @@
                                                 {formatDate(item.rental_start)}
                                             </td>{/if}
 
-											{#if visibleColumns.rentalEnd}<td>
+							{#if visibleColumns.rentalEnd}<td>
                                                 {formatDate(item.rental_end)}
                                             </td>{/if}
 							{#if visibleColumns.invoiceAmount}<td>{itemIndex === 0 ? new Intl.NumberFormat("en-MY", { style: "currency", currency: "MYR" }).format(Number(invoice.total_amount ?? 0)) : "—"}</td>{/if}
 							{#if visibleColumns.createdBy}<td>{invoice.created_by?.name ?? "—"}</td>{/if}
-											{#if visibleColumns.wasteSellAmount}<td>{itemIndex === 0 ? new Intl.NumberFormat("en-MY", { style: "currency", currency: "MYR" }).format(Number(invoice.waste_sell_amount ?? 0)) : "—"}</td>{/if}
+							{#if visibleColumns.wasteSellAmount}<td>{itemIndex === 0 ? new Intl.NumberFormat("en-MY", { style: "currency", currency: "MYR" }).format(Number(invoice.waste_sell_amount ?? 0)) : "—"}</td>{/if}
 
 							{#if visibleColumns.paymentStatus}<td class="payment-status-column">
 								{#if invoice.status !== "cancelled"}
@@ -739,20 +739,20 @@
                                 {:else}
                                     <tr>
 										{#if visibleColumns.invoice}
-											<td><a class="invoice-link" href={settledInvoiceHref(invoice)}>{invoice.invoice_no}</a></td>
+							<td><a class="invoice-link" href={settledInvoiceHref(invoice)}>{invoice.invoice_no}</a></td>
 										{/if}
 
-									{#if visibleColumns.invoiceDate}<td>{formatDate(invoice.issued_date)}</td>{/if}
+					{#if visibleColumns.invoiceDate}<td>{formatDate(invoice.issued_date)}</td>{/if}
 
-									{#if visibleColumns.customer}<td>
+					{#if visibleColumns.customer}<td>
                                             {invoice.customer?.name ?? "-"}
                                         </td>{/if}
 
-									{#if visibleColumns.barrel}<td class="barrel-column"> - </td>{/if}
+										{#if visibleColumns.barrel}<td class="barrel-column"> - </td>{/if}
 
 									{#if visibleColumns.rentalStart}<td class="rental-start-column"> - </td>{/if}
 
-									{#if visibleColumns.rentalEnd}<td> - </td>{/if}
+					{#if visibleColumns.rentalEnd}<td> - </td>{/if}
 					{#if visibleColumns.invoiceAmount}<td>{new Intl.NumberFormat("en-MY", { style: "currency", currency: "MYR" }).format(Number(invoice.total_amount ?? 0))}</td>{/if}
 					{#if visibleColumns.createdBy}<td>{invoice.created_by?.name ?? "—"}</td>{/if}
 					{#if visibleColumns.wasteSellAmount}<td>{new Intl.NumberFormat("en-MY", { style: "currency", currency: "MYR" }).format(Number(invoice.waste_sell_amount ?? 0))}</td>{/if}
@@ -1022,6 +1022,7 @@
 	========================= */
 
     .report-section {
+        min-width: 0;
         margin-top: 30px;
     }
 
@@ -1066,6 +1067,7 @@
 
     .table-card {
         width: 100%;
+        min-width: 0;
         max-width: 100%;
         overflow-x: auto;
         overflow-y: hidden;
@@ -1118,6 +1120,7 @@
 
         font-size: 13px;
         font-weight: 600;
+		line-height: 1.35;
     }
 
     td {
@@ -1127,6 +1130,7 @@
 
         font-size: 14px;
 		vertical-align: middle;
+		line-height: 1.35;
     }
 
     tbody tr:last-child td {
@@ -1186,6 +1190,7 @@
 		font: inherit;
 		font-size: 12px;
 		font-weight: 700;
+		line-height: 1.2;
 		text-align: left;
 		cursor: pointer;
 		box-shadow: 0 1px 2px rgb(15 23 42 / 3%);

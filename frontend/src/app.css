@@ -9,7 +9,9 @@
 		--canvas: #f4f6f9;
 	}
 
-	* {
+	*,
+	*::before,
+	*::after {
 		box-sizing: border-box;
 	}
 
@@ -17,6 +19,8 @@
 		min-width: 320px;
 		max-width: 100%;
 		overflow-x: hidden;
+		-webkit-text-size-adjust: 100%;
+		text-size-adjust: 100%;
 		background: var(--canvas);
 	}
 
@@ -24,6 +28,7 @@
 		margin: 0;
 		max-width: 100%;
 		overflow-x: hidden;
+		line-height: 1.5;
 		background: var(--canvas);
 		color: var(--ink);
 		font-family:
@@ -403,6 +408,15 @@
 	select,
 	textarea {
 		font: inherit;
+		line-height: inherit;
+		letter-spacing: inherit;
+		margin: 0;
+	}
+
+	button {
+		-webkit-appearance: none;
+		appearance: none;
+		text-transform: none;
 	}
 
 	button:focus-visible,

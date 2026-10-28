@@ -25,6 +25,7 @@
 		invoice &&
 			["admin", "staff", "normal_staff"].includes($user?.role),
 	);
+	let canExportPdf = $derived($user?.role === "admin");
 
 	function formatAmount(value) {
 		return new Intl.NumberFormat("en-MY", {
@@ -71,7 +72,7 @@
 	}
 
 	async function exportPdf() {
-		if (!invoice || exporting) {
+		if (!canExportPdf || !invoice || exporting) {
 			return;
 		}
 
@@ -147,14 +148,16 @@
 							: "UpdateSell"}
 					</button>
 				{/if}
-				<button
-					type="button"
-					class="btn"
-					disabled={exporting}
-					onclick={exportPdf}
-				>
-					{exporting ? "Preparing..." : "Export PDF"}
-				</button>
+				{#if canExportPdf}
+					<button
+						type="button"
+						class="btn"
+						disabled={exporting}
+						onclick={exportPdf}
+					>
+						{exporting ? "Preparing..." : "Export PDF"}
+					</button>
+				{/if}
 
 				{#if !settlementView && canManageInvoice && invoice.settlement_status !== "settled"}
 					<a

@@ -431,6 +431,7 @@
 	// =========================
 
 	async function exportPdf(invoice) {
+		if (!isAdmin) return;
 		const printWindow = window.open("", "_blank");
 
 		if (!printWindow) {
@@ -959,13 +960,15 @@
 				>
 				<div class="menu-divider"></div>
 			{/if}
-			<button
-				type="button"
-				disabled={exportingId === menuInvoice.id}
-				onclick={() => exportPdf(menuInvoice)}
-			>
-				{exportingId === menuInvoice.id ? "Preparing..." : "Export PDF"}
-			</button>
+			{#if isAdmin}
+				<button
+					type="button"
+					disabled={exportingId === menuInvoice.id}
+					onclick={() => exportPdf(menuInvoice)}
+				>
+					{exportingId === menuInvoice.id ? "Preparing..." : "Export PDF"}
+				</button>
+			{/if}
 			{#if canSellWaste(menuInvoice) && menuInvoice.settlement_status !== "settled"}
 				<button
 					type="button"
